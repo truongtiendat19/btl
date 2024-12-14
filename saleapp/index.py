@@ -1,11 +1,12 @@
 from flask import Flask, render_template, request
 from pyexpat.errors import messages
-
+import dao
 app = Flask(__name__)
 
 @app.route("/")
-def trangchu():
-    return render_template('index.html')
+def index():
+    cates = dao.load_categories()  # Gọi hàm lấy danh mục từ dao.py
+    return render_template('index.html', categories=cates)
 
 @app.route("/dangnhap")
 def dangnhap():
