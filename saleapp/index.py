@@ -10,7 +10,7 @@ def index():
 
 @app.route("/dangnhap")
 def dangnhap():
-    return "DANG NHAP "
+    return render_template('dangnhap.html')
 
 
 @app.route("/hello/<name>")

@@ -5,9 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7b885487-372f-49cf-ac64-d33842c0cc47" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/PythonProject1.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/PythonProject1.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/saleapp/templates/dangnhap.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/saleapp/templates/layout/base.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/saleapp/templates/layout/footer.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/saleapp/templates/layout/header.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/saleapp/index.py" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/index.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/saleapp/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/templates/index.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,7 +50,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "master",
-    "last_opened_file_path": "D:/it2201saleappv2",
+    "last_opened_file_path": "D:/btl",
     "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
 }]]></component>
