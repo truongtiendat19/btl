@@ -3,10 +3,17 @@ from flask import render_template, request
 from pyexpat.errors import messages
 from saleapp import dao
 
-@app.route("/")
+# @app.route("/")
+# def index():
+#     cates = dao.load_categories()  # Gọi hàm lấy danh mục từ dao.py
+#     return render_template('index.html', categories=cates)
+
+
+@app.route('/')
 def index():
-    cates = dao.load_categories()  # Gọi hàm lấy danh mục từ dao.py
-    return render_template('index.html', categories=cates)
+    cart = None
+    return render_template('index.html', cart=cart or [])
+
 
 @app.route("/login", methods=['get', 'post'])
 def login():
