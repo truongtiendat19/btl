@@ -2,6 +2,7 @@ from saleapp import app
 from flask import render_template, request
 from pyexpat.errors import messages
 from saleapp import dao
+from saleapp.models import *
 
 @app.route("/")
 def index():
