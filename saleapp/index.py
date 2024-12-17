@@ -1,5 +1,5 @@
 from saleapp import app
-from flask import render_template, request
+from flask import render_template, request, redirect, session, jsonify
 from pyexpat.errors import messages
 from saleapp import dao
 from saleapp.models import *
@@ -19,6 +19,7 @@ def index():
 @app.route("/login", methods=['get', 'post'])
 def login():
     return render_template('login.html')
+
 
 @app.route("/login1", methods=['get', 'post'])
 def login1():
