@@ -12,24 +12,24 @@ def index():
     cate_id = request.args.get('category_id')
     page = request.args.get('page', 1)
 
-    prods = dao.load_products(kw=kw, category_id=cate_id, page=int(page))
+    books = dao.load_books(kw=kw, category_id=cate_id, page=int(page))
 
-    total = dao.count_products()
+    total = dao.count_books()
 
-    return render_template('index.html', products=prods,
+    return render_template('index.html', books=books,
                            pages=math.ceil(total/app.config["PAGE_SIZE"]))
 
 
-@app.route("/products/<product_id>")
-def details(product_id):
-    comments = dao.load_comments(product_id)
-    return render_template('details.html', product=dao.get_prod_by_id(product_id), comments=comments)
+@app.route("/books/<book_id>")
+def details(book_id):
+    comments = dao.load_comments(book_id)
+    return render_template('details.html', book=dao.get_book_by_id(book_id), comments=comments)
 
 
-@app.route("/api/products/<product_id>/comments", methods=['post'])
+@app.route("/api/books/<book_id>/comments", methods=['post'])
 @login_required
-def add_comment(product_id):
-    c = dao.add_comment(content=request.json.get('content'), product_id=product_id)
+def add_comment(book_id):
+    c = dao.add_comment(content=request.json.get('content'), book_id=book_id)
     return jsonify({
         "id": c.id,
         "content": c.content,
@@ -97,19 +97,6 @@ def register_process():
 
 @app.route("/api/carts", methods=['post'])
 def add_to_cart():
-    # {
-    #     "1": {
-    #         "id": 1,
-    #         "name": 'iphone',
-    #         "price": 123,
-    #         "quantity": 2
-    #     }, "2": {
-    #         "id": 2,
-    #         "name": 'iphone',
-    #         "price": 123,
-    #         "quantity": 2
-    #     }
-    # }
     cart = session.get('cart')
     if not cart:
         cart = {}
@@ -133,24 +120,24 @@ def add_to_cart():
     return jsonify(utils.cart_stats(cart))
 
 
-@app.route("/api/carts/<product_id>", methods=['put'])
-def update_cart(product_id):
+@app.route("/api/carts/<book_id>", methods=['put'])
+def update_cart(book_id):
     quantity = request.json.get('quantity', 0)
 
     cart = session.get('cart')
-    if cart and product_id in cart:
-        cart[product_id]["quantity"] = int(quantity)
+    if cart and book_id in cart:
+        cart[book_id]["quantity"] = int(quantity)
 
     session['cart'] = cart
 
     return jsonify(utils.cart_stats(cart))
 
 
-@app.route("/api/carts/<product_id>", methods=['delete'])
-def delete_cart(product_id):
+@app.route("/api/carts/<book_id>", methods=['delete'])
+def delete_cart(book_id):
     cart = session.get('cart')
-    if cart and product_id in cart:
-        del cart[product_id]
+    if cart and book_id in cart:
+        del cart[book_id]
 
     session['cart'] = cart
 
@@ -186,7 +173,6 @@ def common_response_data():
         'categories': dao.load_categories(),
         'cart_stats': utils.cart_stats(session.get('cart'))
     }
-
 
 if __name__ == '__main__':
     with app.app_context():

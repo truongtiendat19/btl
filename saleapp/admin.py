@@ -1,7 +1,7 @@
 from saleapp import db, app, dao
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
-from saleapp.models import Category, Product, User, UserRole
+from saleapp.models import Category, Book, User, UserRole
 from flask_login import current_user, logout_user
 from flask_admin import BaseView, expose
 from flask import redirect
@@ -10,10 +10,10 @@ from flask import redirect
 class MyAdminIndexView(AdminIndexView):
     @expose("/")
     def index(self):
-        return self.render('admin/index.html', cates=dao.stats_products())
+        return self.render('admin/index.html', cates=dao.stats_books())
 
 
-admin = Admin(app, name='ecourseapp', template_mode='bootstrap4', index_view=MyAdminIndexView())
+admin = Admin(app, name='404 NOT FOUND', template_mode='bootstrap4', index_view=MyAdminIndexView())
 
 
 class AuthenticatedView(ModelView):
@@ -26,10 +26,10 @@ class CategoryView(AuthenticatedView):
     column_searchable_list = ['id', 'name']
     column_filters = ['id', 'name']
     can_view_details = True
-    column_list = ['name', 'products']
+    column_list = ['name', 'books']
 
 
-class ProductView(AuthenticatedView):
+class BookView(AuthenticatedView):
     pass
 
 
@@ -54,7 +54,7 @@ class StatsView(MyView):
 
 
 admin.add_view(CategoryView(Category, db.session))
-admin.add_view(ProductView(Product, db.session))
+admin.add_view(BookView(Book, db.session))
 admin.add_view(AuthenticatedView(User, db.session))
 admin.add_view(StatsView(name='Thống kê - báo cáo'))
 admin.add_view(LogoutView(name='Đăng xuất'))

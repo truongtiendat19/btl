@@ -1,65 +1,65 @@
 <!-- Navbar -->
-    <nav class="navbar navbar-expand-sm" style="background-color: #333; padding: 20px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-        <div class="container-fluid">
-            <!-- Logo -->
-            <a class="navbar-brand fw-bold" href="#" style="color: #fff; font-size: 24px;">
-                <img src="https://via.placeholder.com/40" alt="Logo" style="width: 40px; height: 40px; border: 2px solid #fff; border-radius: 50%; margin-right: 10px;">
-                eCommerce Website
-            </a>
-            <!-- Toggler Button -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar" style="border-color: rgba(255, 255, 255, 0.5);">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <!-- Navbar Links -->
-            <div class="collapse navbar-collapse" id="collapsibleNavbar">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/" style="color: #00bcd4; font-size: 18px; transition: all 0.3s;">Trang chủ</a>
-                    </li>
-                    {% for c in categories %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="/?category_id={{c.id}}" style="color: #fff; font-size: 18px; transition: all 0.3s;">{{ c.name }}</a>
-                    </li>
-                    {% endfor %}
+<nav class="navbar navbar-expand-sm" style="background-color: #333; padding: 20px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+    <div class="container-fluid">
+        <!-- Logo -->
+        <a class="navbar-brand fw-bold" href="/" style="color: #fff; font-size: 24px;">
+            <img src="https://via.placeholder.com/40" alt="Logo" style="width: 40px; height: 40px; border: 2px solid #fff; border-radius: 50%; margin-right: 10px;">
+            404 NOTFOUND
+        </a>
+        <!-- Toggler Button -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar" style="border-color: rgba(255, 255, 255, 0.5);">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <!-- Navbar Links -->
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/" style="color: #00bcd4; font-size: 18px; transition: all 0.3s;">Trang chủ</a>
+                </li>
+                {% for c in categories %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/?category_id={{c.id}}" style="color: #fff; font-size: 18px; transition: all 0.3s;">{{ c.name }}</a>
+                </li>
+                {% endfor %}
 
-                    {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center" href="/" style="color: #fff; font-size: 18px;">
-                            <img src="{{ current_user.avatar }}" width="30" height="30" style="border-radius: 50%; margin-right: 8px;">
-                            Chào {{ current_user.username }}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/logout" style="color: #f44336; font-size: 18px;">Đăng xuất</a>
-                    </li>
-                    {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="/login" style="color: #00bcd4; font-size: 18px;">Đăng nhập</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/register" style="color: #4caf50; font-size: 18px;">Đăng ký</a>
-                    </li>
-                    {% endif %}
+                {% if current_user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center" href="/" style="color: #fff; font-size: 18px;">
+                        <img src="{{ current_user.avatar }}" width="30" height="30" style="border-radius: 50%; margin-right: 8px;">
+                        Chào {{ current_user.username }}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout" style="color: #f44336; font-size: 18px;">Đăng xuất</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/login" style="color: #00bcd4; font-size: 18px;">Đăng nhập</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/register" style="color: #4caf50; font-size: 18px;">Đăng ký</a>
+                </li>
+                {% endif %}
 
-                    <!-- Giỏ hàng -->
-                    <li class="nav-item">
-                        <a class="nav-link position-relative" href="/cart" style="color: #fff; font-size: 20px;">
-                            &#128722;
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 12px; padding: 4px 6px;">
-                                {{ cart_stats.total_quantity }}
-                            </span>
-                        </a>
-                    </li>
-                </ul>
-                <!-- Thanh Tìm Kiếm -->
-                <form method="get" action="/" class="d-flex">
-                    <input class="form-control me-2" type="text" placeholder="Tìm sản phẩm..." name="kw"
-                           style="border-radius: 25px; padding: 10px 15px; font-size: 16px; border: 1px solid #ccc;">
-                    <button class="btn" type="submit"
-                            style="border-radius: 25px; background-color: #00bcd4; color: #fff; font-size: 16px; padding: 10px 20px;">
-                        Tìm
-                    </button>
-                </form>
-            </div>
+                <!-- Giỏ sách -->
+                <li class="nav-item">
+                    <a class="nav-link position-relative" href="/cart" style="color: #fff; font-size: 20px;">
+                        &#128218; <!-- Icon sách thay vì giỏ hàng -->
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 12px; padding: 4px 6px;">
+                            {{ cart_stats.total_quantity }}
+                        </span>
+                    </a>
+                </li>
+            </ul>
+            <!-- Thanh Tìm Kiếm -->
+            <form method="get" action="/" class="d-flex">
+                <input class="form-control me-2" type="text" placeholder="Tìm sách..." name="kw"
+                       style="border-radius: 25px; padding: 10px 15px; font-size: 16px; border: 1px solid #ccc;">
+                <button class="btn" type="submit"
+                        style="border-radius: 25px; background-color: #00bcd4; color: #fff; font-size: 16px; padding: 10px 20px;">
+                    Tìm
+                </button>
+            </form>
         </div>
-    </nav>
+    </div>
+</nav>

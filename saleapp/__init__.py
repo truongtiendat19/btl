@@ -12,7 +12,6 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 app.config["PAGE_SIZE"] = 8
 
 db = SQLAlchemy(app)
-
 login = LoginManager(app)
 
 cloudinary.config(
