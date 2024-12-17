@@ -8,44 +8,38 @@ import hashlib
 from flask_login import UserMixin
 from datetime import datetime
 
-# class UserRole(RoleEnum):
-#     ADMIN = 1
-#     USER = 2
-#
-# class User(db.Model, UserMixin):
-#     id = Column(Integer, primary_key=True, autoincrement=True)
-#     name = Column(String(255), nullable=False)
-#     username = Column(String(100), nullable=False, unique=True)
-#     password = Column(String(100), nullable=False)
-#     avatar = Column(String(100),
-#                     default="https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg")
-#     user_role = Column(Enum(UserRole), default=UserRole.USER)
-#     receipts = relationship('Receipt', backref='user', lazy=True)
-#     comments = relationship('Comment', backref='user', lazy=True)
-#
 class Category(db.Model):
     __tablename__ = "Category"
-    ma = Column(Integer, primary_key=True,autoincrement=True)
+    id = Column(Integer, primary_key=True,autoincrement=True)
     name = Column(String(50), nullable=False)
-    books = relationship('Book', backref='category', lazy=False)
+    books = relationship('Book', backref='category', lazy=True)
+
+    def __str__(self):
+        return self.name
+
+class Author(db.Model):
+    __tablename__ = "Author"
+    id = Column(Integer, primary_key=True,autoincrement=True)
+    name = Column(String(50), nullable=False)
+    books = relationship('Book', backref='author', lazy=True)
 
     def __str__(self):
         return self.name
 
 class Book(db.Model):
     __tablename__ = "Book"
-    ma = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
-    anh_bia = Column(String(255),nullable=True)
-    mo_ta = Column(String(255),nullable=True)
-    gia = Column(Float, default = 0)
-    nha_xuat_ban = Column(String(50), nullable=True)
-    nam_xuat_ban = Column(DateTime, nullable=True)
-    so_luong = Column(Integer, nullable= True)
-    ma_the_loai = Column(Integer, ForeignKey(Category.ma), nullable=False)
+    image = Column(String(255),nullable=True)
+    description = Column(String(255),nullable=True)
+    price = Column(Float, default = 0)
+    quantity = Column(Integer, nullable= True)
+    author_id = Column(Integer, ForeignKey(Author.id), nullable=False)
+    category_id = Column(Integer, ForeignKey(Category.id), nullable=False)
 
     def __str__(self):
         return self.name
+
 
 class CategoryModelView(ModelView):
     can_create = True
@@ -63,7 +57,6 @@ class BookModelView(ModelView):
     #         # Hiển thị danh sách các category
     #     }
     # }
-
 
 admin.add_view(CategoryModelView(Category, db.session))
 admin.add_view(BookModelView(Book, db.session))
