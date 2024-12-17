@@ -6,7 +6,7 @@ from enum import Enum as RoleEnum
 import hashlib
 from flask_login import UserMixin
 from datetime import datetime
-
+import cloudinary
 
 class UserRole(RoleEnum):
     ADMIN = 1
@@ -89,43 +89,92 @@ if __name__ == '__main__':
         db.session.add_all([c1, c2, c3])
         db.session.commit()
 
+
         data = [{
-            "name": "iPhone 7 Plus",
+            "name": "Xu Xu đừng khóc",
             "description": "Apple, 32GB, RAM: 3GB, iOS13",
             "price": 17000000,
-            "image": "https://res.cloudinary.com/dxxwcby8l/image/upload/v1688179242/hclq65mc6so7vdrbp7hz.jpg",
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428226/fxuiaviysvpqgu5wz2ot.jpg",
             "category_id": 1
         }, {
-            "name": "iPad Pro 2020",
+            "name": "Sóc sợ sệt",
             "description": "Apple, 128GB, RAM: 6GB",
             "price": 37000000,
-            "image": "https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg",
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428225/ud0apghlk6bhl4giilk9.jpg",
             "category_id": 2
         }, {
-            "name": "iPad Pro 2021",
+            "name": "Bầu trời năm ấy",
             "description": "Apple, 128GB, RAM: 6GB",
             "price": 37000000,
-            "image": "https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg",
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428224/mljvnwhxmo46ci3ysal2.jpg",
             "category_id": 2
         }, {
-            "name": "iPad Pro 2022",
+            "name": "Đại cương về Nhà nước và Pháp luật",
             "description": "Apple, 128GB, RAM: 6GB",
             "price": 37000000,
-            "image": "https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg",
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/jgwsfsambzvlos5cgk2g.jpg",
             "category_id": 2
         }, {
-            "name": "iPad Pro 2023",
+            "name": "Mình nói gì hạnh phúc",
             "description": "Apple, 128GB, RAM: 6GB",
             "price": 37000000,
-            "image": "https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg",
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/y0bg0xxfphgihzt6xflk.jpg",
             "category_id": 2
         }, {
-            "name": "iPad Pro 2024",
+            "name": "Người đàn bà miền núi ",
             "description": "Apple, 128GB, RAM: 6GB",
             "price": 37000000,
-            "image": "https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg",
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428221/tuizny2flckfxzjbxakp.jpg",
             "category_id": 2
-        }]
+        },{
+            "name": "Hoa ",
+            "description": "Apple, 128GB, RAM: 6GB",
+            "price": 37000000,
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428221/tuizny2flckfxzjbxakp.jpg",
+            "category_id": 2
+        },{
+            "name": "Xu Xu đừng khóc 1",
+            "description": "Apple, 32GB, RAM: 3GB, iOS13",
+            "price": 17000000,
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428226/fxuiaviysvpqgu5wz2ot.jpg",
+            "category_id": 1
+        }, {
+            "name": "Sóc sợ sệt 2",
+            "description": "Apple, 128GB, RAM: 6GB",
+            "price": 37000000,
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428225/ud0apghlk6bhl4giilk9.jpg",
+            "category_id": 2
+        }, {
+            "name": "Bầu trời năm ấy 2",
+            "description": "Apple, 128GB, RAM: 6GB",
+            "price": 37000000,
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428224/mljvnwhxmo46ci3ysal2.jpg",
+            "category_id": 2
+        }, {
+            "name": "Đại cương về Nhà nước và Pháp luật 2",
+            "description": "Apple, 128GB, RAM: 6GB",
+            "price": 37000000,
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/jgwsfsambzvlos5cgk2g.jpg",
+            "category_id": 2
+        }, {
+            "name": "Mình nói gì hạnh phúc 2",
+            "description": "Apple, 128GB, RAM: 6GB",
+            "price": 37000000,
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/y0bg0xxfphgihzt6xflk.jpg",
+            "category_id": 2
+        }, {
+            "name": "Người đàn bà miền núi 2",
+            "description": "Apple, 128GB, RAM: 6GB",
+            "price": 37000000,
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428221/tuizny2flckfxzjbxakp.jpg",
+            "category_id": 2
+        }, {
+            "name": "Hoa 2",
+            "description": "Apple, 128GB, RAM: 6GB",
+            "price": 37000000,
+            "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428221/tuizny2flckfxzjbxakp.jpg",
+            "category_id": 2}
+        ]
 
         for p in data:
             prod = Product(name=p['name'] + ' ' + str(random.randint(1, 100)), description=p['description'], price=p['price'],
