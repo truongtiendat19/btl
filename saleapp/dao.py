@@ -96,7 +96,7 @@ def stats_books():
         .join(Book, Book.category_id.__eq__(Category.id), isouter=True).group_by(Category.id).all()
 
 
-def get_prod_by_id(id):
+def get_book_by_id(id):
     return Book.query.get(id)
 
 
