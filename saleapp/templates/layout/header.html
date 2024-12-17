@@ -1,63 +1,49 @@
-<nav class="navbar navbar-expand-sm" style="background-color: #222; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-        <div class="container-fluid">
-            <!-- Logo -->
-            <a class="navbar-brand fw-bold" href="#" style="color: #fff; font-size: 20px;">
-                <img src="https://via.placeholder.com/30" alt="Logo" style="border: 2px solid #fff; border-radius: 50%; margin-right: 5px;">
-                eCommerce Website
-            </a>
-            <!-- Toggler Button -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar" style="border-color: rgba(255, 255, 255, 0.3);">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <!-- Navbar Links -->
-            <div class="collapse navbar-collapse" id="collapsibleNavbar">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/" style="color: #00bcd4; transition: transform 0.3s;">Trang chủ</a>
-                    </li>
-                    {% for c in categories %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="/?category_id={{c.id}}" style="color: #fff; transition: transform 0.3s;">
-                            {{ c.name }}
-                        </a>
-                    </li>
-                    {% endfor %}
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">eCommerce Website</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/">Trang chủ</a>
+                </li>
+                {% for c in categories %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/?category_id={{c.id}}">{{ c.name }}</a>
+                </li>
+                {% endfor %}
 
-                    {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center" href="/" style="color: #fff;">
-                            <img src="{{ current_user.avatar }}" width="30" height="30" style="border-radius: 50%; margin-right: 5px;" />
-                            Chào {{ current_user.username }}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/logout" style="color: #f44336;">Đăng xuất</a>
-                    </li>
-                    {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="/login" style="color: #00bcd4;">Đăng nhập</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/register" style="color: #4caf50;">Đăng ký</a>
-                    </li>
-                    {% endif %}
+                {% if current_user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="/">
+                        <img src="{{ current_user.avatar }}" width="25" class="rounded-circle" />
+                        Chào {{ current_user.username }}.
+                    </a>
 
-                    <!-- Giỏ hàng -->
-                    <li class="nav-item">
-                        <a class="nav-link position-relative" href="/cart" style="font-size: 20px; color: #fff;">
-                            &#128722;
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 12px; padding: 4px 6px;">
-                                {{ cart_stats.total_quantity }}
-                            </span>
-                        </a>
-                    </li>
-                </ul>
-                <!-- Thanh Tìm Kiếm -->
-                <form method="get" action="/" class="d-flex">
-                    <input class="form-control me-2" type="text" placeholder="Tìm sản phẩm..." name="kw"
-                           style="border-radius: 20px; padding-left: 15px; border: 1px solid #ccc;">
-                    <button class="btn" type="submit" style="border-radius: 20px; background-color: #00bcd4; color: #fff;">Tìm</button>
-                </form>
-            </div>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-success" href="/logout">Đăng xuất</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="/login">Đăng nhập</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-success" href="/register">Đăng ký</a>
+                </li>
+                {% endif %}
+                <li class="nav-item ">
+                    <a class="nav-link active" href="/cart">&#128722; <span class="badge bg-danger cart-counter">{{ cart_stats.total_quantity }}</span></a>
+                </li>
+
+
+            </ul>
+            <form method="get" action="/" class="d-flex">
+                <input class="form-control me-2" type="text" placeholder="Tìm sản phẩm..." name="kw"/>
+                <button class="btn btn-primary" type="submit">Tìm</button>
+            </form>
         </div>
-    </nav>
+    </div>
+</nav>
