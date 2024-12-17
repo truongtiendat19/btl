@@ -1,74 +1,49 @@
-<div style="background-color: rgba(123,198,102,0.82);">
-    <!-- navbar section -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-            <!-- Logo -->
-            <a class="navbar-brand" href="/" style="color: orange; font-size: 30px;">
-                <i class="fa-brands fa-amazon"></i> Bookstore
-            </a>
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">eCommerce Website</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/">Trang chủ</a>
+                </li>
+                {% for c in categories %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/?category_id={{c.id}}">{{ c.name }}</a>
+                </li>
+                {% endfor %}
 
-            <!-- Toggle Button for Mobile -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+                {% if current_user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="/">
+                        <img src="{{ current_user.avatar }}" width="25" class="rounded-circle" />
+                        Chào {{ current_user.username }}.
+                    </a>
 
-            <!-- Navbar Content -->
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <!-- Left Menu Items -->
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/" style="font-size: 18px; font-family: cursive;">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/about" style="font-size: 17px;">About Us</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/contact" style="font-size: 17px;">Contact Us</a>
-                    </li>
-                </ul>
-
-                <!-- Search Form -->
-                <form class="d-flex mx-auto" action="/search" method="POST" style="width: 30%;">
-                    <input class="form-control me-2" type="search" placeholder="Search for books..." aria-label="Search"
-                           name="search">
-                    <button class="btn btn-success" type="submit">Search</button>
-                </form>
-
-                <!-- Right Menu Items -->
-                <ul class="navbar-nav mb-2 mb-lg-0">
-                    <li class="nav-item mx-2">
-                        <a class="nav-link text-secondary" href="/cart" id="cart-link">
-                            Cart <span id="cart-count" class="badge bg-secondary">0</span>
-                            <i class="fa-solid fa-cart-shopping"></i>
-                        </a>
-                    </li>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-success" href="/logout">Đăng xuất</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="/login">Đăng nhập</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-success" href="/register">Đăng ký</a>
+                </li>
+                {% endif %}
+                <li class="nav-item ">
+                    <a class="nav-link active" href="/cart">&#128722; <span class="badge bg-danger cart-counter">{{ cart_stats.total_quantity }}</span></a>
+                </li>
 
 
-                    <!-- Account Dropdown -->
-                    <li class="nav-item dropdown mx-2">
-                        <a class="nav-link dropdown-toggle text-secondary" href="#" id="navbarDropdown" role="button"
-                           data-bs-toggle="dropdown">
-                            Account
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            {% if current_user.is_authenticated %}
-                            <li><a class="dropdown-item" href="/profile/{{ current_user.id }}">Profile <i
-                                    class="fa-solid fa-user"></i></a></li>
-                            <li><a class="dropdown-item" href="/orders">Orders <i
-                                    class="fa-solid fa-truck-fast"></i></a></li>
-                            <li><a class="dropdown-item" href="/logout">Log Out <i
-                                    class="fa-solid fa-right-from-bracket"></i></a></li>
-                            {% else %}
-                            <li><a class="dropdown-item" href="/login">Login <i
-                                    class="fa-solid fa-right-to-bracket"></i></a></li>
-                            {% endif %}
-                        </ul>
-                    </li>
-                </ul>
-            </div>
+            </ul>
+            <form method="get" action="/" class="d-flex">
+                <input class="form-control me-2" type="text" placeholder="Tìm sản phẩm..." name="kw"/>
+                <button class="btn btn-primary" type="submit">Tìm</button>
+            </form>
         </div>
-    </nav>
-</div>
-
+    </div>
+</nav>
