@@ -78,7 +78,7 @@ function addComment(productId) {
           <li class="list-group-item">
               <div class="row">
                   <div class="col-md-1">
-                      <img src="${ c.user.avatar }" class="img-fluid rounded-circle" />
+                      <img src="${ c.customer.avatar }" class="img-fluid rounded-circle" />
                   </div>
                   <div class="col-md-11">
                       <p>${ c.content }</p>

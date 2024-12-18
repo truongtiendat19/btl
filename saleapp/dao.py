@@ -1,11 +1,10 @@
-from saleapp.models import Category, Book, User, Receipt, ReceiptDetails, Comment
+from saleapp.models import Category, Book, User, Receipt, ReceiptDetails, Comment, Staff, Customer
 from saleapp import app, db
 import hashlib
 import cloudinary.uploader
 from flask_login import current_user
 from sqlalchemy import func
 from datetime import datetime
-
 
 def load_categories():
     return Category.query.order_by('id').all()
@@ -31,21 +30,30 @@ def count_books():
     return Book.query.count()
 
 
-def auth_user(username, password, role=None):
+def auth_staff(username, password, role=None):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
 
-    u = User.query.filter(User.username.__eq__(username.strip()),
-                          User.password.__eq__(password))
+    u = Staff.query.filter(Staff.username.__eq__(username.strip()),
+                          Staff.password.__eq__(password))
     if role:
-        u = u.filter(User.user_role.__eq__(role))
+        u = u.filter(Staff.staff_role.__eq__(role))
 
     return u.first()
 
 
-def add_user(name, username, password, avatar):
+def auth_customer(username, password):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
 
-    u = User(name=name, username=username, password=password,
+    u = Customer.query.filter(Customer.username.__eq__(username.strip()),
+                          Customer.password.__eq__(password))
+
+    return u.first()
+
+
+def add_customer(name, username, password, avatar):
+    password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
+
+    u = Customer(name=name, username=username, password=password,
              avatar='https://res.cloudinary.com/dapckqqhj/image/upload/v1734438576/rlpkm5rn7kqct2k5jcir.jpg')
 
     if avatar:
@@ -58,7 +66,7 @@ def add_user(name, username, password, avatar):
 
 def add_receipt(cart):
     if cart:
-        r = Receipt(user=current_user)
+        r = Receipt(customer=current_user)
         db.session.add(r)
 
         for c in cart.values():
@@ -69,8 +77,12 @@ def add_receipt(cart):
         db.session.commit()
 
 
-def get_user_by_id(id):
-    return User.query.get(id)
+def get_customer_by_id(id):
+    return Customer.query.get(id)
+
+
+def get_staff_by_id(id):
+    return Staff.query.get(id)
 
 
 def revenue_stats(kw=None):
@@ -105,7 +117,7 @@ def load_comments(book_id):
 
 
 def add_comment(content, book_id):
-    c = Comment(content=content, book_id=book_id, user=current_user)
+    c = Comment(content=content, book_id=book_id,customer=current_user)
     db.session.add(c)
     db.session.commit()
 

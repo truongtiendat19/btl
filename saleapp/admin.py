@@ -1,7 +1,7 @@
 from saleapp import db, app, dao
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
-from saleapp.models import Category, Book, User, UserRole
+from saleapp.models import Category, Book, Staff, StaffRole
 from flask_login import current_user, logout_user
 from flask_admin import BaseView, expose
 from flask import redirect
@@ -18,7 +18,7 @@ admin = Admin(app, name='404 NOT FOUND', template_mode='bootstrap4', index_view=
 # kiểm tra đăng nhập vai trò admin
 class AuthenticatedView(ModelView):
     def is_accessible(self):
-        return current_user.is_authenticated and current_user.user_role.__eq__(UserRole.ADMIN)
+        return current_user.is_authenticated and current_user.staff_role.__eq__(StaffRole.ADMIN)
 
 # tùy chỉnh trang thể loại
 class CategoryView(AuthenticatedView):
@@ -56,6 +56,6 @@ class StatsView(MyView):
 
 admin.add_view(CategoryView(Category, db.session))
 admin.add_view(BookView(Book, db.session))
-admin.add_view(AuthenticatedView(User, db.session))
+admin.add_view(AuthenticatedView(Staff, db.session))
 admin.add_view(StatsView(name='Thống kê - báo cáo'))
 admin.add_view(LogoutView(name='Đăng xuất'))

@@ -3,7 +3,7 @@ from flask import render_template, request, redirect, session, jsonify
 import dao, utils
 from saleapp import app, login
 from flask_login import login_user, logout_user, login_required
-from saleapp.models import UserRole
+from saleapp.models import StaffRole, Customer, Staff
 
 
 @app.route("/")
@@ -35,8 +35,8 @@ def add_comment(book_id):
         "id": c.id,
         "content": c.content,
         "created_date": c.created_date,
-        "user": {
-            "avatar": c.user.avatar
+        "customer": {
+            "avatar": c.customer.avatar
         }
     })
 
@@ -47,7 +47,7 @@ def login_process():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        u = dao.auth_user(username=username, password=password)
+        u = dao.auth_customer(username=username, password=password)
         if u:
             login_user(u)
 
@@ -62,7 +62,7 @@ def login_admin_process():
     username = request.form.get('username')
     password = request.form.get('password')
 
-    u = dao.auth_user(username=username, password=password, role=UserRole.ADMIN)
+    u = dao.auth_staff(username=username, password=password, role=StaffRole.ADMIN)
     if u:
         login_user(u)
 
@@ -87,7 +87,7 @@ def register_process():
             del data['confirm']
 
             avatar = request.files.get('avatar')
-            dao.add_user(avatar=avatar, **data)
+            dao.add_customer(avatar=avatar, **data)
 
             return redirect('/login')
         else:
@@ -164,8 +164,13 @@ def cart_view():
 
 
 @login.user_loader
-def load_user(user_id):
-    return dao.get_user_by_id(user_id)
+def load_customer(user_id):
+    return dao.get_customer_by_id(user_id)
+
+
+@login.user_loader
+def load_staff(user_id):
+    return dao.get_staff_by_id(user_id)
 
 
 @app.context_processor
