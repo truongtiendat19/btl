@@ -44,7 +44,7 @@ class Book(db.Model):
     description = Column(String(255), nullable=True)
     image = Column(String(100), nullable=True)
     price = Column(Float, default=0)
-    quantity = Column(Integer, nullable= False)
+    quantity = Column(Integer, nullable=True)
     category_id = Column(Integer, ForeignKey(Category.id), nullable=False)
     details = relationship('ReceiptDetails', backref='book', lazy=True)
     comments = relationship('Comment', backref='book', lazy=True)
