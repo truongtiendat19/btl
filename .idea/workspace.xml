@@ -6,9 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="7b885487-372f-49cf-ac64-d33842c0cc47" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saleapp/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saleapp/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/admin.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saleapp/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/models.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,7 +47,7 @@
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/it2203saleappv1/saleapp&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/btl&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
@@ -94,7 +91,6 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="SDK_NAME" value="Python 3.13 (test)" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/saleapp" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
