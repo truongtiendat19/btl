@@ -8,6 +8,7 @@ from saleapp.models import UserRole
 
 @app.route("/")
 def index():
+    # fi
     kw = request.args.get('kw')
     cate_id = request.args.get('category_id')
     page = request.args.get('page', 1)
