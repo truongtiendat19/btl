@@ -33,13 +33,18 @@ class Category(db.Model):
     def __str__(self):
         return self.name
 
+class Author(db.Model):
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), nullable=False, unique=True)
+    books = relationship('Book', backref='author', lazy=True)
 
 class Book(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False, unique=True)
     description = Column(String(255), nullable=True)
-    price = Column(Float, default=0)
     image = Column(String(100), nullable=True)
+    price = Column(Float, default=0)
+    quantity = Column(Integer, nullable= False)
     category_id = Column(Integer, ForeignKey(Category.id), nullable=False)
     details = relationship('ReceiptDetails', backref='book', lazy=True)
     comments = relationship('Comment', backref='book', lazy=True)
