@@ -10,9 +10,11 @@ import cloudinary
 
 class StaffRole(RoleEnum):
     ADMIN = 1
-    STAFF = 2
+    MANAGER = 2
+    STAFF = 3
 
 
+# tài khoản user
 class User(db.Model, UserMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=False)
@@ -21,13 +23,19 @@ class User(db.Model, UserMixin):
     avatar = Column(String(100),
                     default="https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg")
 
+
+# khách hàng
 class Customer(User):
     receipts = relationship('Receipt', backref='customer', lazy=True)
     comments = relationship('Comment', backref='customer', lazy=True)
 
+# nhân viên: người quản trị, người quản lí, nhân viên bán sách
 class Staff(User):
     staff_role = Column(Enum(StaffRole))
+    bills = relationship('Bill', backref='staff', lazy=True)
 
+
+# thể loại
 class Category(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False, unique=True)
@@ -36,37 +44,46 @@ class Category(db.Model):
     def __str__(self):
         return self.name
 
-author_book = db.Table('author_book',
-                       Column('author_id', Integer, ForeignKey('author.id'), primary_key=True),
-                       Column('book_id', Integer, ForeignKey('book.id'), primary_key=True))
 
+# tác giả
 class Author(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False, unique=True)
+    books = relationship('Book', backref='author', lazy=True)
 
+    def __str__(self):
+        return self.name
+
+
+# sách
 class Book(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False, unique=True)
     description = Column(String(255), nullable=True)
     image = Column(String(100), nullable=True)
     price = Column(Float, default=0)
-    quantity = Column(Integer, nullable=False)
+    quantity = Column(Integer, nullable=False, default= 0)
     receipt_details = relationship('ReceiptDetails', backref='book', lazy=True)
+    bill_details = relationship('BillDetails', backref='book', lazy=True)
     import_receipt_details = relationship('ImportReceiptDetails', backref='book', lazy=True)
     comments = relationship('Comment', backref='book', lazy=True)
     category_id = Column(Integer, ForeignKey(Category.id), nullable=False)
-    author_id = relationship('Author', secondary='author_book', lazy='subquery', backref=backref('books',lazy=True) )
+    author_id = Column(Integer, ForeignKey(Author.id), nullable=False)
 
 
     def __str__(self):
         return self.name
 
+
+# hóa đơn cho khách đặt trực tuyến
 class Receipt(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     created_date = Column(DateTime, default=datetime.now())
     customer_id = Column(Integer, ForeignKey(Customer.id), nullable=False)
     details = relationship('ReceiptDetails', backref='receipt', lazy=True)
 
+
+# chi tiết hóa đơn trực tuyến
 class ReceiptDetails(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     quantity = Column(Integer, default=0)
@@ -74,12 +91,34 @@ class ReceiptDetails(db.Model):
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
     receipt_id = Column(Integer, ForeignKey(Receipt.id), nullable=False)
 
+
+# hóa đơn cho khách mua trực tiếp
+class Bill(db.Model):
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    created_date = Column(DateTime, default=datetime.now())
+    name_customer = Column(String(50), nullable=True)
+    staff_id = Column(Integer, ForeignKey(Staff.id), nullable=False)
+    details = relationship('BillDetails', backref='bill', lazy=True)
+
+
+# chi tiết hóa đơn mua trực tiếp
+class BillDetails(db.Model):
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    quantity = Column(Integer, default=0)
+    unit_price = Column(Float, default=0)
+    book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
+    receipt_id = Column(Integer, ForeignKey(Bill.id), nullable=False)
+
+
+# phiếu nhập sách
 class ImportReceipt(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     date_import = Column(DateTime, default=datetime.now())
     staff_id = Column(Integer, ForeignKey(Staff.id), nullable=False)
     details = relationship('ImportReceiptDetails', backref='importReceipt', lazy=True)
 
+
+# chi tiết phiếu nhập sách
 class ImportReceiptDetails(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     quantity = Column(Integer, default=0)
@@ -93,136 +132,138 @@ class Comment(db.Model):
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
     customer_id = Column(Integer, ForeignKey(Customer.id), nullable=False)
 
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
 
 
-        u = Staff(name='admin', username='admin', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
-                 staff_role=StaffRole.ADMIN)
-        db.session.add(u)
-        db.session.commit()
-
-        # a1 = Author(name = 'Catharina Ingelman Sundberg')
-        # a2 = Author(name = 'Aleix Cabrera')
-        # db.session.add_all([a1, a2])
+        # u = Staff(name='admin', username='admin', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
+        #          staff_role=StaffRole.ADMIN, avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg')
+        # db.session.add(u)
         # db.session.commit()
+        #
+        # authors = ["Ngô Tất Tố","Nguyễn Nhật Ánh", "Tô Hoài","Kim Lân"]
+        # author_objects = []
+        # for author_name in authors:
+        #     author = Author(name=author_name)
+        #     db.session.add(author)
+        #     author_objects.append(author)
+        # db.session.commit()
+        #
+        #
         # c1 = Category(name='Văn học')
         # c2 = Category(name='Sách thiếu nhi')
         # c3 = Category(name='Giáo khoa - tham khảo')
-        # c4 = Category(name='Tâm lý - kỹ năng sống')
-        # c5 = Category(name='Nuôi dạy con')
-        # c6 = Category(name='Kinh tế')
-        # c7 = Category(name='Sách học ngoại ngữ')
-        # c8 = Category(name='Tiểu sử hồi ký')
         #
         # db.session.add_all([c1, c2, c3])
         # db.session.commit()
-        #
-        #
+
+
         # data = [{
         #     "name": "Bà già xông pha",
-        #     "description": "Bão táp mưa sa cũng không cản được Băng Hưu Trí. Họ theo đuổi một lý tưởng lớn lao hòng phụng sự công bằng xã hội. Nhưng lý tưởng này cần tiền, rất nhiều tiền. Tiếp tục cướp ngân hàng thì cũng được thôi, nhưng dăm ba triệu đô lúc nà không còn thấm tháp vào đâu so với tham vọng của họ…",
+        #     "description": "Bão táp mưa sa cũng không cản được Băng Hưu Trí.",
         #     "price": 76000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734544786/m6pygvphn7zlrd3stzbl.jpg",
-        #     "category_id": 1,
-        #     "author_id": 1
+        #     "author_id": 1,
+        #     "category_id": 1
         # }, {
         #     "name": "Hiểu Về Quyền Trẻ Em - Người Sên",
-        #     "description": "Vào một ngày mùa đông cách đây rất nhiều năm, tất cả các quốc gia trên hành tinh này đã tụ họp lại để cùng nhau thông qua Tuyên ngôn vê Quyên trẻ em. Bản Tuyên ngôn gồm 10 nguyên tắc, như một lời hiệu triệu tới các dân tộc trên toàn thế giới, rằng phải đảm bảo trẻ em có quyền được chăm sóc sức khỏe, được giáo dục, được vui chơi giải trí, được bảo vệ khỏi sự bóc lột, được thể hiện quan điểm riêng...và nhiều nhiều quyền khác nữa. Tất cả trẻ em đề có những quyền này.",
-        #     "price": 14000,
+        #     "description": "Vào một ngày mùa đông cách đây rất nhiều năm",
+        #     "price": 50000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734544786/cda1cvom2awwtkoikanr.webp",
-        #     "category_id": 2,
-        #     "author_id": 2
+        #     "author_id": 2,
+        #     "category_id": 2
         # }, {
         #     "name": "Bầu trời năm ấy",
-        #     "description": "Apple, 128GB, RAM: 6GB",
-        #     "price": 37000000,
+        #     "description": "Tôi đã yêu em...",
+        #     "price": 37000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428224/mljvnwhxmo46ci3ysal2.jpg",
-        #     "category_id": 2,
-        #     "author_id": 1
+        #     "author_id": 3,
+        #     "category_id": 3
         # }, {
         #     "name": "Đại cương về Nhà nước và Pháp luật",
-        #     "description": "Apple, 128GB, RAM: 6GB",
-        #     "price": 37000000,
+        #     "description": "Sách giáo khoa, tài liệu cho các trường đại học.",
+        #     "price": 45000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/jgwsfsambzvlos5cgk2g.jpg",
-        #     "category_id": 2
+        #     "author_id": 4,
+        #     "category_id": 1
         # }, {
         #     "name": "Mình nói gì hạnh phúc",
-        #     "description": "Apple, 128GB, RAM: 6GB",
-        #     "price": 37000000,
+        #     "description": "Hạnh phúc là gì?",
+        #     "price": 90000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/y0bg0xxfphgihzt6xflk.jpg",
+        #     "author_id": 1,
         #     "category_id": 2
         # }, {
-        #     "name": "Người đàn bà miền núi ",
-        #     "description": "Apple, 128GB, RAM: 6GB",
-        #     "price": 37000000,
+        #     "name": "Người đàn bà miền núi",
+        #     "description": "Miền núi rừng cây xanh tươi tốt.",
+        #     "price": 100000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428221/tuizny2flckfxzjbxakp.jpg",
-        #     "category_id": 2,
-        #     "author_id": 2
+        #     "author_id": 1,
+        #     "category_id": 3
         # },{
-        #     "name": "Hoa ",
-        #     "description": "Apple, 128GB, RAM: 6GB",
-        #     "price": 37000000,
+        #     "name": "Hoa",
+        #     "description": "Một rừng hoa mai nở.",
+        #     "price": 70000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428221/tuizny2flckfxzjbxakp.jpg",
-        #     "category_id": 2
+        #     "author_id": 2,
+        #     "category_id": 3
         # },{
-        #     "name": "Xu Xu đừng khóc 1",
-        #     "description": "Apple, 32GB, RAM: 3GB, iOS13",
-        #     "price": 17000000,
+        #     "name": "Xu Xu đừng khóc",
+        #     "description": "Đừng khóc nữa Xu ơi...",
+        #     "price": 45000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428226/fxuiaviysvpqgu5wz2ot.jpg",
-        #     "category_id": 1,
-        #     "author_id": 2
+        #     "author_id": 2,
+        #     "category_id": 1
         # }, {
-        #     "name": "Sóc sợ sệt 2",
-        #     "description": "Apple, 128GB, RAM: 6GB",
-        #     "price": 37000000,
+        #     "name": "Sóc sợ sệt",
+        #     "description": "Một con sóc đi lạc..",
+        #     "price": 60000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428225/ud0apghlk6bhl4giilk9.jpg",
+        #     "author_id": 3,
         #     "category_id": 2
         # }, {
-        #     "name": "Bầu trời năm ấy 2",
-        #     "description": "Apple, 128GB, RAM: 6GB",
-        #     "price": 37000000,
+        #     "name": "Bầu trời ngày hôm ấy",
+        #     "description": "Rất đẹp!",
+        #     "price": 81000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428224/mljvnwhxmo46ci3ysal2.jpg",
+        #     "author_id": 3,
         #     "category_id": 2
         # }, {
-        #     "name": "Đại cương về Nhà nước và Pháp luật 2",
-        #     "description": "Apple, 128GB, RAM: 6GB",
-        #     "price": 37000000,
+        #     "name": "Nhà nước và Pháp luật",
+        #     "description": "Đại cương.",
+        #     "price": 99000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/jgwsfsambzvlos5cgk2g.jpg",
-        #     "category_id": 2
+        #     "author_id": 4,
+        #     "category_id": 1
         # }, {
-        #     "name": "Mình nói gì hạnh phúc 2",
-        #     "description": "Apple, 128GB, RAM: 6GB",
-        #     "price": 37000000,
+        #     "name": "Hạnh Phúc",
+        #     "description": "Là gì?",
+        #     "price": 101000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/y0bg0xxfphgihzt6xflk.jpg",
-        #     "category_id": 2,
-        #     "author_id": 1
+        #     "author_id": 4,
+        #     "category_id": 3
         # }, {
-        #     "name": "Người đàn bà miền núi 2",
-        #     "description": "Apple, 128GB, RAM: 6GB",
-        #     "price": 37000000,
+        #     "name": "Đàn bà",
+        #     "description": "Là những niềm đau?",
+        #     "price": 77000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428221/tuizny2flckfxzjbxakp.jpg",
+        #     "author_id": 1,
         #     "category_id": 2
         # }, {
-        #     "name": "Hoa 2",
-        #     "description": "Apple, 128GB, RAM: 6GB",
-        #     "price": 37000000,
+        #     "name": "Hoa bằng lăng",
+        #     "description": "Nở rộ...",
+        #     "price": 55000,
         #     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428221/tuizny2flckfxzjbxakp.jpg",
-        #     "category_id": 2,
-        #     "author_id": 1
+        #     "author_id": 2,
+        #     "category_id": 1
         #     }
         # ]
         #
         # for p in data:
-        #     prod = Book(name=p['name'] + ' ' + str(random.randint(1, 100)), description=p['description'], price=p['price'],
-        #                    image=p['image'], category_id=p['category_id'])
+        #     prod = Book(name=p['name'], description=p['description'], price=p['price'],
+        #                    image=p['image'], category_id=p['category_id'], author_id=p['author_id'])
         #     db.session.add(prod)
         #
-        # db.session.commit()
-        #
-        # c1 = Comment(content='good', book_id=1, user_id=1)
-        # c2 = Comment(content='nice', book_id=1, user_id=1)
-        # c3 = Comment(content='excellent', book_id=1, user_id=1)
-        # db.session.add_all([c1, c2, c3])
         # db.session.commit()
