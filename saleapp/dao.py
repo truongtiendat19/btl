@@ -1,10 +1,12 @@
-from saleapp.models import Category, Book, User, Receipt, ReceiptDetails, Comment, Staff, Customer
+from saleapp.models import (Category, Book, User, Receipt, ReceiptDetails, Comment, Staff,
+                            Customer, Author, ImportReceiptDetails, ImportReceipt)
 from saleapp import app, db
 import hashlib
 import cloudinary.uploader
 from flask_login import current_user
 from sqlalchemy import func
 from datetime import datetime
+
 
 def load_categories():
     return Category.query.order_by('id').all()

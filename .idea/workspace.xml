@@ -5,11 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7b885487-372f-49cf-ac64-d33842c0cc47" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/saleapp/templates/import_books.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/saleapp/static/js/import.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saleapp/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/admin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/saleapp/dao.py" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/dao.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/saleapp/index.py" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/index.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saleapp/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/saleapp/static/js/script.js" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/static/js/script.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/saleapp/templates/import_books.html" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/templates/import_books.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

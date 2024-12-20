@@ -3,9 +3,9 @@ from flask import render_template, request, redirect, session, jsonify, url_for,
 import dao, utils
 from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required
-from saleapp.models import StaffRole, Customer, Staff, Book, ImportReceipt,ImportReceiptDetails, Category, Author
-from sqlalchemy.exc import SQLAlchemyError
+from saleapp.models import StaffRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails
 from datetime import datetime
+from sqlalchemy.exc import SQLAlchemyError
 
 
 @app.route('/import_books', methods=['GET', 'POST'])
@@ -17,7 +17,6 @@ def import_books():
         categories = request.form.getlist('category')
         authors = request.form.getlist('author')
         quantities = request.form.getlist('quantity')
-
         errors = []
         success = []
 
@@ -79,8 +78,7 @@ def import_books():
             except SQLAlchemyError as e:
                 db.session.rollback()
                 errors.append(f"Lỗi cơ sở dữ liệu: {str(e)}")
-
-        # Hiển thị thông báo
+                # Hiển thị thông báo
         if success:
             flash(" ".join(success), "success")
         if errors:
@@ -267,5 +265,4 @@ def common_response_data():
 
 if __name__ == '__main__':
     with app.app_context():
-        from saleapp import admin
         app.run(debug=True)

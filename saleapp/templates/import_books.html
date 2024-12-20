@@ -1,49 +1,64 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nhập Sách</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="static/js/import.js"></script>
 </head>
 <body>
-    <h1>Phiếu Nhập Sách</h1>
-    <form method="POST">
-        <label for="date_import">Ngày nhập:</label>
-        <input type="date" id="date_import" name="date_import" value="{{ datetime.now().strftime('%Y-%m-%d') }}" required>
-        <hr>
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Tên Sách</th>
-                    <th>Thể Loại</th>
-                    <th>Tác Giả</th>
-                    <th>Số Lượng</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for i in range(3) %}
-                <tr>
-                    <td>{{ i + 1 }}</td>
-                    <td><input type="text" name="book" required></td>
-                    <td><input type="text" name="category" required></td>
-                    <td><input type="text" name="author" required></td>
-                    <td><input type="number" name="quantity" min="1" required></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <button type="submit">Nhập Sách</button>
-    </form>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Phiếu Nhập Sách</h1>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="date_import" class="form-label">Ngày nhập:</label>
+                <input type="date" id="date_import" name="date_import" class="form-control"
+                       value="{{ datetime.now().strftime('%Y-%m-%d') }}" required>
+            </div>
+            <hr>
+            <table class="table table-bordered table-striped" id="importTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>STT</th>
+                        <th>Tên Sách</th>
+                        <th>Thể Loại</th>
+                        <th>Tác Giả</th>
+                        <th>Số Lượng</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><input type="text" name="book" class="form-control" required></td>
+                        <td><input type="text" name="category" class="form-control" required></td>
+                        <td><input type="text" name="author" class="form-control" required></td>
+                        <td><input type="number" name="quantity" class="form-control" min="150" max="300" required></td>
+                        <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">-</button></td>
+                    </tr>
+                </tbody>
+            </table>
 
-    {% with messages = get_flashed_messages(with_categories=True) %}
-    {% if messages %}
-    <ul>
-        {% for category, message in messages %}
-        <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-    {% endwith %}
+            <div class="text-end">
+                <button type="button" class="btn btn-secondary" onclick="addRow()">+ Thêm sách</button>
+                <button type="submit" class="btn btn-primary">Nhập Sách</button>
+            </div>
+        </form>
+
+        {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+        <div class="alert alert-info mt-3">
+            <ul class="mb-0">
+                {% for category, message in messages %}
+                <li class="text-{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
