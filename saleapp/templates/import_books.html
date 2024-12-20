@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhập Sách</title>
+</head>
+<body>
+    <h1>Phiếu Nhập Sách</h1>
+    <form method="POST">
+        <label for="date_import">Ngày nhập:</label>
+        <input type="date" id="date_import" name="date_import" value="{{ datetime.now().strftime('%Y-%m-%d') }}" required>
+        <hr>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Tên Sách</th>
+                    <th>Thể Loại</th>
+                    <th>Tác Giả</th>
+                    <th>Số Lượng</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(3) %}
+                <tr>
+                    <td>{{ i + 1 }}</td>
+                    <td><input type="text" name="book" required></td>
+                    <td><input type="text" name="category" required></td>
+                    <td><input type="text" name="author" required></td>
+                    <td><input type="number" name="quantity" min="1" required></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit">Nhập Sách</button>
+    </form>
+
+    {% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+    <ul>
+        {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+</body>
+</html>

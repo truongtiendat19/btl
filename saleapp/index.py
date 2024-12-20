@@ -1,9 +1,94 @@
 import math
-from flask import render_template, request, redirect, session, jsonify
+from flask import render_template, request, redirect, session, jsonify, url_for, flash
 import dao, utils
-from saleapp import app, login
+from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required
-from saleapp.models import StaffRole, Customer, Staff
+from saleapp.models import StaffRole, Customer, Staff, Book, ImportReceipt,ImportReceiptDetails, Category, Author
+from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
+
+
+@app.route('/import_books', methods=['GET', 'POST'])
+def import_books():
+    if request.method == 'POST':
+        # Lấy dữ liệu từ form
+        date_import = request.form.get('date_import', datetime.now().strftime('%Y-%m-%d'))
+        books = request.form.getlist('book')
+        categories = request.form.getlist('category')
+        authors = request.form.getlist('author')
+        quantities = request.form.getlist('quantity')
+
+        errors = []
+        success = []
+
+        # Kiểm tra và xử lý từng sách
+        for book_name, category_name, author_name, quantity_str in zip(books, categories, authors, quantities):
+            try:
+                quantity = int(quantity_str)
+
+                # Kiểm tra số lượng nhập
+                if quantity < 150:
+                    errors.append(f"Số lượng nhập cho sách '{book_name}' phải lớn hơn hoặc bằng 150!")
+                    continue
+
+                # Tìm hoặc tạo sách, thể loại, tác giả
+                category = Category.query.filter_by(name=category_name).first()
+                if not category:
+                    category = Category(name=category_name)
+                    db.session.add(category)
+                    db.session.commit()
+
+                author = Author.query.filter_by(name=author_name).first()
+                if not author:
+                    author = Author(name=author_name)
+                    db.session.add(author)
+                    db.session.commit()
+
+                book = Book.query.filter_by(name=book_name, category_id=category.id).first()
+
+                # Nếu sách đã tồn tại và số lượng >= 300, bỏ qua
+                if book and book.quantity >= 300:
+                    errors.append(f"Sách '{book_name}' đã đủ số lượng (>300), không thể nhập thêm!")
+                    continue
+
+                # Tạo mới hoặc cập nhật số lượng sách
+                if not book:
+                    book = Book(name=book_name, category_id=category.id, quantity=0)
+                    db.session.add(book)
+
+                book.quantity += quantity
+
+                # Lưu phiếu nhập
+                import_receipt = ImportReceipt(date_import=date_import, staff_id=1)  # Giả định staff_id = 1
+                db.session.add(import_receipt)
+                db.session.commit()
+
+                # Thêm chi tiết phiếu nhập
+                receipt_detail = ImportReceiptDetails(
+                    quantity=quantity,
+                    book_id=book.id,
+                    importreceipt_id=import_receipt.id
+                )
+                db.session.add(receipt_detail)
+                db.session.commit()
+
+                success.append(f"Nhập thành công sách '{book_name}' với số lượng {quantity}!")
+
+            except ValueError:
+                errors.append(f"Số lượng '{quantity_str}' không hợp lệ cho sách '{book_name}'!")
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                errors.append(f"Lỗi cơ sở dữ liệu: {str(e)}")
+
+        # Hiển thị thông báo
+        if success:
+            flash(" ".join(success), "success")
+        if errors:
+            flash(" ".join(errors), "danger")
+
+        return redirect(url_for('import_books'))
+
+    return render_template('import_books.html', datetime=datetime)
 
 
 @app.route("/")

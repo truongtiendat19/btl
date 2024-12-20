@@ -30,7 +30,7 @@ class CategoryView(AuthenticatedView):
 
 #  tùy chỉnh trang sách
 class BookView(AuthenticatedView):
-    pass
+    column_list = ['name','category_id','author_id','quantity']
 
 # truy cập được khi đã đăng nhập
 class MyView(BaseView):

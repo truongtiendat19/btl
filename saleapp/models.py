@@ -50,8 +50,9 @@ class Book(db.Model):
     description = Column(String(255), nullable=True)
     image = Column(String(100), nullable=True)
     price = Column(Float, default=0)
-    quantity = Column(Integer, nullable=True)
-    details = relationship('ReceiptDetails', backref='book', lazy=True)
+    quantity = Column(Integer, nullable=False)
+    receipt_details = relationship('ReceiptDetails', backref='book', lazy=True)
+    import_receipt_details = relationship('ImportReceiptDetails', backref='book', lazy=True)
     comments = relationship('Comment', backref='book', lazy=True)
     category_id = Column(Integer, ForeignKey(Category.id), nullable=False)
     author_id = relationship('Author', secondary='author_book', lazy='subquery', backref=backref('books',lazy=True) )
@@ -97,10 +98,10 @@ if __name__ == '__main__':
         db.create_all()
 
 
-        # u = Staff(name='admin', username='admin', password=str(hashlib.md5('123456'.encode('utf-8')).hexdigest()),
-        #          staff_role=StaffRole.ADMIN)
-        # db.session.add(u)
-        # db.session.commit()
+        u = Staff(name='admin', username='admin', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
+                 staff_role=StaffRole.ADMIN)
+        db.session.add(u)
+        db.session.commit()
 
         # a1 = Author(name = 'Catharina Ingelman Sundberg')
         # a2 = Author(name = 'Aleix Cabrera')
