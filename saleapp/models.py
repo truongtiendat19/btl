@@ -1,12 +1,12 @@
-import random
-from sqlalchemy.orm import relationship, backref
+
+from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, DateTime
 from saleapp import db, app
 from enum import Enum as RoleEnum
 import hashlib
 from flask_login import UserMixin
 from datetime import datetime
-import cloudinary
+
 
 class StaffRole(RoleEnum):
     ADMIN = 1
@@ -33,6 +33,7 @@ class Customer(User):
 class Staff(User):
     staff_role = Column(Enum(StaffRole))
     bills = relationship('Bill', backref='staff', lazy=True)
+    import_receipt = relationship('ImportReceipt', backref='staff', lazy=True)
 
 
 # thể loại
@@ -124,6 +125,7 @@ class ImportReceiptDetails(db.Model):
     quantity = Column(Integer, default=0)
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
     importreceipt_id = Column(Integer, ForeignKey(ImportReceipt.id), nullable=False)
+
 
 class Comment(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)

@@ -8,6 +8,7 @@ from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 
 
+
 @app.route('/import_books', methods=['GET', 'POST'])
 def import_books():
     if request.method == 'POST':
@@ -264,5 +265,6 @@ def common_response_data():
     }
 
 if __name__ == '__main__':
+    from saleapp import admin
     with app.app_context():
         app.run(debug=True)
