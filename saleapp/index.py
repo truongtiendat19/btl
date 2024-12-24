@@ -8,25 +8,35 @@ from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 
 
-@app.route('/manager', methods=['get', 'post'])
+@app.route('/login', methods=['get', 'post'])
 def login_manager():
-    if request.method.lower() == 'post':
+    if request.method.__eq__('POST'):
         username = request.form.get('username')
         password = request.form.get('password')
 
-        # Xác thực Manager
+        # Xác thực đăng nhập
         u = dao.auth_user(username=username, password=password, role=UserRole.MANAGER)
         if u:
             login_user(u)
             return render_template('manager_dashboard.html', user=current_user)
         else:
+            u = dao.auth_user(username=username, password=password, role=UserRole.STAFF)
+            if u:
+                login_user(u)
+                return "đăng nhập thành công vào staff"
+            else:
+                u = dao.auth_user(username=username, password=password)
+                if u:
+                    login_user(u)
+                    next = request.args.get('next')
+                    return redirect('/' if next is None else next)
             # Thêm thông báo lỗi nếu không xác thực được
-            flash("Sai tên đăng nhập hoặc mật khẩu. Vui lòng thử lại.", "danger")
+        flash("Sai tên đăng nhập hoặc mật khẩu. Vui lòng thử lại.", "danger")
 
-    return render_template('login_manager.html')
+    return render_template('login.html')
 
 
-@app.route('/import_books', methods=['get', 'post'])
+
 @app.route('/import_books', methods=['GET', 'POST'])
 def import_books():
     if request.method == 'POST':
@@ -144,21 +154,21 @@ def add_comment(book_id):
     })
 
 
-@app.route("/login", methods=['get', 'post'])
-def login_process():
-    if request.method.__eq__('POST'):
-        username = request.form.get('username')
-        password = request.form.get('password')
-
-        u = dao.auth_user(username=username, password=password)
-        if u:
-            login_user(u)
-            next = request.args.get('next')
-            return redirect('/' if next is None else next)
-
-        flash("Tên đăng nhập hoặc mật khẩu không đúng!", "danger")
-
-    return render_template('login.html')
+# @app.route("/login", methods=['get', 'post'])
+# def login_process():
+#     if request.method.__eq__('POST'):
+#         username = request.form.get('username')
+#         password = request.form.get('password')
+#
+#         u = dao.auth_user(username=username, password=password)
+#         if u:
+#             login_user(u)
+#             next = request.args.get('next')
+#             return redirect('/' if next is None else next)
+#
+#         flash("Tên đăng nhập hoặc mật khẩu không đúng!", "danger")
+#
+#     return render_template('login.html')
 
 
 @app.route("/login-admin", methods=['post'])

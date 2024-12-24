@@ -7,7 +7,7 @@
             <div class="mb-3">
                 <label for="date_import" class="form-label">Ngày nhập:</label>
                 <input type="date" id="date_import" name="date_import" class="form-control"
-                       value="{{ datetime.now().strftime('%Y-%m-%d') }}" required>
+                       value="{{ datetime.now().strftime('%Y-%m-%d') }}" required readonly>
             </div>
             <hr>
             <table class="table table-bordered table-striped" id="importTable">

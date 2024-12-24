@@ -16,11 +16,11 @@
                 <li class="nav-item">
                     <a class="nav-link active" href="/" style="color: #00bcd4; font-size: 18px; transition: all 0.3s;">Trang chủ</a>
                 </li>
-                {% for c in categories %}
-                <li class="nav-item">
-                    <a class="nav-link" href="/?category_id={{c.id}}" style="color: #fff; font-size: 18px; transition: all 0.3s;">{{ c.name }}</a>
-                </li>
-                {% endfor %}
+<!--                {% for c in categories %}-->
+<!--                <li class="nav-item">-->
+<!--                    <a class="nav-link" href="/?category_id={{c.id}}" style="color: #fff; font-size: 18px; transition: all 0.3s;">{{ c.name }}</a>-->
+<!--                </li>-->
+<!--                {% endfor %}-->
 
                 {% if current_user.is_authenticated %}
                 <li class="nav-item">
