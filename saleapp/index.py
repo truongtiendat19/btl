@@ -2,14 +2,31 @@ import math
 from flask import render_template, request, redirect, session, jsonify, url_for, flash
 import dao, utils
 from saleapp import app, login, db
-from flask_login import login_user, logout_user, login_required
-from saleapp.models import StaffRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails
+from flask_login import login_user, logout_user, login_required, current_user
+from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 
 
+@app.route('/manager', methods=['get', 'post'])
+def login_manager():
+    if request.method.lower() == 'post':
+        username = request.form.get('username')
+        password = request.form.get('password')
 
-@app.route('/import_books', methods=['GET', 'POST'])
+        # Xác thực Manager
+        u = dao.auth_user(username=username, password=password, role=UserRole.MANAGER)
+        if u:
+            login_user(u)
+            return render_template('manager_dashboard.html', manager=current_user)
+        else:
+            # Thêm thông báo lỗi nếu không xác thực được
+            flash("Sai tên đăng nhập hoặc mật khẩu. Vui lòng thử lại.", "danger")
+
+    return render_template('login_manager.html')
+
+
+@app.route('/import_books', methods=['get', 'post'])
 def import_books():
     if request.method == 'POST':
         # Lấy dữ liệu từ form
@@ -59,7 +76,7 @@ def import_books():
                 book.quantity += quantity
 
                 # Lưu phiếu nhập
-                import_receipt = ImportReceipt(date_import=date_import, staff_id=1)  # Giả định staff_id = 1
+                import_receipt = ImportReceipt(date_import=date_import, user_id=current_user.id)
                 db.session.add(import_receipt)
                 db.session.commit()
 
@@ -119,8 +136,8 @@ def add_comment(book_id):
         "id": c.id,
         "content": c.content,
         "created_date": c.created_date,
-        "customer": {
-            "avatar": c.customer.avatar
+        "user": {
+            "avatar": c.user.avatar
         }
     })
 
@@ -131,12 +148,13 @@ def login_process():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        u = dao.auth_customer(username=username, password=password)
+        u = dao.auth_user(username=username, password=password)
         if u:
             login_user(u)
-
             next = request.args.get('next')
             return redirect('/' if next is None else next)
+
+        flash("Tên đăng nhập hoặc mật khẩu không đúng!", "danger")
 
     return render_template('login.html')
 
@@ -146,9 +164,10 @@ def login_admin_process():
     username = request.form.get('username')
     password = request.form.get('password')
 
-    u = dao.auth_staff(username=username, password=password, role=StaffRole.ADMIN)
+    u = dao.auth_user(username=username, password=password, role=UserRole.ADMIN)
     if u:
         login_user(u)
+    flash("Tên đăng nhập hoặc mật khẩu không đúng!", "danger")
 
     return redirect('/admin')
 
@@ -157,6 +176,12 @@ def login_admin_process():
 def logout_process():
     logout_user()
     return redirect('/login')
+
+
+@app.route("/logout_manager")
+def logout_manager():
+    logout_user()
+    return redirect('/manager')
 
 
 @app.route('/register', methods=['get', 'post'])
@@ -171,7 +196,7 @@ def register_process():
             del data['confirm']
 
             avatar = request.files.get('avatar')
-            dao.add_customer(avatar=avatar, **data)
+            dao.add_user(avatar=avatar, **data)
 
             return redirect('/login')
         else:
@@ -248,13 +273,8 @@ def cart_view():
 
 
 @login.user_loader
-def load_customer(user_id):
-    return dao.get_customer_by_id(user_id)
-
-
-@login.user_loader
-def load_staff(user_id):
-    return dao.get_staff_by_id(user_id)
+def load_user(user_id):
+    return dao.get_user_by_id(user_id)
 
 
 @app.context_processor
