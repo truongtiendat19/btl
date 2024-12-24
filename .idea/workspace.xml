@@ -5,10 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7b885487-372f-49cf-ac64-d33842c0cc47" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/saleapp/templates/layout/base_worker.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/saleapp/templates/login_worker.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/saleapp/templates/sale.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/PythonProject1.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/PythonProject1.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/saleapp/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saleapp/templates/admin/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/templates/admin/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saleapp/templates/layout/base_manager.html" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/templates/layout/base_manager.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,7 +64,7 @@
       <recent name="D:\btl\saleapp" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.models">
+  <component name="RunManager" selected="Python.index">
     <configuration name="__init__" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PythonProject1" />
       <option name="ENV_FILES" value="" />
@@ -94,7 +97,6 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="SDK_NAME" value="Python 3.13 (test)" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/saleapp" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -117,7 +119,6 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="SDK_NAME" value="Python 3.13 (test)" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/saleapp" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -157,8 +158,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.models" />
         <item itemvalue="Python.index" />
+        <item itemvalue="Python.models" />
         <item itemvalue="Python.index" />
         <item itemvalue="Python.temp" />
         <item itemvalue="Python.__init__" />
