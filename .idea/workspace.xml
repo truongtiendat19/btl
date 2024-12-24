@@ -11,7 +11,11 @@
       <change beforePath="$PROJECT_DIR$/.idea/PythonProject1.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/PythonProject1.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+<<<<<<< HEAD
       <change beforePath="$PROJECT_DIR$/saleapp/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/models.py" afterDir="false" />
+=======
+      <change beforePath="$PROJECT_DIR$/saleapp/index.py" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/index.py" afterDir="false" />
+>>>>>>> 27bae33f15468fb62580fcd8f23863f668bcda73
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
