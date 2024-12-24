@@ -18,7 +18,7 @@ def login_manager():
         u = dao.auth_user(username=username, password=password, role=UserRole.MANAGER)
         if u:
             login_user(u)
-            return render_template('manager_dashboard.html', manager=current_user)
+            return render_template('manager_dashboard.html', user=current_user)
         else:
             # Thêm thông báo lỗi nếu không xác thực được
             flash("Sai tên đăng nhập hoặc mật khẩu. Vui lòng thử lại.", "danger")

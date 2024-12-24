@@ -69,25 +69,18 @@ window.onload = function() {
 </script>
 
 {% else %}
-<div class="bg-light">
-    <div class="container d-flex justify-content-center align-items-center vh-100">
-        <div class="card p-4 shadow" style="width: 100%; max-width: 400px;">
-            <h1 class="text-center text-primary mb-4">Đăng Nhập Quản Trị</h1>
-            <form method="post" action="/login-admin">
-                <div class="form-floating mb-3">
-                    <input type="text" class="form-control" id="username" placeholder="Tên đăng nhập" name="username" required>
-                    <label for="username">Tên đăng nhập</label>
-                </div>
-
-                <div class="form-floating mb-3">
-                    <input type="password" class="form-control" id="pwd" placeholder="Mật khẩu" name="password" required>
-                    <label for="pwd">Mật khẩu</label>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100">Đăng Nhập</button>
-            </form>
-        </div>
+<h1 class="text-center text-info mt-1">ĐĂNG NHẬP QUẢN TRỊ</h1>
+<form method="post" action="/login-admin">
+    <div class="form-floating mb-3 mt-3">
+        <label for="username">Tên đăng nhập</label>
+        <input type="text" class="form-control" id="username" placeholder="Tên đăng nhập" name="username" />
     </div>
-</div>
+
+    <div class="form-floating mt-3 mb-3">
+        <label for="pwd">Mật khẩu</label>
+        <input type="password" class="form-control" id="pwd" placeholder="Mật khẩu" name="password" />
+    </div>
+    <button type="submit" class="btn btn-primary">Đăng nhập</button>
+</form>
 {% endif %}
 {% endblock %}

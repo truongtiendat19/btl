@@ -6,8 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="7b885487-372f-49cf-ac64-d33842c0cc47" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/saleapp/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/saleapp/templates/admin/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/templates/admin/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/saleapp/templates/login_manager.html" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/templates/login_manager.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/saleapp/templates/layout/base_manager.html" beforeDir="false" afterPath="$PROJECT_DIR$/saleapp/templates/layout/base_manager.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -60,7 +61,7 @@
       <recent name="D:\btl\saleapp" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.index">
+  <component name="RunManager" selected="Python.models">
     <configuration name="__init__" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PythonProject1" />
       <option name="ENV_FILES" value="" />
@@ -156,8 +157,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.index" />
         <item itemvalue="Python.models" />
+        <item itemvalue="Python.index" />
         <item itemvalue="Python.index" />
         <item itemvalue="Python.temp" />
         <item itemvalue="Python.__init__" />
