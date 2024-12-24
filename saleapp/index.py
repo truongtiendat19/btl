@@ -23,7 +23,7 @@ def login_manager():
             u = dao.auth_user(username=username, password=password, role=UserRole.STAFF)
             if u:
                 login_user(u)
-                return "đăng nhập thành công vào staff"
+                return render_template('sale.html', user=current_user)
             else:
                 u = dao.auth_user(username=username, password=password)
                 if u:
