@@ -7,13 +7,11 @@ import hashlib
 from flask_login import UserMixin
 from datetime import datetime
 
-
 class UserRole(RoleEnum):
     ADMIN = 1
     MANAGER = 2
     STAFF = 3
-    CUSTOMER =4
-
+    CUSTOMER = 4
 
 # người dùng
 class User(db.Model, UserMixin):
@@ -21,42 +19,39 @@ class User(db.Model, UserMixin):
     name = Column(String(255), nullable=False)
     username = Column(String(100), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
-    avatar = Column(String(100), default="https://res.cloudinary.com/dapckqqhj/image/upload/v1734438576/rlpkm5rn7kqct2k5jcir.jpg")
+    avatar = Column(String(255), default="https://res.cloudinary.com/dapckqqhj/image/upload/v1734438576/rlpkm5rn7kqct2k5jcir.jpg")
     receipts = relationship('Receipt', backref='user', lazy=True)
     comments = relationship('Comment', backref='user', lazy=True)
     bills = relationship('Bill', backref='user', lazy=True)
-    import_receipt = relationship('ImportReceipt', backref='user', lazy=True)
-    user_role = Column(Enum(UserRole))
-
+    import_receipts = relationship('ImportReceipt', backref='user', lazy=True)
+    user_role = Column(Enum(UserRole), nullable=False)
 
 # thể loại
 class Category(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(50), nullable=False, unique=True)
+    name = Column(String(100), nullable=False, unique=True)
     books = relationship('Book', backref='category', lazy=True)
 
     def __str__(self):
         return self.name
 
-
 # tác giả
 class Author(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(50), nullable=False, unique=True)
+    name = Column(String(100), nullable=False, unique=True)
     books = relationship('Book', backref='author', lazy=True)
 
     def __str__(self):
         return self.name
 
-
 # sách
 class Book(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(50), nullable=False, unique=True)
+    name = Column(String(100), nullable=False, unique=True)
     description = Column(String(255), nullable=True)
-    image = Column(String(100), nullable=True)
-    price = Column(Float, default=0)
-    quantity = Column(Integer, nullable=False, default= 0)
+    image = Column(String(255), nullable=True)
+    price = Column(Float, default=0, nullable=False)
+    quantity = Column(Integer, nullable=False, default=0)
     receipt_details = relationship('ReceiptDetails', backref='book', lazy=True)
     bill_details = relationship('BillDetails', backref='book', lazy=True)
     import_receipt_details = relationship('ImportReceiptDetails', backref='book', lazy=True)
@@ -64,85 +59,81 @@ class Book(db.Model):
     category_id = Column(Integer, ForeignKey(Category.id), nullable=False)
     author_id = Column(Integer, ForeignKey(Author.id), nullable=False)
 
-
     def __str__(self):
         return self.name
-
 
 # hóa đơn cho khách đặt trực tuyến
 class Receipt(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    created_date = Column(DateTime, default=datetime.now())
+    created_date = Column(DateTime, default=datetime.now, nullable=False)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     details = relationship('ReceiptDetails', backref='receipt', lazy=True)
-
 
 # chi tiết hóa đơn trực tuyến
 class ReceiptDetails(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    quantity = Column(Integer, default=0)
-    unit_price = Column(Float, default=0)
+    quantity = Column(Integer, default=0, nullable=False)
+    unit_price = Column(Float, default=0, nullable=False)
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
     receipt_id = Column(Integer, ForeignKey(Receipt.id), nullable=False)
-
 
 # hóa đơn cho khách mua trực tiếp
 class Bill(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    created_date = Column(DateTime, default=datetime.now())
-    name_customer = Column(String(50), nullable=True)
+    created_date = Column(DateTime, default=datetime.now, nullable=False)
+    name_customer = Column(String(100), nullable=True)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     details = relationship('BillDetails', backref='bill', lazy=True)
-
 
 # chi tiết hóa đơn mua trực tiếp
 class BillDetails(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    quantity = Column(Integer, default=0)
-    unit_price = Column(Float, default=0)
+    quantity = Column(Integer, default=0, nullable=False)
+    unit_price = Column(Float, default=0, nullable=False)
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
-    receipt_id = Column(Integer, ForeignKey(Bill.id), nullable=False)
-
+    bill_id = Column(Integer, ForeignKey(Bill.id), nullable=False)
 
 # phiếu nhập sách
 class ImportReceipt(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    date_import = Column(DateTime, default=datetime.now())
+    date_import = Column(DateTime, default=datetime.now, nullable=False)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
-    details = relationship('ImportReceiptDetails', backref='importReceipt', lazy=True)
-
+    details = relationship('ImportReceiptDetails', backref='import_receipt', lazy=True)
 
 # chi tiết phiếu nhập sách
 class ImportReceiptDetails(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    quantity = Column(Integer, default=0)
+    quantity = Column(Integer, default=0, nullable=False)
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
-    importreceipt_id = Column(Integer, ForeignKey(ImportReceipt.id), nullable=False)
-
+    import_receipt_id = Column(Integer, ForeignKey(ImportReceipt.id), nullable=False)
 
 class Comment(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     content = Column(String(255), nullable=False)
-    created_date = Column(DateTime, default=datetime.now())
+    created_date = Column(DateTime, default=datetime.now, nullable=False)
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
-
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
 
-        u = User(name='staff', username='s', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
-                  user_role=UserRole.STAFF,
-                  avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg')
+        u = User(
+            name='staff',
+            username='s',
+            password=hashlib.md5('1'.encode('utf-8')).hexdigest(),
+            user_role=UserRole.STAFF,
+            avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg'
+        )
         db.session.add(u)
         db.session.commit()
-        #
-        # u = User(name='admin', username='admin1', password=str(hashlib.md5('123456789'.encode('utf-8')).hexdigest()),
-        #          user_role=UserRole.ADMIN, avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg')
-        # db.session.add(u)
-        # db.session.commit()
-        #
+
+
+        u = User(name='admin', username='admin1', password=str(hashlib.md5('123456789'.encode('utf-8')).hexdigest()),
+                 user_role=UserRole.ADMIN, avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg')
+        db.session.add(u)
+        db.session.commit()
+
         # authors = ["Ngô Tất Tố","Nguyễn Nhật Ánh", "Tô Hoài","Kim Lân"]
         # author_objects = []
         # for author_name in authors:

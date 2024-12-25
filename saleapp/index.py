@@ -3,10 +3,18 @@ from flask import render_template, request, redirect, session, jsonify, url_for,
 import dao, utils
 from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required, current_user
-from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails
+from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, Bill,BillDetails,Book
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 
+# TRANG HOÁ ĐƠN
+
+@app.route('/api/books', methods=['GET'])
+def get_books():
+    books = Book.query.all()
+    data = [{"id": book.id, "name": book.name, "category": book.category.name, "price": book.price} for book in books]
+    return jsonify(data)
+# TRANG HOÁ ĐƠN
 
 @app.route('/login', methods=['get', 'post'])
 def login_manager():
