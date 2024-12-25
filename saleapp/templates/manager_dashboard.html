@@ -3,27 +3,38 @@
 {% block content %}
 <div class="container mt-5">
     <h1 class="text-center mb-4">Chào mừng {{ user.name }} đến với trang Quản lý kho sách!</h1>
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card text-bg-info">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Quản lý sách</h5>
-                    <p class="card-text">Thêm, sửa, và xóa sách trong kho.</p>
-                    <a href="/books-management" class="btn btn-light">Truy cập</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-bg-warning">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Nhập sách</h5>
-                    <p class="card-text">Thêm hoặc chỉnh sửa thông tin nhập hàng.</p>
-                    <a href="/import_books" class="btn btn-light">Truy cập</a>
-                </div>
-            </div>
-        </div>
 
+    <!-- Bảng thống kê sách tồn kho -->
+    <div class="card shadow-lg">
+        <div class="card-header bg-success text-white text-center">
+            <h3 class="mb-0">Thống Kê Sách Tồn Kho</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-hover align-middle text-center">
+                <thead class="table-success">
+                    <tr>
+                        <th>STT</th>
+                        <th>Tên Sách</th>
+                        <th>Thể Loại</th>
+                        <th>Tác Giả</th>
+                        <th>Số Lượng</th>
+                        <th>Giá (VND)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for book in books %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ book.name }}</td>
+                        <td>{{ book.category.name }}</td>
+                        <td>{{ book.author.name }}</td>
+                        <td>{{ book.quantity }}</td>
+                        <td>{{ "{:,.0f}".format(book.price) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
-
