@@ -3,8 +3,7 @@ from flask import render_template, request, redirect, session, jsonify, url_for,
 import dao, utils
 from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required, current_user
-from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, ManageRule
-from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, Bill,BillDetails,Book
+from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, Bill,BillDetails,Book, ManageRule
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -15,11 +14,27 @@ def get_books():
     books = Book.query.all()
     data = [{"id": book.id, "name": book.name, "category": book.category.name, "price": book.price} for book in books]
     return jsonify(data)
-# TRANG HOÁ ĐƠN
 
-@app.route('/login', methods=['get', 'post'])
+
+@app.route('/login', methods=['GET', 'POST'])
 def login_process():
-    if request.method.__eq__('POST'):
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        # Xác thực đăng nhập
+        u = dao.auth_user(username=username, password=password, role=UserRole.CUSTOMER)
+        if u:
+            login_user(u)
+            next = request.args.get('next')
+            return redirect('/' if next is None else next)
+
+    return render_template('login.html')
+
+
+@app.route('/staff', methods=['GET', 'POST'])
+def login_staff_manager_process():
+    if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
 
@@ -27,29 +42,20 @@ def login_process():
         u = dao.auth_user(username=username, password=password, role=UserRole.MANAGER)
         if u:
             login_user(u)
-            return render_template('manager_dashboard.html', user=current_user)
+            return render_template('/manager_dashboard.html', user=current_user)
         else:
             u = dao.auth_user(username=username, password=password, role=UserRole.STAFF)
             if u:
                 login_user(u)
-                return render_template('sale.html', user=current_user)
-            else:
-                u = dao.auth_user(username=username, password=password)
-                if u:
-                    login_user(u)
-                    next = request.args.get('next')
-                    return redirect('/' if next is None else next)
-            # Thêm thông báo lỗi nếu không xác thực được
-        flash("Sai tên đăng nhập hoặc mật khẩu. Vui lòng thử lại.", "danger")
+                return render_template('/sale.html', user=current_user)
 
-    return render_template('login.html')
+    return render_template('login_staff_manager.html')
 
 
 @app.route('/import_books', methods=['GET', 'POST'])
 def import_books():
     rule = ManageRule.query.first()  # Lấy quy định hiện tại
     db.session.refresh(rule)
-    print(f"Quy định hiện tại: {rule.import_quantity_min}, {rule.quantity_min}, {rule.cancel_time}")
 
     if request.method == 'POST':
         date_import = request.form.get('date_import', datetime.now().strftime('%Y-%m-%d'))
@@ -82,11 +88,7 @@ def import_books():
                     db.session.add(author)
                     db.session.commit()
 
-                book = Book.query.filter_by(name=book_name, category_id=category.id).first()
-                if book and book.quantity >= rule.quantity_min:
-                    errors.append(f"Sách '{book_name}' đã đủ số lượng (>{rule.quantity_min}), không thể nhập thêm!")
-                    continue
-
+                book = Book.query.filter_by(name=book_name).first()
                 if not book:
                     book = Book(name=book_name, category_id=category.id, author_id=author.id, quantity=0)
                     db.session.add(book)
@@ -101,7 +103,7 @@ def import_books():
                 receipt_detail = ImportReceiptDetails(
                     quantity=quantity,
                     book_id=book.id,
-                    importreceipt_id=import_receipt.id
+                    import_receipt_id=import_receipt.id
                 )
                 db.session.add(receipt_detail)
                 db.session.commit()
@@ -121,7 +123,21 @@ def import_books():
 
         return redirect(url_for('import_books'))
 
-    return render_template('import_books.html', datetime=datetime, rule=rule)
+    # Lấy dữ liệu sách
+    books = Book.query.all()
+    books_data = [{
+        "name": book.name,
+        "category": {"name": book.category.name},
+        "author": {"name": book.author.name}
+    } for book in books]
+
+    return render_template('import_books.html', datetime=datetime, rule=rule, books=books, books_data=books_data)
+
+
+@app.route('/manage_books', methods=['GET', 'POST'])
+def manage_books():
+
+    return render_template('manage_books.html')
 
 
 @app.route('/admin/manage_rules', methods=['GET', 'POST'])
@@ -205,7 +221,6 @@ def login_admin_process():
     u = dao.auth_user(username=username, password=password, role=UserRole.ADMIN)
     if u:
         login_user(u)
-    flash("Tên đăng nhập hoặc mật khẩu không đúng!", "danger")
 
     return redirect('/admin')
 
@@ -214,6 +229,12 @@ def login_admin_process():
 def logout_process():
     logout_user()
     return redirect('/login')
+
+
+@app.route("/logout_staff")
+def logout_staff_manager_process():
+    logout_user()
+    return redirect('/staff')
 
 
 @app.route('/register', methods=['get', 'post'])
