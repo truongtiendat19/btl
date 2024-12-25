@@ -80,3 +80,32 @@ body {
 .btn-danger:hover {
     background-color: #b71c1c;
 }
+
+body {
+    background: linear-gradient(to right, #e9f5e9, #c4e8c4);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border: none;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.form-control:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+}
+
+a {
+    text-decoration: none;
+    color: #28a745;
+}

@@ -190,11 +190,6 @@ def logout_process():
     return redirect('/login')
 
 
-@app.route("/logout_manager")
-def logout_manager():
-    logout_user()
-    return redirect('/manager')
-
 
 @app.route('/register', methods=['get', 'post'])
 def register_process():
