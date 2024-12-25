@@ -3,13 +3,13 @@ from flask import render_template, request, redirect, session, jsonify, url_for,
 import dao, utils
 from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required, current_user
-from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails
+from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, ManageRule
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 
 
 @app.route('/login', methods=['get', 'post'])
-def login_manager():
+def login_process():
     if request.method.__eq__('POST'):
         username = request.form.get('username')
         password = request.form.get('password')
@@ -36,14 +36,14 @@ def login_manager():
     return render_template('login.html')
 
 
-
 @app.route('/import_books', methods=['GET', 'POST'])
 def import_books():
-    if request.method == 'POST':
-        date_import = request.form.get('date_import')
-        if not date_import:
-            date_import = datetime.now().strftime('%Y-%m-%d')
+    rule = ManageRule.query.first()  # Lấy quy định hiện tại
+    db.session.refresh(rule)
+    print(f"Quy định hiện tại: {rule.import_quantity_min}, {rule.quantity_min}, {rule.cancel_time}")
 
+    if request.method == 'POST':
+        date_import = request.form.get('date_import', datetime.now().strftime('%Y-%m-%d'))
         books = request.form.getlist('book')
         categories = request.form.getlist('category')
         authors = request.form.getlist('author')
@@ -52,16 +52,13 @@ def import_books():
         errors = []
         success = []
 
-        if not (len(books) == len(categories) == len(authors) == len(quantities)):
-            flash("Dữ liệu nhập không hợp lệ. Vui lòng kiểm tra lại!", "danger")
-            return redirect(url_for('import_books'))
-
         for book_name, category_name, author_name, quantity_str in zip(books, categories, authors, quantities):
             try:
                 quantity = int(quantity_str)
 
-                if quantity < 150:
-                    errors.append(f"Số lượng nhập cho sách '{book_name}' phải lớn hơn hoặc bằng 150!")
+                # Kiểm tra số lượng nhập tối thiểu
+                if quantity < rule.import_quantity_min:
+                    errors.append(f"Số lượng nhập cho sách '{book_name}' phải lớn hơn hoặc bằng {rule.import_quantity_min}!")
                     continue
 
                 category = Category.query.filter_by(name=category_name).first()
@@ -77,8 +74,8 @@ def import_books():
                     db.session.commit()
 
                 book = Book.query.filter_by(name=book_name, category_id=category.id).first()
-                if book and book.quantity >= 300:
-                    errors.append(f"Sách '{book_name}' đã đủ số lượng (>300), không thể nhập thêm!")
+                if book and book.quantity >= rule.quantity_min:
+                    errors.append(f"Sách '{book_name}' đã đủ số lượng (>{rule.quantity_min}), không thể nhập thêm!")
                     continue
 
                 if not book:
@@ -115,8 +112,45 @@ def import_books():
 
         return redirect(url_for('import_books'))
 
-    return render_template('import_books.html', datetime=datetime)
+    return render_template('import_books.html', datetime=datetime, rule=rule)
 
+
+@app.route('/admin/manage_rules', methods=['GET', 'POST'])
+def manage_rules():
+    rule = ManageRule.query.first()  # Lấy quy định đầu tiên (vì có thể chỉ cần một bản ghi)
+
+    if request.method == 'POST':
+        try:
+            # Lấy dữ liệu từ form
+            import_quantity_min = int(request.form.get('import_quantity_min'))
+            quantity_min = int(request.form.get('quantity_min'))
+            cancel_time = int(request.form.get('cancel_time'))
+
+            # Nếu chưa tồn tại quy định, tạo mới
+            if not rule:
+                rule = ManageRule(
+                    import_quantity_min=import_quantity_min,
+                    quantity_min=quantity_min,
+                    cancel_time=cancel_time,
+                    updated_date=datetime.now()
+                )
+                db.session.add(rule)
+            else:
+                # Cập nhật quy định hiện có
+                rule.import_quantity_min = import_quantity_min
+                rule.quantity_min = quantity_min
+                rule.cancel_time = cancel_time
+                rule.updated_date = datetime.now()
+
+            db.session.commit()
+            flash("Cập nhật quy định thành công!", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Lỗi khi cập nhật quy định: {str(e)}", "danger")
+
+        return redirect(url_for('manage_rules'))
+
+    return render_template('manage_rules.html', rule=rule)
 
 
 @app.route("/")
@@ -154,23 +188,6 @@ def add_comment(book_id):
     })
 
 
-# @app.route("/login", methods=['get', 'post'])
-# def login_process():
-#     if request.method.__eq__('POST'):
-#         username = request.form.get('username')
-#         password = request.form.get('password')
-#
-#         u = dao.auth_user(username=username, password=password)
-#         if u:
-#             login_user(u)
-#             next = request.args.get('next')
-#             return redirect('/' if next is None else next)
-#
-#         flash("Tên đăng nhập hoặc mật khẩu không đúng!", "danger")
-#
-#     return render_template('login.html')
-
-
 @app.route("/login-admin", methods=['post'])
 def login_admin_process():
     username = request.form.get('username')
@@ -188,7 +205,6 @@ def login_admin_process():
 def logout_process():
     logout_user()
     return redirect('/login')
-
 
 
 @app.route('/register', methods=['get', 'post'])
@@ -290,6 +306,7 @@ def common_response_data():
         'categories': dao.load_categories(),
         'cart_stats': utils.cart_stats(session.get('cart'))
     }
+
 
 if __name__ == '__main__':
     from saleapp import admin

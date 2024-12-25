@@ -36,9 +36,11 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/login" style="color: #00bcd4; font-size: 18px;">Đăng nhập</a>
                 </li>
+                {% if current_user.user_role!='STAFF' and current_user.user_role!='MANAGER' %}
                 <li class="nav-item">
                     <a class="nav-link" href="/register" style="color: #4caf50; font-size: 18px;">Đăng ký</a>
                 </li>
+                {% endif %}
                 {% endif %}
 
                 <!-- Giỏ sách -->
