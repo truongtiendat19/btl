@@ -1,97 +1,124 @@
 {% extends 'admin/master.html' %}
-
 {% block body %}
-<h1 class="text-danger text-center mt-1">THÔNG KÊ BÁO CÁO</h1>
+<h1 class="text-center text-primary">Thống kê và báo cáo</h1>
+
+<!-- Bộ lọc tháng và năm -->
+<form method="get" class="mb-3">
+    <label>Chọn tháng:</label>
+    <input type="number" name="month" value="{{ month }}" min="1" max="12">
+    <label>Chọn năm:</label>
+    <input type="number" name="year" value="{{ year }}" min="2000">
+    <button type="submit" class="btn btn-primary">Xem báo cáo</button>
+</form>
 
 <div class="row">
-    <div class="col-md-6 col-12">
-        <table class="table">
-            <tr>
-                <th>Id</th>
-                <th>Tên sản phẩm</th>
-                <th>Tổng doanh thu</th>
-            </tr>
-            {% for s in stats %}
-            <tr>
-                <td>{{ s[0] }}</td>
-                <td>{{ s[1] }}</td>
-                <td>{{ "{:,.0f}".format(s[2]) }} VNĐ</td>
-            </tr>
-            {% endfor %}
+    <!-- Bảng doanh thu -->
+    <div class="col-md-6">
+        <h3>Báo cáo doanh thu theo tháng</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Thể loại sách</th>
+                    <th>Doanh thu</th>
+                    <th>Số lượt thuê</th>
+                    <th>Tỷ lệ (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for idx, stat in enumerate(revenue_stats) %}
+                <tr>
+                    <td>{{ idx + 1 }}</td>
+                    <td>{{ stat[0] }}</td>
+                    <td>{{ "{:,.0f}".format(stat[1]) }} VNĐ</td>
+                    <td>{{ stat[2] }}</td>
+                    <td>{{ "{:.2f}".format((stat[1] / total_revenue * 100) if total_revenue else 0) }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="2"><b>Tổng doanh thu:</b></td>
+                    <td colspan="3">{{ "{:,.0f}".format(total_revenue) }} VNĐ</td>
+                </tr>
+            </tbody>
         </table>
     </div>
-    <div class="col-md-6 col-12">
-        <canvas id="myChart"></canvas>
+
+    <!-- Biểu đồ doanh thu -->
+    <div class="col-md-6">
+        <canvas id="revenueChart"></canvas>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-6 col-12">
-        <table class="table">
-            <tr>
-                <th>Thời gian</th>
-                <th>Tổng doanh thu</th>
-            </tr>
-            {% for s in stats2 %}
-            <tr>
-                <td>{{ s[0] }}</td>
+<hr>
 
-                <td>{{ "{:,.0f}".format(s[1]) }} VNĐ</td>
-            </tr>
-            {% endfor %}
+<div class="row">
+    <!-- Bảng tần suất -->
+    <div class="col-md-6">
+        <h3>Báo cáo tần suất sách bán</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Tên sách</th>
+                    <th>Thể loại</th>
+                    <th>Số lượng</th>
+                    <th>Tỷ lệ (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for idx, stat in enumerate(book_frequency_stats) %}
+                <tr>
+                    <td>{{ idx + 1 }}</td>
+                    <td>{{ stat[0] }}</td>
+                    <td>{{ stat[1] }}</td>
+                    <td>{{ stat[2] }}</td>
+                    <td>{{ "{:.2f}".format(stat[3]) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
-    <div class="col-md-6 col-12">
-        <canvas id="myChart2"></canvas>
+
+    <!-- Biểu đồ tần suất -->
+    <div style="width: 38%; margin: 0 auto;">
+            <canvas id="frequencyChart"></canvas>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    let data = [];
-    let labels = [];
+    // Lấy dữ liệu từ context
+    const revenueLabels = {{ revenue_stats|map(attribute=0)|list|tojson }};
+    const revenueData = {{ revenue_stats|map(attribute=1)|list|tojson }};
+    const frequencyLabels = {{ book_frequency_stats|map(attribute=0)|list|tojson }};
+    const frequencyData = {{ book_frequency_stats|map(attribute=2)|list|tojson }};
 
-    let data2 = [];
-    let labels2 = [];
-
-    {% for s in stats %}
-        labels.push('{{ s[1] }}');
-        data.push({{ s[2] }});
-    {% endfor %}
-
-    {% for s in stats2 %}
-        labels2.push({{ s[0] }});
-        data2.push({{ s[1] }});
-    {% endfor %}
-
-    function draw(ctx, data, labels) {
-    new Chart(ctx, {
+    // Biểu đồ doanh thu
+    new Chart(document.getElementById('revenueChart'), {
         type: 'bar',
         data: {
-          labels: labels,
-          datasets: [{
-            label: '# Doanh thu',
-            data: data,
-            borderWidth: 1,
-            backgroundColor: ['red', 'green', 'blue', 'gold', 'brown']
-          }]
+            labels: revenueLabels,
+            datasets: [{
+                label: 'Doanh thu',
+                data: revenueData,
+                backgroundColor: 'blue',
+            }]
         },
-        options: {
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
-      });
-}
+        options: { responsive: true }
+    });
 
-    window.onload = function() {
-         const ctx = document.getElementById('myChart');
-         const ctx2 = document.getElementById('myChart2');
-
-          draw(ctx, data, labels);
-          draw(ctx2, data2, labels2);
-    }
+    // Biểu đồ tần suất
+    new Chart(document.getElementById('frequencyChart'), {
+        type: 'pie',
+        data: {
+            labels: frequencyLabels,
+            datasets: [{
+                label: 'Tần suất',
+                data: frequencyData,
+                backgroundColor: ['red', 'green', 'yellow', 'orange', 'purple'],
+            }]
+        },
+        options: { responsive: true }
+    });
 </script>
 {% endblock %}

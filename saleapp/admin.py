@@ -1,10 +1,13 @@
 from saleapp import db, app, dao
+from dao import revenue_by_category, book_frequency_by_month
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from saleapp.models import Category, Book, User, UserRole
 from flask_login import current_user, logout_user
 from flask_admin import BaseView, expose
-from flask import redirect
+from flask import redirect, request
+from datetime import  datetime
+
 
 # tùy chỉnh trang admin
 class MyAdminIndexView(AdminIndexView):
@@ -44,14 +47,31 @@ class LogoutView(MyView):
         logout_user()
         return redirect('/admin')
 
+
 # tạo chức năng thống kê
+
 class StatsView(MyView):
-    @expose("/")
-    def index(self):
-        # lấy dữ liệu
-        stats = dao.revenue_stats()
-        stats2 = dao.period_stats()
-        return self.render('admin/stats.html', stats=stats, stats2=stats2)
+    @expose('/')
+    def default_view(self):
+        month = request.args.get('month', datetime.now().month, type=int)
+        year = request.args.get('year', datetime.now().year, type=int)
+
+        # Lấy dữ liệu thống kê
+        revenue_stats = revenue_by_category(month, year)
+        book_frequency_stats = book_frequency_by_month(month, year)
+
+        # Tổng doanh thu
+        total_revenue = sum([r[1] for r in revenue_stats]) if revenue_stats else 0
+
+        return self.render(
+            'admin/stats.html',
+            month=month,
+            year=year,
+            revenue_stats=revenue_stats,
+            book_frequency_stats=book_frequency_stats,
+            total_revenue=total_revenue,
+            enumerate=enumerate
+        )
 
 
 admin.add_view(CategoryView(Category, db.session))

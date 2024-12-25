@@ -4,14 +4,14 @@
 
 {% if current_user.is_authenticated %}
 <h1 class="text-info mt-1">CHÀO MỪNG ĐẾN VỚI TRANG QUẢN TRỊ!</h1>
-<h2 class="text-danger">Chào {{ current_user.username }}.</h2>
+<h2 class="text-danger">Chào {{ current_user.name }}.</h2>
 
 <div class="row">
     <div class="col-md-6 col-12">
         <table class="table">
             <tr>
-                <th>Id</th>
-                <th>Tên danh mục</th>
+                <th>STT</th>
+                <th>Tên sách</th>
                 <th>Số sản phẩm</th>
             </tr>
             {% for s in cates %}

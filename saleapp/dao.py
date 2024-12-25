@@ -1,10 +1,10 @@
-from saleapp.models import (Category, Book, User, Receipt, ReceiptDetails, Comment)
+from saleapp.models import Category, Book, User, Receipt, ReceiptDetails, Comment, BillDetails, Bill
 from saleapp import app, db
 import hashlib
 import cloudinary.uploader
 from flask_login import current_user
 from sqlalchemy import func
-from datetime import datetime
+from operator import  or_
 
 
 def load_categories():
@@ -72,29 +72,6 @@ def get_user_by_id(id):
     return User.query.get(id)
 
 
-def revenue_stats(kw=None):
-    query = db.session.query(Book.id, Book.name, func.sum(ReceiptDetails.quantity * ReceiptDetails.unit_price))\
-                      .join(ReceiptDetails, ReceiptDetails.book_id.__eq__(Book.id)).group_by(Book.id)
-
-    if kw:
-        query = query.filter(Book.name.contains(kw))
-
-    return query.all()
-
-
-def period_stats(p='month', year=datetime.now().year):
-    return db.session.query(func.extract(p, Receipt.created_date),
-                            func.sum(ReceiptDetails.quantity * ReceiptDetails.unit_price))\
-                      .join(ReceiptDetails, ReceiptDetails.receipt_id.__eq__(Receipt.id))\
-                      .group_by(func.extract(p, Receipt.created_date), func.extract('year', Receipt.created_date))\
-                      .filter(func.extract('year', Receipt.created_date).__eq__(year)).all()
-
-
-def stats_books():
-    return db.session.query(Category.id, Category.name, func.count(Book.id))\
-        .join(Book, Book.category_id.__eq__(Category.id), isouter=True).group_by(Category.id).all()
-
-
 def get_book_by_id(id):
     return Book.query.get(id)
 
@@ -109,6 +86,97 @@ def add_comment(content, book_id):
     db.session.commit()
 
     return c
+
+
+def revenue_by_category(month, year):
+    return db.session.query(
+        Category.name.label("category_name"),
+        func.sum(
+            func.coalesce(ReceiptDetails.quantity * ReceiptDetails.unit_price, 0) +
+            func.coalesce(BillDetails.quantity * BillDetails.unit_price, 0)
+        ).label("total_revenue"),
+        func.count(
+            func.coalesce(ReceiptDetails.id, 0) + func.coalesce(BillDetails.id, 0)
+        ).label("total_count")
+    )\
+    .select_from(Category)\
+    .join(Book, Book.category_id == Category.id)\
+    .outerjoin(ReceiptDetails, ReceiptDetails.book_id == Book.id)\
+    .outerjoin(Receipt, Receipt.id == ReceiptDetails.receipt_id)\
+    .outerjoin(BillDetails, BillDetails.book_id == Book.id)\
+    .outerjoin(Bill, Bill.id == BillDetails.bill_id)\
+    .filter(
+        or_(
+            func.extract('month', Receipt.created_date) == month,
+            func.extract('month', Bill.created_date) == month
+        ),
+        or_(
+            func.extract('year', Receipt.created_date) == year,
+            func.extract('year', Bill.created_date) == year
+        )
+    )\
+    .group_by(Category.name).all()
+
+
+def book_frequency_by_month(month, year):
+    total_books = db.session.query(
+        func.sum(
+            func.coalesce(ReceiptDetails.quantity, 0) + func.coalesce(BillDetails.quantity, 0)
+        )
+    )\
+    .select_from(Book)\
+    .outerjoin(ReceiptDetails, ReceiptDetails.book_id == Book.id)\
+    .outerjoin(Receipt, Receipt.id == ReceiptDetails.receipt_id)\
+    .outerjoin(BillDetails, BillDetails.book_id == Book.id)\
+    .outerjoin(Bill, Bill.id == BillDetails.bill_id)\
+    .filter(
+        or_(
+            func.extract('month', Receipt.created_date) == month,
+            func.extract('month', Bill.created_date) == month
+        ),
+        or_(
+            func.extract('year', Receipt.created_date) == year,
+            func.extract('year', Bill.created_date) == year
+        )
+    ).scalar()
+
+    query = db.session.query(
+        Book.name.label("book_name"),
+        Category.name.label("category_name"),
+        func.sum(
+            func.coalesce(ReceiptDetails.quantity, 0) + func.coalesce(BillDetails.quantity, 0)
+        ).label("total_quantity")
+    )\
+    .select_from(Book)\
+    .join(Category, Category.id == Book.category_id)\
+    .outerjoin(ReceiptDetails, ReceiptDetails.book_id == Book.id)\
+    .outerjoin(Receipt, Receipt.id == ReceiptDetails.receipt_id)\
+    .outerjoin(BillDetails, BillDetails.book_id == Book.id)\
+    .outerjoin(Bill, Bill.id == BillDetails.bill_id)\
+    .filter(
+        or_(
+            func.extract('month', Receipt.created_date) == month,
+            func.extract('month', Bill.created_date) == month
+        ),
+        or_(
+            func.extract('year', Receipt.created_date) == year,
+            func.extract('year', Bill.created_date) == year
+        )
+    )\
+    .group_by(Book.name, Category.name)
+
+    # Tính tỷ lệ
+    results = []
+    for book_name, category_name, quantity in query.all():
+        percentage = (quantity / total_books * 100) if total_books else 0
+        results.append((book_name, category_name, quantity, round(percentage, 2)))
+
+    return results
+
+
+def stats_books():
+    return db.session.query(Category.id, Category.name, func.count(Book.id))\
+        .join(Book, Book.category_id.__eq__(Category.id), isouter=True).group_by(Category.id).all()
 
 
 if __name__ == '__main__':

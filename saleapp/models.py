@@ -73,7 +73,8 @@ class Receipt(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     created_date = Column(DateTime, default=datetime.now, nullable=False)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
-    details = relationship('ReceiptDetails', backref='receipt', lazy=True)
+    details = relationship('ReceiptDetails', backref='receipt', lazy=True, cascade="all, delete-orphan")
+
 
 
 # chi tiết hóa đơn trực tuyến

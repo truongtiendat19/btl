@@ -347,6 +347,7 @@ def common_response_data():
     }
 
 
+
 if __name__ == '__main__':
     from saleapp import admin
     with app.app_context():
