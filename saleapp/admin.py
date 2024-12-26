@@ -2,11 +2,12 @@ from saleapp import db, app, dao
 from dao import revenue_by_category, book_frequency_by_month
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
-from saleapp.models import Category, Book, User, UserRole, ManageRule
+from saleapp.models import Category, Book, User, UserRole, ManageRule, ImportReceipt, Author, ImportReceiptDetails
 from flask_login import current_user, logout_user
 from flask_admin import BaseView, expose
-from flask import redirect, request, flash
+from flask import redirect, request, flash, url_for
 from datetime import  datetime
+from sqlalchemy.exc import SQLAlchemyError
 
 
 # tùy chỉnh trang admin
@@ -27,10 +28,19 @@ class AuthenticatedView(ModelView):
         return current_user.is_authenticated and current_user.user_role.name == 'ADMIN'
 
 
-# truy cập được khi đã đăng nhập
 class AdminView(BaseView):
     def is_accessible(self):
         return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
+
+
+class ManagerView(BaseView):
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.user_role == UserRole.MANAGER
+
+
+class AdminManagerView(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated and (current_user.user_role == UserRole.ADMIN or current_user.user_role == UserRole.MANAGER)
 
 
 # tùy chỉnh trang thể loại
@@ -47,19 +57,17 @@ class CategoryView(AuthenticatedView):
 
 
 #  tùy chỉnh trang sách
-class BookView(AuthenticatedView):
+class BookView(AdminManagerView):
     column_list = ['name','quantity','price']
     column_searchable_list = ['name']
     can_view_details = True
     can_export = True
+    can_edit = True
     column_labels = {
         'name': 'Sách',
         'quantity': 'Số lượng',
         'price':'Giá'
     }
-
-    def is_accessible(self):
-        return  current_user.is_authenticated and (current_user.user_role == UserRole.ADMIN or current_user.user_role == UserRole.MANAGER)
 
 
 class UserView(AuthenticatedView):
@@ -85,7 +93,7 @@ class LogoutView(BaseView):
 # chức năng thống kê
 class StatsView(AdminView):
     @expose('/')
-    def default_view(self):
+    def stats_view(self):
         month = request.args.get('month', datetime.now().month, type=int)
         year = request.args.get('year', datetime.now().year, type=int)
 
@@ -156,10 +164,108 @@ class AddStaffView(AdminView):
         return self.render('admin/add_staff.html', err_msg=err_msg)
 
 
+# nhập sách
+class ImportBooksView(ManagerView):
+    @expose('/', methods=['GET', 'POST'])
+    def import_books(selt):
+        rule = ManageRule.query.first()
+        current_datetime = datetime.now()
+        db.session.refresh(rule)
+        if request.method == 'POST':
+            date_import = request.form.get('date_import', datetime.now().strftime('%Y-%m-%d'))
+            books = request.form.getlist('book')
+            categories = request.form.getlist('category')
+            authors = request.form.getlist('author')
+            quantities = request.form.getlist('quantity')
+
+            errors = []
+            success = []
+
+            try:
+                import_receipt = ImportReceipt(date_import=date_import, user_id=current_user.id)
+                db.session.add(import_receipt)
+
+                for book_name, category_name, author_name, quantity_str in zip(books, categories, authors, quantities):
+                    try:
+                        quantity = int(quantity_str)
+
+                        # Kiểm tra số lượng nhập tối thiểu
+                        if quantity < rule.import_quantity_min:
+                            errors.append(
+                                f"Số lượng nhập cho sách '{book_name}' phải lớn hơn hoặc bằng {rule.import_quantity_min}!")
+                            continue
+
+                        # Lấy hoặc tạo Category
+                        category = Category.query.filter_by(name=category_name).first()
+                        if not category:
+                            category = Category(name=category_name)
+                            db.session.add(category)
+
+                        # Lấy hoặc tạo Author
+                        author = Author.query.filter_by(name=author_name).first()
+                        if not author:
+                            author = Author(name=author_name)
+                            db.session.add(author)
+
+                        # Lấy hoặc tạo Book
+                        book = Book.query.filter_by(name=book_name).first()
+                        if not book:
+                            book = Book(name=book_name, category_id=category.id, author_id=author.id, quantity=0)
+                            db.session.add(book)
+
+                        if book.quantity > 300:
+                            errors.append(
+                                f"Số lượng nhập sách '{book_name}' trong kho lớn hơn 300 cuốn! ")
+                            continue
+                        else:
+                            book.quantity += quantity  # Cập nhật số lượng tồn kho
+
+                        # Tạo chi tiết hóa đơn nhập
+                        receipt_detail = ImportReceiptDetails(
+                            quantity=quantity,
+                            book_id=book.id,
+                            import_receipt=import_receipt
+                        )
+                        db.session.add(receipt_detail)
+
+                        success.append(f"Nhập thành công sách '{book_name}' với số lượng {quantity}!")
+
+                    except ValueError:
+                        errors.append(f"Số lượng '{quantity_str}' không hợp lệ cho sách '{book_name}'!")
+                    except SQLAlchemyError as e:
+                        errors.append(f"Lỗi cơ sở dữ liệu khi nhập sách '{book_name}': {str(e)}")
+
+                # Commit toàn bộ thay đổi
+                db.session.commit()
+
+                if success:
+                    flash(" ".join(success), "success")
+                if errors:
+                    flash(" ".join(errors), "danger")
+
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                flash(f"Lỗi khi tạo hóa đơn nhập: {str(e)}", "danger")
+
+            # Dùng class name hoặc route chính xác của view
+            return redirect(url_for('importbooksview.import_books'))
+
+        # Lấy dữ liệu sách
+        books = Book.query.all()
+        books_data = [{
+            "name": book.name,
+            "category": {"name": book.category.name},
+            "author": {"name": book.author.name}
+        } for book in books]
+
+        return selt.render('admin/import_books.html', current_datetime=current_datetime, rule=rule, books=books, books_data=books_data)
+
+
 admin.add_view(CategoryView(Category, db.session, name ='Thể loại'))
 admin.add_view(BookView(Book, db.session, name='Sách'))
 admin.add_view(UserView(User, db.session,name='Tài khoản'))
 admin.add_view(StatsView(name='Thống kê - báo cáo'))
 admin.add_view(ManageRuleView(name='Quy định'))
 admin.add_view(AddStaffView(name='Thêm tài khoản nhân viên'))
+admin.add_view(ImportBooksView(name='Nhập sách'))
 admin.add_view(LogoutView(name='Đăng xuất'))

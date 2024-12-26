@@ -31,11 +31,12 @@ def count_books():
     return Book.query.count()
 
 
-def auth_user(username, password, role=None):
+def auth_user(username, password, role):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
 
     u = User.query.filter(User.username.__eq__(username.strip()),
-                          User.password.__eq__(password))
+                          User.password.__eq__(password),
+                          User.active.__eq__(1))
     if role:
         u = u.filter(User.user_role.__eq__(role))
 

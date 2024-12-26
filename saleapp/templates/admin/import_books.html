@@ -1,13 +1,13 @@
-{% extends 'layout/base_manager.html' %}
+{% extends 'admin/master.html' %}
 
-{% block content %}
+{% block body %}
 <div class="container mt-5">
     <h1 class="text-center mb-4">Phiếu Nhập Sách</h1>
     <form method="POST">
         <div class="mb-3">
             <label for="date_import" class="form-label">Ngày nhập:</label>
             <input type="date" id="date_import" name="date_import" class="form-control"
-                   value="{{ datetime.now().strftime('%Y-%m-%d') }}" required readonly>
+                   value="{{ current_datetime.strftime('%Y-%m-%d') }}" required readonly>
         </div>
         <hr>
         <table class="table table-bordered table-striped" id="importTable">
