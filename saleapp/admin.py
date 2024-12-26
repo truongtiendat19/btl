@@ -23,7 +23,14 @@ admin = Admin(app, name='404 NOT FOUND', template_mode='bootstrap4', index_view=
 # kiểm tra đăng nhập vai trò admin
 class AuthenticatedView(ModelView):
     def is_accessible(self):
-        return current_user.is_authenticated and current_user.user_role.__eq__(UserRole.ADMIN)
+
+        return current_user.is_authenticated and current_user.user_role.name == 'ADMIN'
+
+
+# truy cập được khi đã đăng nhập
+class AdminView(BaseView):
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
 
 
 # tùy chỉnh trang thể loại
@@ -52,9 +59,7 @@ class BookView(AuthenticatedView):
     }
 
     def is_accessible(self):
-        return current_user.is_authenticated and (
-                current_user.user_role == UserRole.ADMIN or current_user.user_role == UserRole.MANAGER
-        )
+        return  current_user.is_authenticated and (current_user.user_role == UserRole.ADMIN or current_user.user_role == UserRole.MANAGER)
 
 
 class UserView(AuthenticatedView):
@@ -69,22 +74,16 @@ class UserView(AuthenticatedView):
     }
 
 
-# truy cập được khi đã đăng nhập
-class MyView(BaseView):
-    def is_accessible(self):
-        return current_user.is_authenticated
-
-
 # đăng xuất
-class LogoutView(MyView):
+class LogoutView(BaseView):
     @expose("/")
     def index(self):
         logout_user()
-        return redirect('/admin')
+        return redirect('/logout_staff')
 
 
 # chức năng thống kê
-class StatsView(MyView):
+class StatsView(AdminView):
     @expose('/')
     def default_view(self):
         month = request.args.get('month', datetime.now().month, type=int)
@@ -103,7 +102,7 @@ class StatsView(MyView):
 
 
 # chức năng thay đổi quy định
-class ManageRuleView(MyView):
+class ManageRuleView(AdminView):
     @expose('/', methods=['GET', 'POST'])
     def manage_view(self):
         rule = ManageRule.query.first()  # Lấy quy định đầu tiên (vì có thể chỉ cần một bản ghi)
@@ -134,7 +133,8 @@ class ManageRuleView(MyView):
         return self.render('admin/manage_rules.html', rule=rule)
 
 
-class AddStaffView(MyView):
+# thêm tài khoản
+class AddStaffView(AdminView):
     @expose('/', methods=['GET', 'POST'])
     def add_staff(self):
         err_msg = ''

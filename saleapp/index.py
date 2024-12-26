@@ -1,4 +1,5 @@
 import math
+from functools import wraps
 from flask import render_template, request, redirect, session, jsonify, url_for, flash
 import dao, utils
 from saleapp import app, login, db
@@ -6,6 +7,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails,Book, ManageRule
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
+
 
 # TRANG HOÁ ĐƠN
 
@@ -32,57 +34,65 @@ def login_process():
     return render_template('login.html')
 
 
+def role_required(role):
+    def wrapper(func):
+        @wraps(func)
+        def decorated_view(*args, **kwargs):
+
+            if not current_user.is_authenticated:
+                return redirect(url_for('login_staff_process'))
+
+            if current_user.user_role.name != role:
+                return redirect(url_for('login_staff_process'))
+
+            return func(*args, **kwargs)
+        return decorated_view
+    return wrapper
+
+
 @app.route('/staff', methods=['GET', 'POST'])
-def login_staff_manager_process():
+def login_staff_process():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
 
-        # Xác thực đăng nhập
-        u = dao.auth_user(username=username, password=password, role=UserRole.MANAGER)
-        if u:
-            login_user(u)
-            return redirect('/manager_dashboard')
-        else:
-            u = dao.auth_user(username=username, password=password, role=UserRole.STAFF)
+
+        for role in [UserRole.MANAGER, UserRole.STAFF, UserRole.ADMIN]:
+            u = dao.auth_user(username=username, password=password, role=role)
             if u:
                 login_user(u)
-                return redirect('/sale')
+
+                if role == UserRole.MANAGER:
+                    return redirect('/manager_dashboard')
+                elif role == UserRole.STAFF:
+                    return redirect('/sale')
+                elif role == UserRole.ADMIN:
+                    return redirect('/admin')
 
     return render_template('login_staff_manager.html')
 
 
 @app.route('/sale')
 @login_required
+@role_required('STAFF')
 def sale():
-    if current_user.user_role != 'STAFF':
-        next = request.args.get('next')
-        return redirect('/' if next is None else next)
-
     return render_template('/sale.html', user=current_user)
 
 
 @app.route('/manager_dashboard')
 @login_required
+@role_required('MANAGER')
 def manager_dashboard():
-    if current_user.user_role != 'MANAGER':
-        next = request.args.get('next')
-        return redirect('/' if next is None else next)
-
-
-    books = Book.query.all()  # Lấy danh sách sách từ database
+    books = Book.query.all()
     return render_template('/manager_dashboard.html', user=current_user, books=books)
 
 
 @app.route('/import_books', methods=['GET', 'POST'])
+@login_required
+@role_required('MANAGER')
 def import_books():
-    if current_user.user_role != 'MANAGER':
-        next = request.args.get('next')
-        return redirect('/' if next is None else next)
-
-    rule = ManageRule.query.first()  # Lấy quy định hiện tại
+    rule = ManageRule.query.first()
     db.session.refresh(rule)
-
     if request.method == 'POST':
         date_import = request.form.get('date_import', datetime.now().strftime('%Y-%m-%d'))
         books = request.form.getlist('book')
@@ -103,7 +113,8 @@ def import_books():
 
                     # Kiểm tra số lượng nhập tối thiểu
                     if quantity < rule.import_quantity_min:
-                        errors.append(f"Số lượng nhập cho sách '{book_name}' phải lớn hơn hoặc bằng {rule.import_quantity_min}!")
+                        errors.append(
+                            f"Số lượng nhập cho sách '{book_name}' phải lớn hơn hoặc bằng {rule.import_quantity_min}!")
                         continue
 
                     # Lấy hoặc tạo Category
@@ -167,10 +178,9 @@ def import_books():
 
 
 @app.route('/manage_books', methods=['GET', 'POST'])
+@login_required
+@role_required('MANAGER')
 def manage_books():
-    if current_user.user_role != 'MANAGER':
-        next = request.args.get('next')
-        return redirect('/' if next is None else next)
 
     return render_template('manage_books.html')
 
@@ -208,18 +218,6 @@ def add_comment(book_id):
             "avatar": c.user.avatar
         }
     })
-
-
-@app.route("/login-admin", methods=['post'])
-def login_admin_process():
-    username = request.form.get('username')
-    password = request.form.get('password')
-
-    u = dao.auth_user(username=username, password=password, role=UserRole.ADMIN)
-    if u:
-        login_user(u)
-
-    return redirect('/admin')
 
 
 @app.route("/logout")
@@ -333,7 +331,6 @@ def common_response_data():
         'categories': dao.load_categories(),
         'cart_stats': utils.cart_stats(session.get('cart'))
     }
-
 
 
 if __name__ == '__main__':

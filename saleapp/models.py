@@ -1,6 +1,6 @@
 
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, DateTime
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, DateTime, Boolean
 from saleapp import db, app
 from enum import Enum as RoleEnum
 import hashlib
@@ -9,10 +9,10 @@ from datetime import datetime
 
 
 class UserRole(RoleEnum):
-    ADMIN = 1
-    MANAGER = 2
-    STAFF = 3
-    CUSTOMER =4
+    ADMIN = "ADMIN"
+    MANAGER = "MANAGER"
+    STAFF = "STAFF"
+    CUSTOMER = "CUSTOMER"
 
 
 # người dùng
@@ -27,6 +27,8 @@ class User(db.Model, UserMixin):
     bills = relationship('Bill', backref='user', lazy=True)
     import_receipts = relationship('ImportReceipt', backref='user', lazy=True)
     user_role = Column(Enum(UserRole), nullable=False, default='CUSTOMER')
+    active = Column(Boolean, default=True)
+
 
 # thể loại
 class Category(db.Model):

@@ -1,8 +1,9 @@
+
 {% extends 'admin/master.html' %}
 
 {% block body %}
 
-{% if current_user.is_authenticated and current_user.user_role == 'ADMIN' %}
+{% if current_user.user_role.name == 'ADMIN' %}
 <br><br>
 <div class=" justify-content-center align-items-center vh-100">
     <br>
@@ -37,35 +38,12 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Chuẩn bị dữ liệu từ backend
-let data = [];
-let labels = [];
-{% for s in cates %}
-    data.push({{ s[2] }});
-    labels.push('{{ s[1] }}');
-{% endfor %}
-
-</script>
-
-{% else %}
-<div class="container d-flex justify-content-center align-items-center vh-100">
-    <div class="card p-4 shadow-lg" style="width: 100%; max-width: 400px;">
-        <h3 class="text-center text-primary mb-4">Đăng nhập</h3>
-        <form method="post" action="/login-admin">
-            <div class="form-floating mb-3">
-                <input required type="text" class="form-control" id="username" placeholder="Tên đăng nhập" name="username">
-            </div>
-            <div class="form-floating mb-3">
-                <input required type="password" class="form-control" id="pwd" placeholder="Mật khẩu" name="password">
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
-        </form>
-    </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-        crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment-with-locales.min.js"></script>
-
+    let data = [];
+    let labels = [];
+    {% for s in cates %}
+        data.push({{ s[2] }});
+        labels.push('{{ s[1] }}');
+    {% endfor %}
 {% endif %}
+</script>
 {% endblock %}
