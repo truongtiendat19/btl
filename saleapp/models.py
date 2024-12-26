@@ -26,7 +26,7 @@ class User(db.Model, UserMixin):
     comments = relationship('Comment', backref='user', lazy=True)
     bills = relationship('Bill', backref='user', lazy=True)
     import_receipts = relationship('ImportReceipt', backref='user', lazy=True)
-    user_role = Column(Enum(UserRole), nullable=False)
+    user_role = Column(Enum(UserRole), nullable=False, default='CUSTOMER')
 
 # thể loại
 class Category(db.Model):

@@ -3,7 +3,7 @@ from flask import render_template, request, redirect, session, jsonify, url_for,
 import dao, utils
 from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required, current_user
-from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, Bill,BillDetails,Book, ManageRule
+from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails,Book, ManageRule
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -34,7 +34,6 @@ def login_process():
 
 @app.route('/staff', methods=['GET', 'POST'])
 def login_staff_manager_process():
-    books = Book.query.all()  # Lấy danh sách sách từ database
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -43,19 +42,44 @@ def login_staff_manager_process():
         u = dao.auth_user(username=username, password=password, role=UserRole.MANAGER)
         if u:
             login_user(u)
-            return render_template('/manager_dashboard.html', user=current_user, books=books)
+            return redirect('/manager_dashboard')
         else:
             u = dao.auth_user(username=username, password=password, role=UserRole.STAFF)
             if u:
                 login_user(u)
-                return render_template('/sale.html', user=current_user)
+                return redirect('/sale')
 
     return render_template('login_staff_manager.html')
 
 
+@app.route('/sale')
+@login_required
+def sale():
+    if current_user.user_role != 'STAFF':
+        next = request.args.get('next')
+        return redirect('/' if next is None else next)
+
+    return render_template('/sale.html', user=current_user)
+
+
+@app.route('/manager_dashboard')
+@login_required
+def manager_dashboard():
+    if current_user.user_role != 'MANAGER':
+        next = request.args.get('next')
+        return redirect('/' if next is None else next)
+
+
+    books = Book.query.all()  # Lấy danh sách sách từ database
+    return render_template('/manager_dashboard.html', user=current_user, books=books)
+
 
 @app.route('/import_books', methods=['GET', 'POST'])
 def import_books():
+    if current_user.user_role != 'MANAGER':
+        next = request.args.get('next')
+        return redirect('/' if next is None else next)
+
     rule = ManageRule.query.first()  # Lấy quy định hiện tại
     db.session.refresh(rule)
 
@@ -142,9 +166,11 @@ def import_books():
     return render_template('import_books.html', datetime=datetime, rule=rule, books=books, books_data=books_data)
 
 
-
 @app.route('/manage_books', methods=['GET', 'POST'])
 def manage_books():
+    if current_user.user_role != 'MANAGER':
+        next = request.args.get('next')
+        return redirect('/' if next is None else next)
 
     return render_template('manage_books.html')
 

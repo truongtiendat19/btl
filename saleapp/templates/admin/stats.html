@@ -1,7 +1,8 @@
 {% extends 'admin/master.html' %}
 {% block body %}
+<br>
 <h1 class="text-center text-primary">Thống kê và báo cáo</h1>
-
+<br>
 <!-- Bộ lọc tháng và năm -->
 <form method="get" class="mb-3">
     <label>Chọn tháng:</label>
@@ -48,7 +49,6 @@
         <canvas id="revenueChart"></canvas>
     </div>
 </div>
-
 <hr>
 
 <div class="row">
@@ -113,7 +113,7 @@
         data: {
             labels: frequencyLabels,
             datasets: [{
-                label: 'Tần suất',
+                label: 'Số lượng',
                 data: frequencyData,
                 backgroundColor: ['red', 'green', 'yellow', 'orange', 'purple'],
             }]

@@ -2,35 +2,38 @@
 
 {% block body %}
 
-{% if current_user.is_authenticated %}
-<h1 class="text-info mt-1">CHÀO MỪNG ĐẾN VỚI TRANG QUẢN TRỊ!</h1>
-<h2 class="text-danger">Chào {{ current_user.name }}.</h2>
-
-<div class="row">
-    <div class="col-md-6 col-12">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Tên sách</th>
-                    <th>Số đầu sách</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for s in cates %}
-                <tr>
-                    <td>{{ s[0] }}</td>
-                    <td>{{ s[1] }}</td>
-                    <td>{{ s[2] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <div class="col-md-6 col-12">
-        <canvas id="myChart" style="max-height: 400px;"></canvas>
+{% if current_user.is_authenticated and current_user.user_role == 'ADMIN' %}
+<br><br>
+<div class=" justify-content-center align-items-center vh-100">
+    <br>
+    <div class="container text-center">
+        <h2 class="text-info">Chào {{ current_user.name }} đến với trang Quản Trị Viên !!!</h2>
+        <br>
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-12">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Thể loại</th>
+                            <th>Số đầu sách</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in cates %}
+                        <tr>
+                            <td>{{ s[0] }}</td>
+                            <td>{{ s[1] }}</td>
+                            <td>{{ s[2] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -42,57 +45,12 @@ let labels = [];
     labels.push('{{ s[1] }}');
 {% endfor %}
 
-// Hàm vẽ biểu đồ
-function drawChart(ctx, data, labels) {
-    new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Tỉ lệ sách',
-                data: data,
-                backgroundColor: [
-                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#2E86C1'
-                ],
-                hoverBackgroundColor: [
-                    '#FF6384AA', '#36A2EBAA', '#FFCE56AA', '#4BC0C0AA', '#9966FFAA', '#FF9F40AA', '#2E86C1AA'
-                ],
-                borderWidth: 1,
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(tooltipItem) {
-                            let value = tooltipItem.raw;
-                            let total = data.reduce((acc, val) => acc + val, 0);
-                            let percentage = ((value / total) * 100).toFixed(1);
-                            return `${tooltipItem.label}: ${value} (${percentage}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Tự động vẽ biểu đồ khi trang được tải
-window.onload = function() {
-    const ctx = document.getElementById('myChart').getContext('2d');
-    drawChart(ctx, data, labels);
-}
 </script>
 
 {% else %}
 <div class="container d-flex justify-content-center align-items-center vh-100">
     <div class="card p-4 shadow-lg" style="width: 100%; max-width: 400px;">
-        <h3 class="text-center text-success mb-4">Đăng nhập</h3>
+        <h3 class="text-center text-primary mb-4">Đăng nhập</h3>
         <form method="post" action="/login-admin">
             <div class="form-floating mb-3">
                 <input required type="text" class="form-control" id="username" placeholder="Tên đăng nhập" name="username">
@@ -100,7 +58,7 @@ window.onload = function() {
             <div class="form-floating mb-3">
                 <input required type="password" class="form-control" id="pwd" placeholder="Mật khẩu" name="password">
             </div>
-            <button type="submit" class="btn btn-success w-100">Đăng nhập</button>
+            <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
         </form>
     </div>
 </div>
