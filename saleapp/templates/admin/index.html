@@ -8,79 +8,106 @@
 
 <div class="row">
     <div class="col-md-6 col-12">
-        <table class="table">
-            <tr>
-                <th>STT</th>
-                <th>Tên sách</th>
-                <th>Số sản phẩm</th>
-            </tr>
-            {% for s in cates %}
-            <tr>
-                <td>{{ s[0] }}</td>
-                <td>{{ s[1] }}</td>
-                <td>{{ s[2] }}</td>
-            </tr>
-            {% endfor %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Tên sách</th>
+                    <th>Số đầu sách</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in cates %}
+                <tr>
+                    <td>{{ s[0] }}</td>
+                    <td>{{ s[1] }}</td>
+                    <td>{{ s[2] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
     <div class="col-md-6 col-12">
-        <canvas id="myChart"></canvas>
+        <canvas id="myChart" style="max-height: 400px;"></canvas>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-
+// Chuẩn bị dữ liệu từ backend
 let data = [];
 let labels = [];
- {% for s in cates %}
- data.push({{s[2]}});
- labels.push('{{s[1]}}');
- {% endfor %}
+{% for s in cates %}
+    data.push({{ s[2] }});
+    labels.push('{{ s[1] }}');
+{% endfor %}
 
-
-function draw(ctx, data, labels) {
+// Hàm vẽ biểu đồ
+function drawChart(ctx, data, labels) {
     new Chart(ctx, {
         type: 'pie',
         data: {
-          labels: labels,
-          datasets: [{
-            label: '# Doanh thu',
-            data: data,
-            borderWidth: 1,
-            backgroundColor: ['red', 'green', 'blue', 'gold', 'brown']
-          }]
+            labels: labels,
+            datasets: [{
+                label: 'Tỉ lệ sách',
+                data: data,
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#2E86C1'
+                ],
+                hoverBackgroundColor: [
+                    '#FF6384AA', '#36A2EBAA', '#FFCE56AA', '#4BC0C0AA', '#9966FFAA', '#FF9F40AA', '#2E86C1AA'
+                ],
+                borderWidth: 1,
+            }]
         },
         options: {
-          scales: {
-            y: {
-              beginAtZero: true
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(tooltipItem) {
+                            let value = tooltipItem.raw;
+                            let total = data.reduce((acc, val) => acc + val, 0);
+                            let percentage = ((value / total) * 100).toFixed(1);
+                            return `${tooltipItem.label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
             }
-          }
         }
-      });
+    });
 }
 
+// Tự động vẽ biểu đồ khi trang được tải
 window.onload = function() {
-    const ctx = document.getElementById('myChart');
-
-          draw(ctx, data, labels);
+    const ctx = document.getElementById('myChart').getContext('2d');
+    drawChart(ctx, data, labels);
 }
 </script>
 
 {% else %}
-<h1 class="text-center text-info mt-1">ĐĂNG NHẬP QUẢN TRỊ</h1>
-<form method="post" action="/login-admin">
-    <div class="form-floating mb-3 mt-3">
-        <label for="username">Tên đăng nhập</label>
-        <input type="text" class="form-control" id="username" placeholder="Tên đăng nhập" name="username" />
+<div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="card p-4 shadow-lg" style="width: 100%; max-width: 400px;">
+        <h3 class="text-center text-success mb-4">Đăng nhập</h3>
+        <form method="post" action="/login-admin">
+            <div class="form-floating mb-3">
+                <input required type="text" class="form-control" id="username" placeholder="Tên đăng nhập" name="username">
+            </div>
+            <div class="form-floating mb-3">
+                <input required type="password" class="form-control" id="pwd" placeholder="Mật khẩu" name="password">
+            </div>
+            <button type="submit" class="btn btn-success w-100">Đăng nhập</button>
+        </form>
     </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment-with-locales.min.js"></script>
 
-    <div class="form-floating mt-3 mb-3">
-        <label for="pwd">Mật khẩu</label>
-        <input type="password" class="form-control" id="pwd" placeholder="Mật khẩu" name="password" />
-    </div>
-    <button type="submit" class="btn btn-primary">Đăng nhập</button>
-</form>
 {% endif %}
 {% endblock %}

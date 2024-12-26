@@ -149,44 +149,6 @@ def manage_books():
     return render_template('manage_books.html')
 
 
-@app.route('/admin/manage_rules', methods=['GET', 'POST'])
-def manage_rules():
-    rule = ManageRule.query.first()  # Lấy quy định đầu tiên (vì có thể chỉ cần một bản ghi)
-
-    if request.method == 'POST':
-        try:
-            # Lấy dữ liệu từ form
-            import_quantity_min = int(request.form.get('import_quantity_min'))
-            quantity_min = int(request.form.get('quantity_min'))
-            cancel_time = int(request.form.get('cancel_time'))
-
-            # Nếu chưa tồn tại quy định, tạo mới
-            if not rule:
-                rule = ManageRule(
-                    import_quantity_min=import_quantity_min,
-                    quantity_min=quantity_min,
-                    cancel_time=cancel_time,
-                    updated_date=datetime.now()
-                )
-                db.session.add(rule)
-            else:
-                # Cập nhật quy định hiện có
-                rule.import_quantity_min = import_quantity_min
-                rule.quantity_min = quantity_min
-                rule.cancel_time = cancel_time
-                rule.updated_date = datetime.now()
-
-            db.session.commit()
-            flash("Cập nhật quy định thành công!", "success")
-        except Exception as e:
-            db.session.rollback()
-            flash(f"Lỗi khi cập nhật quy định: {str(e)}", "danger")
-
-        return redirect(url_for('manage_rules'))
-
-    return render_template('manage_rules.html', rule=rule)
-
-
 @app.route("/")
 def index():
     # fi
