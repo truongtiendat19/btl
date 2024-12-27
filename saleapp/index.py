@@ -14,7 +14,7 @@ from threading import Thread
 import time
 from sqlalchemy.exc import SQLAlchemyError
 from saleapp.models import UserRole,Book
-
+from apscheduler.schedulers.background import BackgroundScheduler
 
 @app.route('/api/books', methods=['GET'])
 def get_books():
@@ -67,17 +67,64 @@ def import_bill():
         db.session.commit()
 
         return jsonify({"message": "Hóa đơn được lưu thành công!"}), 200
-
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": f"Đã xảy ra lỗi: {str(e)}"}), 500
 
+@app.route('/api/order', methods=['POST'])
+def create_order():
+    data = request.get_json()
 
-@app.route('/ds')
-def ds():
-    return render_template('DS.html')
+    user_id = current_user.id
+    customer_phone = data.get('customer_phone')
+    customer_address = data.get('customer_address')
+    payment_method = data.get('payment_method') == 'Online'  # Chuyển thành boolean
+    delivery_method = data.get('delivery_method')
+    book_orders = data.get('book_orders')
+    # Tính tổng tiền đơn hàng
+    receipt_details = []
+
+    for book_order in book_orders:
+        book_id = book_order.get('book_id')
+        quantity = book_order.get('quantity')
+
+        book = Book.query.get(book_id)
+        if not book:
+            return jsonify({"message": f"Sách với ID {book_id} không tồn tại!"}), 400
 
 
+        receipt_detail = ReceiptDetails(quantity=quantity, unit_price=book.price, book_id=book.id)
+        receipt_details.append(receipt_detail)
+
+    # Tạo thời gian hết hạn (48 giờ sau khi đặt hàng)
+
+
+    new_receipt = Receipt(
+        customer_phone=customer_phone,
+        customer_address=customer_address,
+        payment_method=payment_method,
+        delivery_method=delivery_method,
+        user_id=user_id,
+        details=receipt_details
+    )
+
+    db.session.add(new_receipt)
+    db.session.commit()
+
+    return jsonify({"message": "Đặt sách thành công!"}), 200
+def cancel_expired_orders():
+    """Hủy các đơn hàng đã hết hạn"""
+    expired_receipts = Receipt.query.filter(Receipt.status == 'Pending', Receipt.expiry_date < datetime.now()).all()
+    for receipt in expired_receipts:
+        receipt.status = 'Cancelled'
+        db.session.commit()
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(cancel_expired_orders, 'interval', hours=1)  # Kiểm tra mỗi giờ
+scheduler.start()
+
+
+# đặt sách
 @app.route('/login', methods=['GET', 'POST'])
 def login_process():
     if request.method == 'POST':
@@ -256,17 +303,26 @@ def delete_cart(book_id):
     return jsonify(utils.cart_stats(cart))
 
 
-@app.route("/api/pay", methods=['post'])
+@app.route("/api/pay", methods=['post','get'])
 @login_required
 def pay():
-    cart = session.get('cart')
-    try:
-        dao.add_receipt(cart)
-    except Exception as ex:
-        return jsonify({'status': 500, 'msg': str(ex)})
-    else:
-        del session['cart']
-        return jsonify({'status': 200, 'msg': 'successful'})
+    if  request.method.__eq__('POST'):
+        data = request.get_json()
+        cart = session.get('cart')
+        customer_phone = data.get('customer_phone')
+        customer_address = data.get('customer_address')
+        payment_method = data.get('payment_method') == 'Online'  # Chuyển thành boolean
+        delivery_method = data.get('delivery_method')
+        dao.add_receipt(cart,customer_phone,customer_address,payment_method ,delivery_method)
+        return redirect('/')
+    # try:
+    #     dao.add_receipt(cart)
+    # except Exception as ex:
+    #     return jsonify({'status': 500, 'msg': str(ex)})
+    # else:
+    #     del session['cart']
+    #     return jsonify({'status': 200, 'msg': 'successful'})
+    return render_template('order_books.html',user=current_user)
 
 
 @app.route('/cart')

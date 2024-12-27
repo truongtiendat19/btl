@@ -34,7 +34,7 @@
 
     {% if current_user.is_authenticated %}
     <div class="mt-1">
-        <button class="btn btn-success" onclick="pay()">Thanh toán</button>
+        <button class="btn btn-success" onclick="window.location.href='/api/pay'">Thanh toán</button>
     </div>
     {% else %}
     <p>Vui lòng <a href="/login?next=/cart">đăng nhập</a> để thanh toán!</p>

@@ -56,14 +56,14 @@ def add_user(name, username, password, avatar, user_role=None):
     db.session.commit()
 
 
-def add_receipt(cart):
+def add_receipt(cart, customer_phone,customer_address,payment_method ,delivery_method):
     if cart:
-        r = Receipt(user=current_user)
+        r = Receipt(user=current_user, customer_phone=customer_phone,customer_address=customer_address,payment_method=payment_method,delivery_method=delivery_method)
         db.session.add(r)
 
         for c in cart.values():
             d = ReceiptDetails(quantity=c['quantity'], unit_price=c['price'],
-                               book_id=c['id'], receipt=r)
+                               book_id=c['id'], receipt=r.id)
             db.session.add(d)
 
         db.session.commit()

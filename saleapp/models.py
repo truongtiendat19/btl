@@ -76,7 +76,11 @@ class Receipt(db.Model):
     created_date = Column(DateTime, default=datetime.now, nullable=False)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     details = relationship('ReceiptDetails', backref='receipt', lazy=True, cascade="all, delete-orphan")
-
+    customer_phone = Column(String(20), nullable=False)
+    customer_address = Column(db.String(255), nullable=False)
+    payment_method = Column(Boolean, nullable=False)
+    delivery_method = Column(String(50), nullable=False)
+    status = Column(String(50), default="Pending")  # Trạng thái đơn hàng: 'Pending', 'Cancelled', 'Completed'
 
 
 # chi tiết hóa đơn trực tuyến
