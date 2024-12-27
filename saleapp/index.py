@@ -7,7 +7,7 @@ import dao, utils
 from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required, current_user
 from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, ManageRule,ReceiptDetails,Receipt
-from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, Bill,BillDetails,Book,Order
+from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, Bill,BillDetails,Book
 from datetime import datetime,timedelta
 import random
 from threading import Thread
@@ -73,37 +73,9 @@ def import_bill():
         return jsonify({"message": f"Đã xảy ra lỗi: {str(e)}"}), 500
 
 
-# TRANG HOÁ ĐƠN
-scheduler = BackgroundScheduler()
-
-def check_and_cancel_orders():
-    current_time = datetime.utcnow()
-    expired_time = current_time - timedelta(hours=48)
-
-    # Lọc các đơn hàng quá hạn
-    expired_orders = Order.query.filter(
-        Order.order_time < expired_time,
-        Order.status == 'pending',
-        Order.payment_status == 'unpaid'
-    ).all()
-
-    for order in expired_orders:
-        order.status = 'cancelled'
-        db.session.commit()
-
-# Khởi động APScheduler ngay khi ứng dụng được tạo
-scheduler.add_job(check_and_cancel_orders, 'interval', hours=1)
-scheduler.start()
-
-@app.teardown_appcontext
-def shutdown_scheduler(exception=None):
-    if scheduler.running:
-        scheduler.shutdown()
-
 @app.route('/ds')
 def ds():
     return render_template('DS.html')
-
 
 
 @app.route('/login', methods=['GET', 'POST'])
