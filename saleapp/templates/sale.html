@@ -79,6 +79,10 @@
     </style>
 </head>
 <body>
+<div class="d-flex justify-content-end align-items-center" style="position: absolute; top: 0; right: 0; padding: 10px;">
+    <button type="button" class="btn btn-danger" onclick="window.location.href='/logout_staff'">Đăng xuất</button>
+</div>
+
 <div class="container invoice-container">
     <div class="invoice-header">
         <h2>Hóa Đơn Bán Sách</h2>
@@ -93,7 +97,7 @@
         </div>
         <div class="col-md-6">
             <label for="staff-name" class="form-label">Nhân Viên Thanh Toán:</label>
-            <input type="text" id="staff-name" class="form-control" placeholder="Nhập tên nhân viên" required>
+            <input type="text" id="staff-name" value="{{current_user.name}}" class="form-control" placeholder="Nhập tên nhân viên" readonly required>
         </div>
     </div>
 
