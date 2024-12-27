@@ -1,8 +1,11 @@
+/* Màu nền */
 body {
-    background-color: rgba(207, 225, 185, 1);
-    color: darkblue;
+    background: linear-gradient(to right, #e9f5e9, #c4e8c4);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
 }
-/* Container Row */
+
+/* Thiết kế Container Row */
 .row {
     display: flex;
     flex-wrap: wrap;
@@ -14,7 +17,7 @@ body {
 /* Card Tổng Quan */
 .card {
     border: none;
-    border-radius: 10px;
+    border-radius: 15px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     overflow: hidden;
@@ -49,7 +52,7 @@ body {
 
 .card-text {
     font-size: 16px;
-    color: #e53935;
+    color: #218838; /* Màu xanh đậm */
     font-weight: bold;
     margin-bottom: 15px;
 }
@@ -61,14 +64,14 @@ body {
     font-size: 14px;
 }
 
-.btn-primary {
-    background-color: #007bff;
+.btn-success {
+    background-color: #28a745; /* Xanh lá chính */
     border: none;
     transition: background-color 0.3s ease;
 }
 
-.btn-primary:hover {
-    background-color: #0056b3;
+.btn-success:hover {
+    background-color: #218838; /* Xanh lá đậm hơn khi hover */
 }
 
 .btn-danger {
@@ -81,31 +84,18 @@ body {
     background-color: #b71c1c;
 }
 
-body {
-    background: linear-gradient(to right, #e9f5e9, #c4e8c4);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.card {
-    border: none;
-    border-radius: 15px;
-}
-
-.btn-success {
-    background-color: #28a745;
-    border: none;
-}
-
-.btn-success:hover {
-    background-color: #218838;
-}
-
+/* Hiệu ứng cho các ô nhập liệu */
 .form-control:focus {
     border-color: #28a745;
     box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
 }
 
+/* Liên kết */
 a {
     text-decoration: none;
     color: #28a745;
+}
+
+a:hover {
+    color: #218838;
 }
