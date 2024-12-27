@@ -39,16 +39,9 @@
             width: 100%;
             margin-bottom: 30px;
         }
-        .invoice-table td input,
-        .invoice-table td select {
-            text-align: center;
-        }
         .form-control {
             border-radius: 8px;
             box-shadow: none;
-        }
-        .form-label {
-            font-weight: bold;
         }
         .total-amount {
             font-size: 1.6em;
@@ -60,20 +53,6 @@
             display: flex;
             justify-content: flex-end;
             margin-top: 20px;
-        }
-        .action-buttons button {
-            margin-left: 15px;
-        }
-        .invoice-footer {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 30px;
-            font-size: 1em;
-            color: #555;
-        }
-        .invoice-footer div {
-            font-size: 1.1em;
-            font-weight: bold;
         }
         .remove-book-row {
             background-color: #f44336;
@@ -106,23 +85,19 @@
         <span>Ngày Lập: <span id="invoice-date-display"></span></span>
     </div>
 
-    <!-- Thông tin khách hàng -->
+    <!-- Customer Information -->
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="mb-3">
-                <label for="customer-name" class="form-label">Họ Tên Khách Hàng:</label>
-                <input type="text" id="customer-name" class="form-control" placeholder="Nhập họ tên khách hàng">
-            </div>
+            <label for="customer-name" class="form-label">Họ Tên Khách Hàng:</label>
+            <input type="text" id="customer-name" class="form-control" placeholder="Nhập họ tên khách hàng" required>
         </div>
         <div class="col-md-6">
-            <div class="mb-3">
-                <label for="staff-name" class="form-label">Nhân Viên Thanh Toán:</label>
-                <input type="text" id="staff-name" class="form-control" readonly>
-            </div>
+            <label for="staff-name" class="form-label">Nhân Viên Thanh Toán:</label>
+            <input type="text" id="staff-name" class="form-control" placeholder="Nhập tên nhân viên" required>
         </div>
     </div>
 
-    <!-- Bảng chi tiết hóa đơn -->
+    <!-- Invoice Table -->
     <div class="mb-4 text-end">
         <button type="button" id="add-book-row" class="add-book-btn">Thêm Sách</button>
     </div>
@@ -142,12 +117,12 @@
         </tbody>
     </table>
 
-    <!-- Tổng tiền -->
+    <!-- Total Amount -->
     <div class="total-amount">
         Tổng Tiền: <span id="total-amount">0 VNĐ</span>
     </div>
 
-    <!-- Nút chức năng -->
+    <!-- Action Buttons -->
     <div class="action-buttons">
         <button type="button" id="save-invoice" class="btn btn-success">Lưu Hóa Đơn</button>
         <button type="button" id="cancel-invoice" class="btn btn-danger">Hủy Hóa Đơn</button>
@@ -169,7 +144,7 @@
         const fetchBooks = async () => {
             try {
                 const response = await fetch('/api/books');
-                if (!response.ok) throw new Error("Error fetching books data");
+                if (!response.ok) throw new Error("Lỗi khi tải danh sách sách.");
                 return await response.json();
             } catch (error) {
                 console.error(error);
@@ -199,21 +174,11 @@
                         ${books.map(book => `<option value="${book.id}" data-category="${book.category}" data-price="${book.price}">${book.name}</option>`).join('')}
                     </select>
                 </td>
-                <td>
-                    <input type="text" class="form-control category" readonly>
-                </td>
-                <td>
-                    <input type="number" class="form-control quantity" min="1" value="1">
-                </td>
-                <td>
-                    <input type="text" class="form-control price" readonly>
-                </td>
-                <td>
-                    <input type="text" class="form-control total" readonly>
-                </td>
-                <td>
-                    <button type="button" class="remove-book-row">-</button>
-                </td>
+                <td><input type="text" class="form-control category" readonly></td>
+                <td><input type="number" class="form-control quantity" min="1" value="1"></td>
+                <td><input type="text" class="form-control price" readonly></td>
+                <td><input type="text" class="form-control total" readonly></td>
+                <td><button type="button" class="remove-book-row">-</button></td>
             `;
 
             const bookSelect = row.querySelector('.book-select');
@@ -265,30 +230,39 @@
         };
 
         const saveInvoice = async () => {
-            const invoiceData = getInvoiceData();
+            const data = getInvoiceData();
+            if (!data.customerName || data.details.length === 0) {
+                alert("Vui lòng nhập đầy đủ thông tin hóa đơn.");
+                return;
+            }
 
-            const response = await fetch('/api/invoices', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(invoiceData)
-            });
-            if (!response.ok) throw new Error("Failed to save invoice");
-            alert("Hóa đơn đã được lưu!");
-        };
+            try {
+                const response = await fetch('/import_bill', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
 
-        const cancelInvoice = () => {
-            if (confirm("Bạn có chắc chắn muốn hủy hóa đơn không?")) {
-                bookDetails.innerHTML = "";
-                totalAmountField.textContent = "0 VNĐ";
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Hóa đơn đã được lưu thành công!');
+                    window.location.reload();
+                } else {
+                    alert(result.message || 'Đã xảy ra lỗi.');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Có lỗi xảy ra khi lưu hóa đơn.');
             }
         };
 
-        saveInvoiceBtn.addEventListener("click", saveInvoice);
-        cancelInvoiceBtn.addEventListener("click", cancelInvoice);
-        addBookRowBtn.addEventListener("click", addBookRow);
+        // Event listeners
+        addBookRowBtn.addEventListener('click', addBookRow);
+        saveInvoiceBtn.addEventListener('click', saveInvoice);
+        cancelInvoiceBtn.addEventListener('click', () => window.location.reload());
     });
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

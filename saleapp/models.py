@@ -131,7 +131,24 @@ class ManageRule(db.Model):
     cancel_time = Column(Integer, nullable=False, default=48)
     updated_date = Column(DateTime, default=datetime.now())
 
+class Invoice(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    customerName = db.Column(db.String(100), nullable=False)
+    invoiceDate = db.Column(db.String(10), nullable=False)
+    staffName = db.Column(db.String(100), nullable=False)
+    details = db.Column(db.Text, nullable=False)  # Lưu dưới dạng JSON
 
+    def __repr__(self):
+        return f"Invoice('{self.id}', '{self.customerName}')"
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    receipt_id = db.Column(db.String(50), unique=True, nullable=False)
+    customer_name = db.Column(db.String(100), nullable=False)
+    total_amount = db.Column(db.Float, nullable=False)
+    payment_method = db.Column(db.String(50), nullable=False)
+    order_time = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='pending')  # 'pending', 'cancelled', 'paid'
+    payment_status = db.Column(db.String(20), default='unpaid')  # 'unpaid', 'paid'
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

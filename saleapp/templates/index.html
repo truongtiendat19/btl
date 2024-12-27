@@ -22,9 +22,7 @@
                     <h4 class="card-title">{{ b.name }}</h4>
                     <p class="card-text">{{ b.price }} VNĐ</p>
                     <a href="/books/{{ b.id }}" class="btn btn-primary">Xem chi tiết</a>
-                    <button class="btn btn-danger booking" onclick="addToCart({{ b.id }}, '{{ b.name }}', {{ b.price }})">
-                        Đặt hàng
-                    </button>
+                    <button type="button" onclick="window.location.href='{{ url_for('ds') }}'">Đặt Sách</button>
                 </div>
             </div>
         </div>

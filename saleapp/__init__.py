@@ -7,6 +7,9 @@ import cloudinary
 # tạo ứng dụng
 app = Flask(__name__)
 
+# Đặt secret_key để bảo mật session
+app.secret_key = 'your_secret_key'
+
 # thiết lập khóa bí mật
 app.secret_key = 'ab8f61d1c7b9d0e2c6f4c8ab7314f8cfe0baf1f9732fcf80'
 

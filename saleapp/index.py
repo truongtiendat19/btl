@@ -1,21 +1,112 @@
 import math
 from flask import render_template, request, redirect, session, jsonify, url_for, flash
+from apscheduler.schedulers.background import BackgroundScheduler
 import dao, utils
 from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required, current_user
-from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, ManageRule
-from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, Bill,BillDetails,Book
-from datetime import datetime
+from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, ManageRule,ReceiptDetails,Receipt
+from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, Bill,BillDetails,Book,Order
+from datetime import datetime,timedelta
+import random
+from threading import Thread
+import time
 from sqlalchemy.exc import SQLAlchemyError
 
 # TRANG HOÁ ĐƠN
 
+# @app.route('/api/books', methods=['GET'])
+# def get_books():
+#     books = Book.query.all()
+#     data = [{"id": book.id, "name": book.name, "category": book.category.name, "price": book.price} for book in books]
+#     return jsonify(data)
 @app.route('/api/books', methods=['GET'])
 def get_books():
     books = Book.query.all()
-    data = [{"id": book.id, "name": book.name, "category": book.category.name, "price": book.price} for book in books]
-    return jsonify(data)
+    book_list = [{
+        "id": book.id,
+        "name": book.name,
+        "category": book.category.name,
+        "price": book.price
+    } for book in books]
+    return jsonify(book_list)
+
+
+@app.route('/import_bill', methods=['POST'])
+def import_bill():
+    try:
+        data = request.json
+        customer_name = data.get("customerName")
+        invoice_date = data.get("invoiceDate")
+        staff_name = data.get("staffName")
+        details = data.get("details")  # Dạng JSON chứa danh sách sách
+
+        # Tạo một hóa đơn mới
+        new_bill = Bill(
+            name_customer=customer_name,
+            created_date=datetime.strptime(invoice_date, '%Y-%m-%d'),
+            user_id=1  # Thay ID nhân viên xử lý hóa đơn tại đây
+        )
+        db.session.add(new_bill)
+        db.session.flush()  # Đảm bảo `new_bill` có ID để dùng ở bước tiếp theo
+
+        # Thêm chi tiết hóa đơn
+        for detail in details:
+            book = Book.query.get(detail.get("bookId"))
+            if not book or book.quantity < int(detail.get("quantity")):
+                return jsonify({"message": f"Sách {book.name if book else 'không xác định'} không đủ số lượng"}), 400
+
+            book.quantity -= int(detail.get("quantity"))  # Cập nhật tồn kho
+            db.session.add(book)
+
+            bill_detail = BillDetails(
+                bill_id=new_bill.id,
+                book_id=detail.get("bookId"),
+                quantity=int(detail.get("quantity")),
+                unit_price=book.price
+            )
+            db.session.add(bill_detail)
+
+        # Lưu thay đổi
+        db.session.commit()
+
+        return jsonify({"message": "Hóa đơn được lưu thành công!"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Đã xảy ra lỗi: {str(e)}"}), 500
+
+
 # TRANG HOÁ ĐƠN
+scheduler = BackgroundScheduler()
+
+def check_and_cancel_orders():
+    current_time = datetime.utcnow()
+    expired_time = current_time - timedelta(hours=48)
+
+    # Lọc các đơn hàng quá hạn
+    expired_orders = Order.query.filter(
+        Order.order_time < expired_time,
+        Order.status == 'pending',
+        Order.payment_status == 'unpaid'
+    ).all()
+
+    for order in expired_orders:
+        order.status = 'cancelled'
+        db.session.commit()
+
+# Khởi động APScheduler ngay khi ứng dụng được tạo
+scheduler.add_job(check_and_cancel_orders, 'interval', hours=1)
+scheduler.start()
+
+@app.teardown_appcontext
+def shutdown_scheduler(exception=None):
+    if scheduler.running:
+        scheduler.shutdown()
+
+@app.route('/ds')
+def ds():
+    return render_template('DS.html')
+
 
 @app.route('/login', methods=['get', 'post'])
 def login_process():
@@ -34,6 +125,9 @@ def login_process():
                 login_user(u)
                 return render_template('sale.html', user=current_user)
             else:
+                if u:
+                    login_user(u)
+                    return render_template('import_bill.html', user=current_user)
                 u = dao.auth_user(username=username, password=password)
                 if u:
                     login_user(u)
@@ -181,7 +275,6 @@ def index():
 def details(book_id):
     comments = dao.load_comments(book_id)
     return render_template('details.html', book=dao.get_book_by_id(book_id), comments=comments)
-
 
 @app.route("/api/books/<book_id>/comments", methods=['post'])
 @login_required

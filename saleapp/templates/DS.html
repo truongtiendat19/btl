@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt Sách Online</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+        }
+        form {
+            width: 80%;
+            max-width: 700px;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        input, select {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            display: block;
+            width: 100%;
+            background-color: #28a745;
+            color: white;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .error, .success {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 1.1rem;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        #free-shipping {
+            font-weight: bold;
+            color: #007bff;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Đặt Sách Online</h1>
+<form id="order-form">
+    <div class="form-group">
+        <label for="customer-name">Tên Khách Hàng</label>
+        <input type="text" id="customer-name" name="customer_name" placeholder="Nhập tên khách hàng" required>
+    </div>
+    <div class="form-group">
+        <label for="book-id">Chọn Sách</label>
+        <select id="book-id" name="book_id" required>
+            <option value="">Đang tải sách...</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="quantity">Số Lượng</label>
+        <input type="number" id="quantity" name="quantity" placeholder="Nhập số lượng" required min="1">
+    </div>
+    <div class="form-group">
+        <label for="payment-method">Phương Thức Thanh Toán</label>
+        <select id="payment-method" name="payment_method" required>
+            <option value="COD">Thanh toán khi nhận hàng</option>
+            <option value="Online">Thanh toán trực tuyến</option>
+        </select>
+    </div>
+    <div id="free-shipping" style="display: none;">Miễn phí giao hàng vì bạn chọn thanh toán trực tuyến!</div>
+    <div id="total-price" style="margin-bottom: 20px; font-size: 1.2rem; font-weight: bold;"></div>
+    <button type="submit">Đặt Sách</button>
+    <div id="message"></div>
+</form>
+
+<script>
+    // Tải sách từ API
+    document.addEventListener('DOMContentLoaded', async () => {
+        const bookSelect = document.getElementById('book-id');
+        try {
+            const response = await fetch('/api/books');
+            const books = await response.json();
+
+            // Hiển thị danh sách sách lên dropdown
+            bookSelect.innerHTML = books.map(book =>
+                `<option value="${book.id}" data-price="${book.price}" data-quantity="${book.quantity}">${book.name}</option>`
+            ).join('');
+        } catch (error) {
+            bookSelect.innerHTML = '<option value="">Lỗi tải sách</option>';
+        }
+    });
+
+    // Tính tổng giá trị đơn hàng khi thay đổi số lượng
+    document.getElementById('quantity').addEventListener('input', () => {
+        const bookSelect = document.getElementById('book-id');
+        const selectedOption = bookSelect.options[bookSelect.selectedIndex];
+        const price = parseFloat(selectedOption.dataset.price || 0);
+        const quantity = parseInt(document.getElementById('quantity').value || 0);
+        const totalPrice = price * quantity;
+
+        document.getElementById('total-price').textContent = `Tổng số tiền: ${totalPrice.toLocaleString()} VNĐ`;
+    });
+
+    // Hiển thị miễn phí giao hàng nếu thanh toán trực tuyến
+    document.getElementById('payment-method').addEventListener('change', () => {
+        const paymentMethod = document.getElementById('payment-method').value;
+        if (paymentMethod === 'Online') {
+            document.getElementById('free-shipping').style.display = 'block';
+        } else {
+            document.getElementById('free-shipping').style.display = 'none';
+        }
+    });
+
+    // Xử lý form đặt sách
+    document.getElementById('order-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const customerName = document.getElementById('customer-name').value;
+        const bookSelect = document.getElementById('book-id');
+        const selectedOption = bookSelect.options[bookSelect.selectedIndex];
+        const bookId = selectedOption.value;
+        const stockQuantity = parseInt(selectedOption.dataset.quantity || 0);
+        const quantity = parseInt(document.getElementById('quantity').value || 0);
+        const paymentMethod = document.getElementById('payment-method').value;
+
+        // Kiểm tra số lượng sách
+        if (quantity > stockQuantity) {
+            document.getElementById('message').textContent = 'Số lượng sách không đủ trong kho.';
+            document.getElementById('message').className = 'error';
+            return;
+        }
+
+        const orderData = {
+            customer_name: customerName,
+            book_id: parseInt(bookId),
+            quantity: quantity,
+            payment_method: paymentMethod
+        };
+
+        try {
+            const response = await fetch('/api/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+
+            const result = await response.json();
+            const messageElement = document.getElementById('message');
+
+            if (response.ok) {
+                messageElement.textContent = 'Đặt sách thành công! Mã đơn hàng: ' + result.receipt_id;
+                messageElement.className = 'success';
+            } else {
+                messageElement.textContent = result.error || 'Đặt sách thất bại!';
+                messageElement.className = 'error';
+            }
+        } catch (error) {
+            document.getElementById('message').textContent = 'Có lỗi xảy ra khi đặt sách.';
+            document.getElementById('message').className = 'error';
+        }
+    });
+</script>
+
+</body>
+</html>
