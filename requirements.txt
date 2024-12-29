@@ -1,101 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hóa Đơn Bán Sách</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            font-weight: bold;
-        }
-        input, button {
-            padding: 8px;
-            width: 100%;
-            margin-top: 5px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
-</head>
-<body>
-    <h1>Hóa Đơn Bán Sách</h1>
-    <form action="#" method="post">
-        <!-- Customer Name and Invoice Date -->
-        <div class="form-group">
-            <label for="customerName">Họ tên khách hàng:</label>
-            <input type="text" id="customerName" name="customerName" placeholder="Nhập tên khách hàng" required>
-        </div>
-        <div class="form-group">
-            <label for="invoiceDate">Ngày lập hóa đơn:</label>
-            <input type="date" id="invoiceDate" name="invoiceDate" required>
-        </div>
-
-        <!-- Book Details -->
-        <table>
-            <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Tên Sách</th>
-                    <th>Thể Loại</th>
-                    <th>Số Lượng</th>
-                    <th>Đơn Giá</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>1</td>
-                    <td><input type="text" name="book1Name" placeholder="Tên sách" required></td>
-                    <td><input type="text" name="book1Category" placeholder="Thể loại" required></td>
-                    <td><input type="number" name="book1Quantity" placeholder="Số lượng" required></td>
-                    <td><input type="number" name="book1Price" placeholder="Đơn giá" step="0.01" required></td>
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td><input type="text" name="book2Name" placeholder="Tên sách"></td>
-                    <td><input type="text" name="book2Category" placeholder="Thể loại"></td>
-                    <td><input type="number" name="book2Quantity" placeholder="Số lượng"></td>
-                    <td><input type="number" name="book2Price" placeholder="Đơn giá" step="0.01"></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- Payment Staff -->
-        <div class="form-group">
-            <label for="staffName">Nhân viên thanh toán:</label>
-            <input type="text" id="staffName" name="staffName" placeholder="Nhập tên nhân viên thanh toán" required>
-        </div>
-
-        <!-- Submit Button -->
-        <button type="submit">Lập hóa đơn</button>
-    </form>
-</body>
-</html>
+blinker==1.8.2
+certifi==2024.8.30
+click==8.1.7
+cloudinary==1.41.0
+colorama==0.4.6
+Flask==3.0.3
+Flask-Admin==1.6.1
+Flask-Login==0.6.3
+Flask-SQLAlchemy==3.1.1
+greenlet==3.1.1
+importlib_metadata==8.5.0
+itsdangerous==2.2.0
+Jinja2==3.1.4
+MarkupSafe==3.0.2
+PyMySQL==1.1.1
+setuptools==75.6.0
+six==1.16.0
+SQLAlchemy==2.0.36
+typing_extensions==4.12.2
+urllib3==2.2.3
+Werkzeug==3.0.6
+wheel==0.37.1
+WTForms==3.1.2
+zipp==3.21.0
