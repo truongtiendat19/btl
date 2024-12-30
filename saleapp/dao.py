@@ -55,31 +55,17 @@ def add_user(name, username, password, avatar, user_role=None):
     db.session.add(u)
     db.session.commit()
 
-def add_receipt(cart, customer_phone, customer_address, payment_method, delivery_method):
+def add_receipt(cart, customer_phone,customer_address,payment_method ,delivery_method):
     if cart:
-        # Tạo một hóa đơn mới
-        r = Receipt(user=current_user, customer_phone=customer_phone, customer_address=customer_address,
-                    payment_method=payment_method, delivery_method=delivery_method)
+        r = Receipt(user=current_user, customer_phone=customer_phone,customer_address=customer_address,payment_method=payment_method,delivery_method=delivery_method)
         db.session.add(r)
 
         for c in cart.values():
-            book = Book.query.get(c['id'])  # Lấy sách theo ID
-            if book:
-                # Kiểm tra số lượng sách trong kho, giảm số lượng nếu cần
-                if book.quantity >= c['quantity']:
-                    book.quantity -= c['quantity']
-                    db.session.add(book)
-
-                    # Lưu chi tiết đơn hàng vào bảng ReceiptDetails
-                    d = ReceiptDetails(quantity=c['quantity'], unit_price=c['price'],
-                                       book_id=c['id'], receipt_id=r.id)
-                    db.session.add(d)
-                else:
-                    raise ValueError(f"Số lượng sách '{book.name}' không đủ!")
+            d = ReceiptDetails(quantity=c['quantity'], unit_price=c['price'],
+                               book_id=r.id, receipt=r.id)
+            db.session.add(d)
 
         db.session.commit()
-
-
 
 def get_user_by_id(id):
     return User.query.get(id)

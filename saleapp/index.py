@@ -314,6 +314,7 @@ def pay():
         payment_method = data.get('payment_method') == 'Online'  # Chuyển thành boolean
         delivery_method = data.get('delivery_method')
         dao.add_receipt(cart,customer_phone,customer_address,payment_method ,delivery_method)
+
         return redirect('/')
 
     return render_template('order_books.html',user=current_user)
