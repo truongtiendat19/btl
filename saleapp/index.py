@@ -314,14 +314,9 @@ def pay():
         payment_method = data.get('payment_method') == 'Online'  # Chuyển thành boolean
         delivery_method = data.get('delivery_method')
         dao.add_receipt(cart,customer_phone,customer_address,payment_method ,delivery_method)
+
         return redirect('/')
-    # try:
-    #     dao.add_receipt(cart)
-    # except Exception as ex:
-    #     return jsonify({'status': 500, 'msg': str(ex)})
-    # else:
-    #     del session['cart']
-    #     return jsonify({'status': 200, 'msg': 'successful'})
+
     return render_template('order_books.html',user=current_user)
 
 
