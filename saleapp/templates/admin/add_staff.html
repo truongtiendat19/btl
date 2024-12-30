@@ -24,6 +24,11 @@
                     <option value="ADMIN">Quản trị viên</option>
                 </select>
             </div>
+            {% if err_msg %}
+            <div style="color: red;">
+                {{ err_msg }}
+            </div>
+            {% endif %}
             <div class="text-center">
                 <button type="submit" class="btn btn-primary btn-lg w-100">
                     Thêm

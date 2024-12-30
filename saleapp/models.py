@@ -1,4 +1,3 @@
-
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, DateTime, Boolean
 from saleapp import db, app
@@ -6,17 +5,25 @@ from enum import Enum as RoleEnum
 import hashlib
 from flask_login import UserMixin
 from datetime import datetime
+from sqlalchemy.orm import validates
 
 
-class UserRole(RoleEnum):
+class ManageRule(db.Model): #quy định
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    import_quantity_min = Column(Integer, nullable=False, default=150)
+    quantity_min = Column(Integer, nullable=False, default=300)
+    cancel_time = Column(Integer, nullable=False, default=48)
+    updated_date = Column(DateTime, default=datetime.now())
+
+
+class UserRole(RoleEnum): #phân quyền
     ADMIN = "ADMIN"
     MANAGER = "MANAGER"
     STAFF = "STAFF"
-    CUSTOMER = "CUSTOMER"
+    CUSTOMER = "CUSTOMER"#
 
 
-# người dùng
-class User(db.Model, UserMixin):
+class User(db.Model, UserMixin): #người dùng
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=False)
     username = Column(String(100), nullable=False, unique=True)
@@ -30,8 +37,7 @@ class User(db.Model, UserMixin):
     active = Column(Boolean, default=True)
 
 
-# thể loại
-class Category(db.Model):
+class Category(db.Model): #thể loại
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False, unique=True)
     books = relationship('Book', backref='category', lazy=True)
@@ -40,8 +46,7 @@ class Category(db.Model):
         return self.name
 
 
-# tác giả
-class Author(db.Model):
+class Author(db.Model): #thể loại
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False, unique=True)
     books = relationship('Book', backref='author', lazy=True)
@@ -50,8 +55,7 @@ class Author(db.Model):
         return self.name
 
 
-# sách
-class Book(db.Model):
+class Book(db.Model): #sách
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False, unique=True)
     description = Column(String(255), nullable=True)
@@ -70,8 +74,7 @@ class Book(db.Model):
         return self.name
 
 
-# hóa đơn cho khách đặt trực tuyến
-class Receipt(db.Model):
+class Receipt(db.Model): # hóa đơn cho khách đặt trực tuyến
     id = Column(Integer, primary_key=True, autoincrement=True)
     created_date = Column(DateTime, default=datetime.now, nullable=False)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
@@ -83,8 +86,7 @@ class Receipt(db.Model):
     status = Column(String(50), default="Pending")  # Trạng thái đơn hàng: 'Pending', 'Cancelled', 'Completed'
 
 
-# chi tiết hóa đơn trực tuyến
-class ReceiptDetails(db.Model):
+class ReceiptDetails(db.Model): # chi tiết hóa đơn trực tuyến
     id = Column(Integer, primary_key=True, autoincrement=True)
     quantity = Column(Integer, default=0, nullable=False)
     unit_price = Column(Float, default=0, nullable=False)
@@ -92,8 +94,7 @@ class ReceiptDetails(db.Model):
     receipt_id = Column(Integer, ForeignKey(Receipt.id), nullable=False)
 
 
-# hóa đơn cho khách mua trực tiếp
-class Bill(db.Model):
+class Bill(db.Model): # hóa đơn cho khách mua trực tiếp
     id = Column(Integer, primary_key=True, autoincrement=True)
     created_date = Column(DateTime, default=datetime.now, nullable=False)
     name_customer = Column(String(100), nullable=True)
@@ -101,29 +102,36 @@ class Bill(db.Model):
     details = relationship('BillDetails', backref='bill', lazy=True)
 
 
-# chi tiết hóa đơn mua trực tiếp
-class BillDetails(db.Model):
+class BillDetails(db.Model): # chi tiết hóa đơn mua trực tiếp
     id = Column(Integer, primary_key=True, autoincrement=True)
     quantity = Column(Integer, default=0, nullable=False)
     unit_price = Column(Float, default=0, nullable=False)
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
     bill_id = Column(Integer, ForeignKey(Bill.id), nullable=False)
 
-# phiếu nhập sách
-class ImportReceipt(db.Model):
+
+class ImportReceipt(db.Model): # phiếu nhập sách
     id = Column(Integer, primary_key=True, autoincrement=True)
     date_import = Column(DateTime, default=datetime.now, nullable=False)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     details = relationship('ImportReceiptDetails', backref='import_receipt', lazy=True)
 
-# chi tiết phiếu nhập sách
-class ImportReceiptDetails(db.Model):
+
+class ImportReceiptDetails(db.Model): # chi tiết phiếu nhập sách
     id = Column(Integer, primary_key=True, autoincrement=True)
     quantity = Column(Integer, default=0, nullable=False)
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
     import_receipt_id = Column(Integer, ForeignKey(ImportReceipt.id), nullable=False)
 
-class Comment(db.Model):
+    @validates('quantity')
+    def validate_quantity(self, key, value):
+        rule = ManageRule.query.first()
+        if value < rule.import_quantity_min:
+            raise ValueError(f"Quantity must be at least {rule.import_quantity_min}")
+        return value
+
+
+class Comment(db.Model): #bình luận
     id = Column(Integer, primary_key=True, autoincrement=True)
     content = Column(String(255), nullable=False)
     created_date = Column(DateTime, default=datetime.now, nullable=False)
@@ -131,42 +139,17 @@ class Comment(db.Model):
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
 
 
-class ManageRule(db.Model):
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    import_quantity_min = Column(Integer, nullable=False, default=150)
-    quantity_min = Column(Integer, nullable=False, default=300)
-    cancel_time = Column(Integer, nullable=False, default=48)
-    updated_date = Column(DateTime, default=datetime.now())
-
-
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
 
-        u = User(name='staff', username='s', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
-                  user_role=UserRole.STAFF,
-                  avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg')
-        db.session.add(u)
-        db.session.commit()
-
         m = ManageRule()
         db.session.add(m)
-        db.session.commit()
-
         u = User(name='admin', username='a', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
-                 user_role=UserRole.ADMIN, avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg')
+                 user_role=UserRole.ADMIN)
         db.session.add(u)
-        db.session.commit()
-
-        u = User(name='manager', username='m', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
-                 user_role=UserRole.MANAGER,
-                 avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg')
-        db.session.add(u)
-        db.session.commit()
-
-        u = User(name='customer', username='c', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
-                 user_role=UserRole.CUSTOMER,
-                 avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528735/cg6clgelp8zjwlehqsst.jpg')
+        u = User(name='staff', username='s', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
+                 user_role=UserRole.STAFF)
         db.session.add(u)
         db.session.commit()
 

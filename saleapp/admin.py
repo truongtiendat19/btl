@@ -21,10 +21,8 @@ class MyAdminIndexView(AdminIndexView):
 admin = Admin(app, name='404 NOT FOUND', template_mode='bootstrap4', index_view=MyAdminIndexView(name='Trang chủ'))
 
 
-# kiểm tra đăng nhập vai trò admin
-class AuthenticatedView(ModelView):
+class MyAdminView(ModelView):
     def is_accessible(self):
-
         return current_user.is_authenticated and current_user.user_role.name == 'ADMIN'
 
 
@@ -38,13 +36,13 @@ class ManagerView(BaseView):
         return current_user.is_authenticated and current_user.user_role == UserRole.MANAGER
 
 
-class AdminManagerView(ModelView):
+class MyManagerView(ModelView):
     def is_accessible(self):
-        return current_user.is_authenticated and (current_user.user_role == UserRole.ADMIN or current_user.user_role == UserRole.MANAGER)
+        return current_user.is_authenticated and current_user.user_role == UserRole.MANAGER
 
 
 # tùy chỉnh trang thể loại
-class CategoryView(AuthenticatedView):
+class CategoryView(MyManagerView):
     can_export = True
     column_searchable_list = ['name']
     # column_filters = ['name']
@@ -57,7 +55,7 @@ class CategoryView(AuthenticatedView):
 
 
 #  tùy chỉnh trang sách
-class BookView(AdminManagerView):
+class BookView(MyManagerView):
     column_list = ['name','quantity','price']
     column_searchable_list = ['name']
     can_view_details = True
@@ -70,7 +68,7 @@ class BookView(AdminManagerView):
     }
 
 
-class UserView(AuthenticatedView):
+class UserView(MyAdminView):
     column_list = ['name','username','user_role']
     column_searchable_list = ['name', 'user_role']
     can_view_details = True
@@ -145,22 +143,26 @@ class ManageRuleView(AdminView):
 class AddStaffView(AdminView):
     @expose('/', methods=['GET', 'POST'])
     def add_staff(self):
-        err_msg = ''
-        if request.method.__eq__('POST'):
+        err_msg = ''  # Biến lưu thông báo lỗi
+        if request.method == 'POST':
+            username = request.form.get('username')
             password = request.form.get('password')
             confirm = request.form.get('confirm')
 
-            if password.__eq__(confirm):
-                data = request.form.copy()
-                del data['confirm']
+            # Kiểm tra mật khẩu và username
+            if password == confirm:
+                if dao.check_username_exists(username):
+                    err_msg = 'Thêm KHÔNG thành công, username đã tồn tại!!!'
+                else:
+                    data = request.form.copy()
+                    del data['confirm']
 
-
-                dao.add_user( **data)
-                err_msg = 'Thêm tài khoản thành công !!!'
-
+                    dao.add_user(**data)
+                    err_msg = 'Thêm tài khoản thành công!'
             else:
                 err_msg = 'Mật khẩu không khớp!'
 
+        # Truyền err_msg sang giao diện
         return self.render('admin/add_staff.html', err_msg=err_msg)
 
 
@@ -187,55 +189,47 @@ class ImportBooksView(ManagerView):
 
                 for book_name, category_name, author_name, quantity_str in zip(books, categories, authors, quantities):
                     try:
-                        quantity = int(quantity_str)
+                        book = Book.query.filter_by(name=book_name).first()
+                        if not book:
+                            errors.append(f"Không tìm thấy đầu sách '{book_name}' trong kho")
+                            continue
+
+                        try:
+                            quantity = int(quantity_str)
+                        except ValueError:
+                            errors.append(f"Số lượng '{quantity_str}' không hợp lệ cho sách '{book_name}'!")
+                            continue
 
                         # Kiểm tra số lượng nhập tối thiểu
                         if quantity < rule.import_quantity_min:
                             errors.append(
-                                f"Số lượng nhập cho sách '{book_name}' phải lớn hơn hoặc bằng {rule.import_quantity_min}!")
+                                f"Số lượng nhập cho sách '{book_name}' phải lớn hơn hoặc bằng {rule.import_quantity_min}!"
+                            )
                             continue
 
-                        # Lấy hoặc tạo Category
-                        category = Category.query.filter_by(name=category_name).first()
-                        if not category:
-                            category = Category(name=category_name)
-                            db.session.add(category)
-
-                        # Lấy hoặc tạo Author
-                        author = Author.query.filter_by(name=author_name).first()
-                        if not author:
-                            author = Author(name=author_name)
-                            db.session.add(author)
-
-                        # Lấy hoặc tạo Book
-                        book = Book.query.filter_by(name=book_name).first()
-                        if not book:
-                            book = Book(name=book_name, category_id=category.id, author_id=author.id, quantity=0)
-                            db.session.add(book)
-
-                        if book.quantity > 300:
+                        if book.quantity > rule.quantity_min:
                             errors.append(
-                                f"Số lượng nhập sách '{book_name}' trong kho lớn hơn 300 cuốn! ")
+                                f"Số lượng sách '{book_name}' trong kho lớn hơn '{rule.quantity_min}' cuốn!"
+                            )
                             continue
                         else:
-                            book.quantity += quantity  # Cập nhật số lượng tồn kho
+                            book.quantity += quantity
 
-                        # Tạo chi tiết hóa đơn nhập
+                        # Thêm chi tiết hóa đơn nhập
                         receipt_detail = ImportReceiptDetails(
                             quantity=quantity,
                             book_id=book.id,
                             import_receipt=import_receipt
                         )
                         db.session.add(receipt_detail)
-
                         success.append(f"Nhập thành công sách '{book_name}' với số lượng {quantity}!")
+
 
                     except ValueError:
                         errors.append(f"Số lượng '{quantity_str}' không hợp lệ cho sách '{book_name}'!")
                     except SQLAlchemyError as e:
                         errors.append(f"Lỗi cơ sở dữ liệu khi nhập sách '{book_name}': {str(e)}")
 
-                # Commit toàn bộ thay đổi
                 db.session.commit()
 
                 if success:

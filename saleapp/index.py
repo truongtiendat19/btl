@@ -1,20 +1,15 @@
 import math
-from flask import render_template, request, redirect, session, jsonify, url_for, flash
-from apscheduler.schedulers.background import BackgroundScheduler
 from functools import wraps
 from flask import render_template, request, redirect, session, jsonify, url_for
 import dao, utils
 from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required, current_user
-from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, ManageRule,ReceiptDetails,Receipt
-from saleapp.models import UserRole, Category,Author, Book, ImportReceipt, ImportReceiptDetails, Bill,BillDetails,Book
-from datetime import datetime,timedelta
-import random
-from threading import Thread
-import time
-from sqlalchemy.exc import SQLAlchemyError
+from saleapp.models import ReceiptDetails,Receipt
+from saleapp.models import Bill,BillDetails
+from datetime import datetime
 from saleapp.models import UserRole,Book
 from apscheduler.schedulers.background import BackgroundScheduler
+
 
 @app.route('/api/books', methods=['GET'])
 def get_books():
@@ -124,7 +119,6 @@ scheduler.add_job(cancel_expired_orders, 'interval', hours=1)  # Kiểm tra mỗ
 scheduler.start()
 
 
-# đặt sách
 @app.route('/login', methods=['GET', 'POST'])
 def login_process():
     if request.method == 'POST':
@@ -239,17 +233,21 @@ def register_process():
     if request.method.__eq__('POST'):
         password = request.form.get('password')
         confirm = request.form.get('confirm')
+        username = request.form.get('username')
 
-        if password.__eq__(confirm):
-            data = request.form.copy()
-            del data['confirm']
-
-            avatar = request.files.get('avatar')
-            dao.add_user(avatar=avatar, **data)
-
-            return redirect('/login')
+        if dao.check_username_exists(username):
+            err_msg = 'Thêm KHÔNG thành công, username đã tồn tại!!!'
         else:
-            err_msg = 'Mật khẩu không khớp!'
+            if password.__eq__(confirm):
+                data = request.form.copy()
+                del data['confirm']
+
+                avatar = request.files.get('avatar')
+                dao.add_user(avatar=avatar, **data)
+
+                return redirect('/login')
+            else:
+                err_msg = 'Mật khẩu không khớp!'
 
     return render_template('register.html', err_msg=err_msg)
 

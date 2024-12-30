@@ -43,7 +43,7 @@ def auth_user(username, password, role):
     return u.first()
 
 
-def add_user(name, username, password, avatar, user_role=None):
+def add_user(name, username, password, avatar =None, user_role=None):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
 
     u = User(name=name, username=username, password=password, avatar=avatar, user_role=user_role)
@@ -54,6 +54,12 @@ def add_user(name, username, password, avatar, user_role=None):
 
     db.session.add(u)
     db.session.commit()
+
+
+def check_username_exists(username):
+    user = User.query.filter_by(username=username).first()
+    return user is not None
+
 
 def add_receipt(cart, customer_phone,customer_address,payment_method ,delivery_method):
     if cart:
@@ -66,6 +72,7 @@ def add_receipt(cart, customer_phone,customer_address,payment_method ,delivery_m
             db.session.add(d)
 
         db.session.commit()
+
 
 def get_user_by_id(id):
     return User.query.get(id)
