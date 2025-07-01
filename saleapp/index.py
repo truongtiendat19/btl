@@ -39,7 +39,7 @@ def import_bill():
             user_id=1  # Thay ID nhân viên xử lý hóa đơn tại đây
         )
         db.session.add(new_bill)
-        db.session.flush()  # Đảm bảo `new_bill` có ID để dùng ở bước tiếp theo
+        db.session.flush()
 
         # Thêm chi tiết hóa đơn
         for detail in details:
@@ -73,7 +73,7 @@ def create_order():
     user_id = current_user.id
     customer_phone = data.get('customer_phone')
     customer_address = data.get('customer_address')
-    payment_method = data.get('payment_method') == 'Online'  # Chuyển thành boolean
+    payment_method = data.get('payment_method') == 'Online'
     delivery_method = data.get('delivery_method')
     book_orders = data.get('book_orders')
     # Tính tổng tiền đơn hàng
@@ -115,7 +115,7 @@ def cancel_expired_orders():
         db.session.commit()
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(cancel_expired_orders, 'interval', hours=1)  # Kiểm tra mỗi giờ
+scheduler.add_job(cancel_expired_orders, 'interval', seconds=50)  # Kiểm tra mỗi giờ
 scheduler.start()
 
 
