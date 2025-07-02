@@ -1,6 +1,6 @@
 /* Màu nền */
 body {
-    background: linear-gradient(to right, #e9f5e9, #c4e8c4);
+    background: #efefef;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #333;
 }
@@ -85,17 +85,93 @@ body {
 }
 
 /* Hiệu ứng cho các ô nhập liệu */
-.form-control:focus {
-    border-color: #28a745;
-    box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+form .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 6px rgba(13, 110, 253, 0.6);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
-/* Liên kết */
-a {
+
+/* Footer chính */
+footer {
+    background: #efefef; /* Màu nền trang */
+    padding: 40px 0;
+}
+
+/* Hộp footer canh giữa */
+.footer-box {
+    background-color: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.1);
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 30px 20px;
+    color: #007BFF;
+}
+
+/* Bố cục bên trong footer */
+.footer-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 70px;
+}
+
+/* Các cột trong footer */
+.footer-section {
+    flex: 1 1 250px;
+}
+
+.footer-section h4 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #0056b3;
+}
+
+.footer-section p {
+    font-size: 15px;
+    color: #333;
+}
+
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-section ul li {
+    margin-bottom: 10px;
+}
+
+.footer-section ul li a {
+    color: #007BFF;
     text-decoration: none;
-    color: #28a745;
+    transition: color 0.3s ease;
 }
 
-a:hover {
-    color: #218838;
+.footer-section ul li a:hover {
+    color: #0056b3;
 }
+
+/* Mạng xã hội */
+.social-icons a {
+    display: inline-block;
+    margin-right: 10px;
+    font-size: 25px;
+    color: #007BFF;
+    transition: color 0.3s ease;
+}
+
+.social-icons a:hover {
+    color: #0056b3;
+}
+
+/* Dòng cuối footer */
+.footer-bottom {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 14px;
+    color: #666;
+}
+
+
+

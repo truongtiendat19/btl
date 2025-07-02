@@ -120,7 +120,7 @@ class BookContent(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
     page_number = Column(Integer, nullable=False)
-    content = Column(String, nullable=False)
+    content = Column(String(10000), nullable=False)
 
 
 # phiếu nhập sách
