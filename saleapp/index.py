@@ -4,8 +4,6 @@ from flask import render_template, request, redirect, session, jsonify, url_for
 import dao, utils
 from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required, current_user
-from saleapp.models import ReceiptDetails,Receipt
-from saleapp.models import Bill,BillDetails
 from datetime import datetime
 from saleapp.models import UserRole,Book
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -23,100 +21,100 @@ def get_books():
     return jsonify(book_list)
 
 
-@app.route('/import_bill', methods=['POST'])
-def import_bill():
-    try:
-        data = request.json
-        customer_name = data.get("customerName")
-        invoice_date = data.get("invoiceDate")
-        staff_name = data.get("staffName")
-        details = data.get("details")  # Dạng JSON chứa danh sách sách
+# @app.route('/import_bill', methods=['POST'])
+# def import_bill():
+#     try:
+#         data = request.json
+#         customer_name = data.get("customerName")
+#         invoice_date = data.get("invoiceDate")
+#         staff_name = data.get("staffName")
+#         details = data.get("details")  # Dạng JSON chứa danh sách sách
+#
+#         # Tạo một hóa đơn mới
+#         new_bill = Bill(
+#             name_customer=customer_name,
+#             created_date=datetime.strptime(invoice_date, '%Y-%m-%d'),
+#             user_id=1  # Thay ID nhân viên xử lý hóa đơn tại đây
+#         )
+#         db.session.add(new_bill)
+#         db.session.flush()
+#
+#         # Thêm chi tiết hóa đơn
+#         for detail in details:
+#             book = Book.query.get(detail.get("bookId"))
+#             if not book or book.quantity < int(detail.get("quantity")):
+#                 return jsonify({"message": f"Sách {book.name if book else 'không xác định'} không đủ số lượng"}), 400
+#
+#             book.quantity -= int(detail.get("quantity"))  # Cập nhật tồn kho
+#             db.session.add(book)
+#
+#             bill_detail = BillDetails(
+#                 bill_id=new_bill.id,
+#                 book_id=detail.get("bookId"),
+#                 quantity=int(detail.get("quantity")),
+#                 unit_price=book.price
+#             )
+#             db.session.add(bill_detail)
+#
+#         # Lưu thay đổi
+#         db.session.commit()
+#
+#         return jsonify({"message": "Hóa đơn được lưu thành công!"}), 200
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({"message": f"Đã xảy ra lỗi: {str(e)}"}), 500
 
-        # Tạo một hóa đơn mới
-        new_bill = Bill(
-            name_customer=customer_name,
-            created_date=datetime.strptime(invoice_date, '%Y-%m-%d'),
-            user_id=1  # Thay ID nhân viên xử lý hóa đơn tại đây
-        )
-        db.session.add(new_bill)
-        db.session.flush()
-
-        # Thêm chi tiết hóa đơn
-        for detail in details:
-            book = Book.query.get(detail.get("bookId"))
-            if not book or book.quantity < int(detail.get("quantity")):
-                return jsonify({"message": f"Sách {book.name if book else 'không xác định'} không đủ số lượng"}), 400
-
-            book.quantity -= int(detail.get("quantity"))  # Cập nhật tồn kho
-            db.session.add(book)
-
-            bill_detail = BillDetails(
-                bill_id=new_bill.id,
-                book_id=detail.get("bookId"),
-                quantity=int(detail.get("quantity")),
-                unit_price=book.price
-            )
-            db.session.add(bill_detail)
-
-        # Lưu thay đổi
-        db.session.commit()
-
-        return jsonify({"message": "Hóa đơn được lưu thành công!"}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": f"Đã xảy ra lỗi: {str(e)}"}), 500
-
-@app.route('/api/order', methods=['POST'])
-def create_order():
-    data = request.get_json()
-
-    user_id = current_user.id
-    customer_phone = data.get('customer_phone')
-    customer_address = data.get('customer_address')
-    payment_method = data.get('payment_method') == 'Online'
-    delivery_method = data.get('delivery_method')
-    book_orders = data.get('book_orders')
-    # Tính tổng tiền đơn hàng
-    receipt_details = []
-
-    for book_order in book_orders:
-        book_id = book_order.get('book_id')
-        quantity = book_order.get('quantity')
-
-        book = Book.query.get(book_id)
-        if not book:
-            return jsonify({"message": f"Sách với ID {book_id} không tồn tại!"}), 400
-
-
-        receipt_detail = ReceiptDetails(quantity=quantity, unit_price=book.price, book_id=book.id)
-        receipt_details.append(receipt_detail)
-
-    # Tạo thời gian hết hạn (48 giờ sau khi đặt hàng)
-
-
-    new_receipt = Receipt(
-        customer_phone=customer_phone,
-        customer_address=customer_address,
-        payment_method=payment_method,
-        delivery_method=delivery_method,
-        user_id=user_id,
-        details=receipt_details
-    )
-
-    db.session.add(new_receipt)
-    db.session.commit()
-
-    return jsonify({"message": "Đặt sách thành công!"}), 200
-def cancel_expired_orders():
-    """Hủy các đơn hàng đã hết hạn"""
-    expired_receipts = Receipt.query.filter(Receipt.status == 'Pending', Receipt.expiry_date < datetime.now()).all()
-    for receipt in expired_receipts:
-        receipt.status = 'Cancelled'
-        db.session.commit()
-
-scheduler = BackgroundScheduler()
-scheduler.add_job(cancel_expired_orders, 'interval', seconds=50)  # Kiểm tra mỗi giờ
-scheduler.start()
+# @app.route('/api/order', methods=['POST'])
+# def create_order():
+#     data = request.get_json()
+#
+#     user_id = current_user.id
+#     customer_phone = data.get('customer_phone')
+#     customer_address = data.get('customer_address')
+#     payment_method = data.get('payment_method') == 'Online'
+#     delivery_method = data.get('delivery_method')
+#     book_orders = data.get('book_orders')
+#     # Tính tổng tiền đơn hàng
+#     receipt_details = []
+#
+#     for book_order in book_orders:
+#         book_id = book_order.get('book_id')
+#         quantity = book_order.get('quantity')
+#
+#         book = Book.query.get(book_id)
+#         if not book:
+#             return jsonify({"message": f"Sách với ID {book_id} không tồn tại!"}), 400
+#
+#
+#         receipt_detail = ReceiptDetails(quantity=quantity, unit_price=book.price, book_id=book.id)
+#         receipt_details.append(receipt_detail)
+#
+#     # Tạo thời gian hết hạn (48 giờ sau khi đặt hàng)
+#
+#
+#     new_receipt = Receipt(
+#         customer_phone=customer_phone,
+#         customer_address=customer_address,
+#         payment_method=payment_method,
+#         delivery_method=delivery_method,
+#         user_id=user_id,
+#         details=receipt_details
+#     )
+#
+#     db.session.add(new_receipt)
+#     db.session.commit()
+#
+#     return jsonify({"message": "Đặt sách thành công!"}), 200
+# def cancel_expired_orders():
+#     """Hủy các đơn hàng đã hết hạn"""
+#     expired_receipts = Receipt.query.filter(Receipt.status == 'Pending', Receipt.expiry_date < datetime.now()).all()
+#     for receipt in expired_receipts:
+#         receipt.status = 'Cancelled'
+#         db.session.commit()
+#
+# scheduler = BackgroundScheduler()
+# scheduler.add_job(cancel_expired_orders, 'interval', seconds=50)  # Kiểm tra mỗi giờ
+# scheduler.start()
 
 
 @app.route('/login', methods=['GET', 'POST'])

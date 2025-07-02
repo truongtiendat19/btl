@@ -1,67 +1,67 @@
 <!-- Navbar -->
-<nav class="navbar navbar-expand-sm" style="background-color: #333; padding: 20px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+<nav class="navbar navbar-expand-lg bg-white shadow-sm rounded-pill my-3 mx-4 px-4">
     <div class="container-fluid">
-        <!-- Logo -->
-        <a class="navbar-brand fw-bold" href="/" style="color: #fff; font-size: 24px;">
-            <img src="https://via.placeholder.com/40" alt="Logo" style="width: 40px; height: 40px; border: 2px solid #fff; border-radius: 50%; margin-right: 10px;">
-            404 NOT FOUND
+        <!-- Logo-->
+        <a class="navbar-brand fw-bold d-flex align-items-center me-4" href="/" style="color: #0d6efd;">
+            <img src="https://via.placeholder.com/40" alt="Logo"
+                 style="width: 40px; height: 40px; border: 2px solid #0d6efd; border-radius: 50%; margin-right: 10px;">
+            ReadZone
         </a>
-        <!-- Toggler Button -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar" style="border-color: rgba(255, 255, 255, 0.5);">
+
+        <!-- Nút toggle nhỏ gọn -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
+                aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <!-- Navbar Links -->
-        <div class="collapse navbar-collapse" id="collapsibleNavbar">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link active" href="/" style="color: #00bcd4; font-size: 18px; transition: all 0.3s;">Trang chủ</a>
-                </li>
-<!--                {% for c in categories %}-->
-<!--                <li class="nav-item">-->
-<!--                    <a class="nav-link" href="/?category_id={{c.id}}" style="color: #fff; font-size: 18px; transition: all 0.3s;">{{ c.name }}</a>-->
-<!--                </li>-->
-<!--                {% endfor %}-->
 
-                {% if current_user.is_authenticated %}
+        <!-- Nội dung navbar -->
+        <div class="collapse navbar-collapse justify-content-between" id="navbarMain">
+            <!-- Links-->
+            <ul class="navbar-nav d-flex align-items-center">
                 <li class="nav-item">
-                    <a class="nav-link d-flex align-items-center" href="/" style="color: #fff; font-size: 18px;">
-                        <img src="{{ current_user.avatar }}" width="30" height="30" style="border-radius: 50%; margin-right: 8px;">
-                        Chào {{ current_user.name }}
-                    </a>
+                    <a class="nav-link" href="/" style="color: #0d6efd;">Trang chủ</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/logout" style="color: #f44336; font-size: 18px;">Đăng xuất</a>
-                </li>
-                {% else %}
-                <li class="nav-item">
-                    <a class="nav-link" href="/login" style="color: #00bcd4; font-size: 18px;">Đăng nhập</a>
-                </li>
-                {% if current_user.user_role!='STAFF' and current_user.user_role!='MANAGER' %}
-                <li class="nav-item">
-                    <a class="nav-link" href="/register" style="color: #4caf50; font-size: 18px;">Đăng ký</a>
-                </li>
-                {% endif %}
-                {% endif %}
-
-                <!-- Giỏ sách -->
-                <li class="nav-item">
-                    <a class="nav-link position-relative" href="/cart" style="color: #fff; font-size: 20px;">
-                        &#128218; <!-- Icon sách thay vì giỏ hàng -->
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 12px; padding: 4px 6px;">
+                <li class="nav-item ms-2">
+                    <a class="nav-link position-relative" href="/cart" style="color: #0d6efd;">
+                        <i class="fas fa-shopping-cart fa-lg"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                              style="font-size: 12px;">
                             {{ cart_stats.total_quantity }}
                         </span>
                     </a>
                 </li>
             </ul>
-            <!-- Thanh Tìm Kiếm -->
-            <form method="get" action="/" class="d-flex">
-                <input class="form-control me-2" type="text" placeholder="Tìm sách..." name="kw"
-                       style="border-radius: 25px; padding: 10px 15px; font-size: 16px; border: 1px solid #ccc;">
-                <button class="btn" type="submit"
-                        style="border-radius: 25px; background-color: #00bcd4; color: #fff; font-size: 16px; padding: 10px 20px;">
-                    Tìm
+
+            <!-- Tìm kiếm-->
+            <form class="d-flex mx-auto" style="width: 40%;" method="get" action="/">
+                <input class="form-control rounded-pill me-2" type="search" name="kw" placeholder="Tìm sách..."
+                       aria-label="Search">
+                <button class="btn btn-primary rounded-pill" type="submit">
+                    <i class="fas fa-search"></i>
                 </button>
             </form>
+
+            <!-- Đăng nhập / Đăng ký hoặc tên người dùng -->
+            <ul class="navbar-nav d-flex align-items-center">
+                {% if current_user.is_authenticated %}
+                <li class="nav-item d-flex align-items-center">
+                    <a class="nav-link" href="/" style="color: #0d6efd;">
+                        <img src="{{ current_user.avatar }}" width="30" height="30" class="rounded-circle me-2">
+                        {{ current_user.name }}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="/logout">Đăng xuất</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/login" style="color: #0d6efd;">Đăng nhập</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/register" style="color: #0d6efd;">Đăng ký</a>
+                </li>
+                {% endif %}
+            </ul>
         </div>
     </div>
 </nav>

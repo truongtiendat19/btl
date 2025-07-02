@@ -14,7 +14,7 @@ app.secret_key = 'your_secret_key'
 app.secret_key = 'ab8f61d1c7b9d0e2c6f4c8ab7314f8cfe0baf1f9732fcf80'
 
 # cấu hình sơ sở dữ liệu
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:123456789@localhost/saledb?charset=utf8mb4"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:123456789@localhost/db?charset=utf8mb4"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 
 # thiết lập số lượng mục hiển thị
