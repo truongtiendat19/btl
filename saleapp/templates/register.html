@@ -1,43 +1,46 @@
 {% extends 'layout/base.html' %}
 
 {% block content %}
-<div class="container mt-5">
-    {% if err_msg %}
-    <div class="alert alert-danger text-center">{{ err_msg }}</div>
-    {% endif %}
-    <div class="card shadow-lg mx-auto" style="max-width: 500px; border-radius: 15px;">
-        <div class="card-body p-4">
-            <h3 class="text-center text-success mb-4">Đăng ký tài khoản</h3>
+<div class="login-wrapper">
+    <div class="login-box">
+        <!-- Bên trái: Giới thiệu ReadZone -->
+        <div class="login-left">
+            <img src="https://res.cloudinary.com/dapckqqhj/image/upload/v1751531116/read_zone_o4xfbo.png" alt="Logo">
+            <h2>Chào mừng đến với ReadZone</h2>
+        </div>
+
+        <!-- Bên phải: Form đăng ký -->
+        <div class="login-right">
+            {% if err_msg %}
+            <div class="alert alert-danger text-center">{{ err_msg }}</div>
+            {% endif %}
+            <h3 class="text-center mb-4" style="color: #0d6efd;">Đăng ký tài khoản</h3>
             <form method="post" action="/register" enctype="multipart/form-data">
                 <div class="form-floating mb-3">
-                    <input required type="text" class="form-control" id="name" placeholder="Họ tên" name="name"/>
+                    <input required type="text" class="form-control rounded-3 shadow-sm" id="name" placeholder="Họ tên" name="name"/>
                     <label for="name">Họ tên</label>
                 </div>
                 <div class="form-floating mb-3">
-                    <input required type="text" class="form-control" id="username" placeholder="Tên đăng nhập" name="username"/>
+                    <input required type="text" class="form-control rounded-3 shadow-sm" id="username" placeholder="Tên đăng nhập" name="username"/>
                     <label for="username">Tên đăng nhập</label>
                 </div>
                 <div class="form-floating mb-3">
-                    <input required type="password" class="form-control" id="pwd" placeholder="Mật khẩu" name="password"/>
+                    <input required type="password" class="form-control rounded-3 shadow-sm" id="pwd" placeholder="Mật khẩu" name="password"/>
                     <label for="pwd">Mật khẩu</label>
                 </div>
                 <div class="form-floating mb-3">
-                    <input required type="password" class="form-control" id="confirm" placeholder="Xác nhận mật khẩu" name="confirm"/>
+                    <input required type="password" class="form-control rounded-3 shadow-sm" id="confirm" placeholder="Xác nhận mật khẩu" name="confirm"/>
                     <label for="confirm">Xác nhận mật khẩu</label>
                 </div>
                 <div class="form-floating mb-3">
-                    <input type="file" class="form-control" id="avatar" name="avatar"/>
+                    <input type="file" class="form-control rounded-3 shadow-sm" id="avatar" name="avatar"/>
                     <label for="avatar">Ảnh đại diện</label>
                 </div>
-                <div class="text-center">
-                    <button type="submit" class="btn btn-success btn-lg w-100">
-                        Đăng ký
-                    </button>
-                </div>
+                <button type="submit" class="btn btn-login">
+                    Đăng ký
+                </button>
             </form>
         </div>
     </div>
-    <br> <br>
 </div>
 {% endblock %}
-
