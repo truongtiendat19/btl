@@ -5,7 +5,9 @@ import dao, utils
 from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
-from saleapp.models import UserRole,Book
+
+from saleapp.dao import check_username_exists
+from saleapp.models import UserRole, Book, User
 from apscheduler.schedulers.background import BackgroundScheduler
 
 
@@ -119,68 +121,27 @@ def get_books():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_process():
+    err_msg = ''
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
 
-        # Xác thực đăng nhập
-        u = dao.auth_user(username=username, password=password, role=UserRole.CUSTOMER)
-        if u:
-            login_user(u)
-            next = request.args.get('next')
-            return redirect('/' if next is None else next)
-
-        u = dao.auth_user(username=username, password=password, role=UserRole.ADMIN)
-        if u:
-            login_user(u)
-            return url_for('/admin')
-
-    return render_template('login.html')
-
-
-def role_required(role):
-    def wrapper(func):
-        @wraps(func)
-        def decorated_view(*args, **kwargs):
-
-            if not current_user.is_authenticated:
-                return redirect(url_for('login_staff_process'))
-
-            if current_user.user_role.name != role:
-                return redirect(url_for('login_staff_process'))
-
-            return func(*args, **kwargs)
-        return decorated_view
-    return wrapper
-
-
-@app.route('/staff', methods=['GET', 'POST'])
-def login_staff_process():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-
-
-        for role in [UserRole.MANAGER, UserRole.STAFF, UserRole.ADMIN]:
-            u = dao.auth_user(username=username, password=password, role=role)
+        if check_username_exists(username):
+            # Xác thực đăng nhập
+            u = dao.auth_user(username=username, password=password, role=UserRole.CUSTOMER)
             if u:
                 login_user(u)
+                next = request.args.get('next')
+                return redirect('/' if next is None else next)
 
-                if role == UserRole.MANAGER:
-                    return redirect('/admin')
-                elif role == UserRole.STAFF:
-                    return redirect('/sale')
-                elif role == UserRole.ADMIN:
-                    return redirect('/admin')
+            u = dao.auth_user(username=username, password=password, role=UserRole.ADMIN)
+            if u:
+                login_user(u)
+                return redirect('/admin')
+            err_msg = 'Mật khẩu không đúng.'
+        else: err_msg = 'Tên đăng nhập không tồn tại.'
 
-    return render_template('login_staff.html')
-
-
-@app.route('/sale')
-@login_required
-@role_required('STAFF')
-def sale():
-    return render_template('/sale.html', user=current_user)
+    return render_template('login.html', err_msg=err_msg)
 
 
 @app.route("/")
@@ -224,12 +185,6 @@ def logout_process():
     return redirect('/login')
 
 
-@app.route("/logout_staff")
-def logout_staff_manager_process():
-    logout_user()
-    return redirect('/staff')
-
-
 @app.route('/register', methods=['get', 'post'])
 def register_process():
     err_msg = ''
@@ -239,7 +194,7 @@ def register_process():
         username = request.form.get('username')
 
         if dao.check_username_exists(username):
-            err_msg = 'Thêm KHÔNG thành công, username đã tồn tại!!!'
+            err_msg = 'Tên đăng nhập đã tồn tại.'
         else:
             if password.__eq__(confirm):
                 data = request.form.copy()

@@ -43,13 +43,13 @@ def auth_user(username, password, role):
 
 
 def add_user(name, username, password, avatar =None, user_role=None):
+    avatar_url = 'https://res.cloudinary.com/dapckqqhj/image/upload/v1734438576/rlpkm5rn7kqct2k5jcir.jpg'
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
 
-    u = User(name=name, username=username, password=password, avatar=avatar, user_role=user_role)
-
-    if avatar:
+    if avatar and avatar.filename:
         res = cloudinary.uploader.upload(avatar)
-        u.avatar = res.get('secure_url')
+        avatar_url = res.get('secure_url')
+    u = User(name=name, username=username, password=password, avatar=avatar_url, user_role=user_role)
 
     db.session.add(u)
     db.session.commit()
@@ -57,7 +57,9 @@ def add_user(name, username, password, avatar =None, user_role=None):
 
 def check_username_exists(username):
     user = User.query.filter_by(username=username).first()
-    return user is not None
+    if user:
+        return True
+    return False
 #
 #
 # def add_receipt(cart, customer_phone,customer_address,payment_method ,delivery_method):

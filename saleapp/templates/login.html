@@ -12,6 +12,9 @@
 
         <!-- Phần phải: Form -->
         <div class="login-right">
+            {% if err_msg %}
+            <div class="alert alert-danger text-center">{{ err_msg }}</div>
+            {% endif %}
             <h3 class="text-center mb-4 text-primary">Đăng nhập</h3>
             <form method="post">
                 <div class="form-floating mb-3">

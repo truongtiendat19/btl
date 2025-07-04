@@ -30,41 +30,36 @@ class AdminView(BaseView):
         return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
 
 
-class ManagerView(BaseView):
-    def is_accessible(self):
-        return current_user.is_authenticated and current_user.user_role == UserRole.MANAGER
-
-
-class MyManagerView(ModelView):
-    def is_accessible(self):
-        return current_user.is_authenticated and current_user.user_role == UserRole.MANAGER
-
-
-# tùy chỉnh trang thể loại
-class CategoryView(MyManagerView):
-    can_export = True
-    column_searchable_list = ['name']
-    # column_filters = ['name']
-    can_view_details = True
-    column_list = ['name', 'books']
-    column_labels = {
-        'name': 'Thể loại',
-        'books': 'Sách'
-    }
-
-
-#  tùy chỉnh trang sách
-class BookView(MyManagerView):
-    column_list = ['name','quantity','price']
-    column_searchable_list = ['name']
-    can_view_details = True
-    can_export = True
-    can_edit = True
-    column_labels = {
-        'name': 'Sách',
-        'quantity': 'Số lượng',
-        'price':'Giá'
-    }
+# class ManagerView(BaseView):
+#     def is_accessible(self):
+#         return current_user.is_authenticated and current_user.user_role
+#
+#
+# # tùy chỉnh trang thể loại
+# class CategoryView(MyManagerView):
+#     can_export = True
+#     column_searchable_list = ['name']
+#     # column_filters = ['name']
+#     can_view_details = True
+#     column_list = ['name', 'books']
+#     column_labels = {
+#         'name': 'Thể loại',
+#         'books': 'Sách'
+#     }
+#
+#
+# #  tùy chỉnh trang sách
+# class BookView(MyManagerView):
+#     column_list = ['name','quantity','price']
+#     column_searchable_list = ['name']
+#     can_view_details = True
+#     can_export = True
+#     can_edit = True
+#     column_labels = {
+#         'name': 'Sách',
+#         'quantity': 'Số lượng',
+#         'price':'Giá'
+#     }
 
 
 class UserView(MyAdminView):
@@ -84,7 +79,7 @@ class LogoutView(BaseView):
     @expose("/")
     def index(self):
         logout_user()
-        return redirect('/logout_staff')
+        return redirect('/login')
 
 #
 # # chức năng thống kê
@@ -253,9 +248,9 @@ class AddStaffView(AdminView):
 #
 #         return selt.render('admin/import_books.html', current_datetime=current_datetime, rule=rule, books=books, books_data=books_data)
 
-
-admin.add_view(CategoryView(Category, db.session, name ='Thể loại'))
-admin.add_view(BookView(Book, db.session, name='Sách'))
+#
+# admin.add_view(CategoryView(Category, db.session, name ='Thể loại'))
+# admin.add_view(BookView(Book, db.session, name='Sách'))
 admin.add_view(UserView(User, db.session,name='Tài khoản'))
 # admin.add_view(StatsView(name='Thống kê - báo cáo'))
 # admin.add_view(ManageRuleView(name='Quy định'))

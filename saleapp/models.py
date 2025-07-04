@@ -18,9 +18,9 @@ class User(db.Model, UserMixin):
     username = Column(String(100), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
     name = Column(String(255), nullable=False)
-    avatar = Column(String(255), default="https://res.cloudinary.com/dapckqqhj/image/upload/v1734438576/rlpkm5rn7kqct2k5jcir.jpg")
-    email = Column(String(50), nullable = False)
-    phone = Column(String(50), nullable= False)
+    avatar = Column(String(255), nullable=False, default="https://res.cloudinary.com/dapckqqhj/image/upload/v1734438576/rlpkm5rn7kqct2k5jcir.jpg")
+    email = Column(String(50), nullable = True)
+    phone = Column(String(50), nullable= True)
     user_role = Column(Enum(UserRole), nullable=False, default=UserRole.CUSTOMER)
     reviews = relationship('Review', backref='user', lazy=True)
     import_receipts = relationship('ImportReceipt', backref='user', lazy=True)
@@ -167,8 +167,7 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
 
-        # m = ManageRule()
-        # db.session.add(m)
+
         # u = User(name='admin', username='a', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
         #          user_role=UserRole.ADMIN)
         # db.session.add(u)
