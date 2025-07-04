@@ -130,6 +130,11 @@ def login_process():
             next = request.args.get('next')
             return redirect('/' if next is None else next)
 
+        u = dao.auth_user(username=username, password=password, role=UserRole.ADMIN)
+        if u:
+            login_user(u)
+            return url_for('/admin')
+
     return render_template('login.html')
 
 

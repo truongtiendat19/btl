@@ -29,36 +29,35 @@ def load_books(kw=None, category_id=None, page=1):
 
 def count_books():
     return Book.query.count()
-#
-#
-# def auth_user(username, password, role):
-#     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
-#
-#     u = User.query.filter(User.username.__eq__(username.strip()),
-#                           User.password.__eq__(password),
-#                           User.active.__eq__(1))
-#     if role:
-#         u = u.filter(User.user_role.__eq__(role))
-#
-#     return u.first()
-#
-#
-# def add_user(name, username, password, avatar =None, user_role=None):
-#     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
-#
-#     u = User(name=name, username=username, password=password, avatar=avatar, user_role=user_role)
-#
-#     if avatar:
-#         res = cloudinary.uploader.upload(avatar)
-#         u.avatar = res.get('secure_url')
-#
-#     db.session.add(u)
-#     db.session.commit()
-#
-#
-# def check_username_exists(username):
-#     user = User.query.filter_by(username=username).first()
-#     return user is not None
+
+
+def auth_user(username, password, role):
+    password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
+
+    u = User.query.filter(User.username.__eq__(username.strip()),
+                          User.password.__eq__(password))
+    if role:
+        u = u.filter(User.user_role.__eq__(role))
+
+    return u.first()
+
+
+def add_user(name, username, password, avatar =None, user_role=None):
+    password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
+
+    u = User(name=name, username=username, password=password, avatar=avatar, user_role=user_role)
+
+    if avatar:
+        res = cloudinary.uploader.upload(avatar)
+        u.avatar = res.get('secure_url')
+
+    db.session.add(u)
+    db.session.commit()
+
+
+def check_username_exists(username):
+    user = User.query.filter_by(username=username).first()
+    return user is not None
 #
 #
 # def add_receipt(cart, customer_phone,customer_address,payment_method ,delivery_method):
@@ -74,12 +73,12 @@ def count_books():
 #         db.session.commit()
 #
 #
-# def get_user_by_id(id):
-#     return User.query.get(id)
-#
-#
-# def get_book_by_id(id):
-#     return Book.query.get(id)
+def get_user_by_id(id):
+    return User.query.get(id)
+
+
+def get_book_by_id(id):
+    return Book.query.get(id)
 #
 #
 # def load_comments(book_id):
@@ -178,13 +177,13 @@ def count_books():
 #         results.append((book_name, category_name, quantity, round(percentage, 2)))
 #
 #     return results
-#
-#
-# def stats_books():
-#     return db.session.query(Category.id, Category.name, func.count(Book.id))\
-#         .join(Book, Book.category_id.__eq__(Category.id), isouter=True).group_by(Category.id).all()
 
-#
-# if __name__ == '__main__':
-#     with app.app_context():
-#         print(count_books())
+
+def stats_books():
+    return db.session.query(Category.id, Category.name, func.count(Book.id))\
+        .join(Book, Book.category_id.__eq__(Category.id), isouter=True).group_by(Category.id).all()
+
+
+if __name__ == '__main__':
+    with app.app_context():
+        print(count_books())

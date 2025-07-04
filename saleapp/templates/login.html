@@ -1,25 +1,42 @@
 {% extends 'layout/base.html' %}
 
 {% block content %}
-<body>
-<div class="container d-flex justify-content-center align-items-center vh-100">
-    <div class="card p-4 shadow-lg" style="width: 100%; max-width: 400px;">
-        <h3 class="text-center text-success mb-4">Đăng nhập</h3>
-        <form method="post">
-            <div class="form-floating mb-3">
-                <input required type="text" class="form-control" id="username" placeholder="Tên đăng nhập" name="username">
-                <label for="username">Tên đăng nhập</label>
-            </div>
-            <div class="form-floating mb-3">
-                <input required type="password" class="form-control" id="pwd" placeholder="Mật khẩu" name="password">
-                <label for="pwd">Mật khẩu</label>
-            </div>
-            <button type="submit" class="btn btn-success w-100">Đăng nhập</button>
-            <div class="text-center mt-3">
-                <p>Chưa có tài khoản? <a href="/register">Đăng ký ngay</a></p>
-            </div>
-        </form>
+
+<div class="login-wrapper">
+    <div class="login-box">
+        <!-- Phần trái -->
+        <div class="login-left">
+            <img src="https://res.cloudinary.com/dapckqqhj/image/upload/v1751531116/read_zone_o4xfbo.png" alt="ReadZone logo">
+            <h2>Chào mừng đến với ReadZone</h2>
+        </div>
+
+        <!-- Phần phải: Form -->
+        <div class="login-right">
+            <h3 class="text-center mb-4 text-primary">Đăng nhập</h3>
+            <form method="post">
+                <div class="form-floating mb-3">
+                    <input required type="text" class="form-control" id="username"
+                           placeholder="Tên đăng nhập" name="username">
+                    <label for="username">Tên đăng nhập</label>
+                </div>
+
+                <div class="form-floating mb-3">
+                    <input required type="password" class="form-control" id="pwd"
+                           placeholder="Mật khẩu" name="password">
+                    <label for="pwd">Mật khẩu</label>
+                </div>
+
+                <button type="submit" class="btn btn-login">
+                    <b> Đăng nhập</b>
+                </button>
+
+                <div class="text-center mt-2">
+                    <p class="mb-0">Chưa có tài khoản?
+                        <a href="/register" style="color: #0d6efd; text-decoration: underline;">Đăng ký ngay</a>
+                    </p>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}
-
