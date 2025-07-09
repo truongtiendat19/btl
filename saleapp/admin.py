@@ -22,7 +22,7 @@ admin = Admin(app, name='404 NOT FOUND', template_mode='bootstrap4', index_view=
 
 class MyAdminView(ModelView):
     def is_accessible(self):
-        return current_user.is_authenticated and current_user.user_role.name == 'ADMIN'
+        return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
 
 
 class AdminView(BaseView):
@@ -30,36 +30,31 @@ class AdminView(BaseView):
         return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
 
 
-# class ManagerView(BaseView):
-#     def is_accessible(self):
-#         return current_user.is_authenticated and current_user.user_role
-#
-#
-# # tùy chỉnh trang thể loại
-# class CategoryView(MyManagerView):
-#     can_export = True
-#     column_searchable_list = ['name']
-#     # column_filters = ['name']
-#     can_view_details = True
-#     column_list = ['name', 'books']
-#     column_labels = {
-#         'name': 'Thể loại',
-#         'books': 'Sách'
-#     }
-#
-#
-# #  tùy chỉnh trang sách
-# class BookView(MyManagerView):
-#     column_list = ['name','quantity','price']
-#     column_searchable_list = ['name']
-#     can_view_details = True
-#     can_export = True
-#     can_edit = True
-#     column_labels = {
-#         'name': 'Sách',
-#         'quantity': 'Số lượng',
-#         'price':'Giá'
-#     }
+# tùy chỉnh trang thể loại
+class CategoryView(MyAdminView):
+    can_export = True
+    column_searchable_list = ['name']
+    # column_filters = ['name']
+    can_view_details = True
+    column_list = ['name', 'books']
+    column_labels = {
+        'name': 'Thể loại',
+        'books': 'Sách'
+    }
+
+
+#  tùy chỉnh trang sách
+class BookView(MyAdminView):
+    column_list = ['name','quantity','price_physical']
+    column_searchable_list = ['name']
+    can_view_details = True
+    can_export = True
+    can_edit = True
+    column_labels = {
+        'name': 'Tên sách',
+        'quantity': 'Số lượng',
+        'price_physical':'Giá'
+    }
 
 
 class UserView(MyAdminView):

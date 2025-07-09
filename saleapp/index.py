@@ -7,7 +7,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
 
 from saleapp.dao import check_username_exists
-from saleapp.models import UserRole, Book, User
+from saleapp.models import UserRole, Book, User, Category
 from apscheduler.schedulers.background import BackgroundScheduler
 
 
@@ -292,7 +292,6 @@ def common_response_data():
         'categories': dao.load_categories(),
         'cart_stats': utils.cart_stats(session.get('cart'))
     }
-
 
 if __name__ == '__main__':
     from saleapp import admin
