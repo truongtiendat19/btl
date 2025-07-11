@@ -24,10 +24,11 @@
                 <li class="nav-item ms-2">
                     <a class="nav-link position-relative" href="/cart" style="color: #0d6efd;">
                         <i class="fas fa-shopping-cart fa-lg"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                              style="font-size: 12px;">
-                            {{ cart_stats.total_quantity }}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-quantity-badge"
+                          style="font-size: 12px;">
+                        {{ cart_stats.total_quantity }}
                         </span>
+
                     </a>
                 </li>
             </ul>
@@ -65,3 +66,26 @@
         </div>
     </div>
 </nav>
+<script>
+function updateCartQuantity(quantity) {
+    const badge = document.querySelector('.cart-quantity-badge');
+    if (badge) {
+        badge.textContent = quantity+1;
+    }
+}
+
+function addToCart(id, name, price) {
+    fetch('/api/carts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, name: name, price: price })
+    })
+    .then(res => res.json())
+    .then(data => {
+        updateCartQuantity(data.total_quantity);
+        alert('✅ Sản phẩm đã được thêm vào giỏ hàng!');
+    })
+    .catch(err => console.error('❌ Lỗi khi thêm vào giỏ:', err));
+}
+</script>
+
