@@ -1,7 +1,7 @@
 from saleapp import db, app, dao
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
-from saleapp.models import Category, Book, User, UserRole
+from saleapp.models import Category,Author, Book, User, UserRole
 from flask_login import current_user, logout_user
 from flask_admin import BaseView, expose
 from flask import redirect, request, flash, url_for
@@ -17,7 +17,7 @@ class MyAdminIndexView(AdminIndexView):
 
 
 # tạo trang chủ admin
-admin = Admin(app, name='404 NOT FOUND', index_view=MyAdminIndexView(name='Trang chủ'))
+admin = Admin(app, name='ReadZone', index_view=MyAdminIndexView(name='Trang chủ'))
 
 
 class MyAdminView(ModelView):
@@ -34,27 +34,66 @@ class AdminView(BaseView):
 class CategoryView(MyAdminView):
     can_export = True
     column_searchable_list = ['name']
-    # column_filters = ['name']
+    column_filters = ['name']
     can_view_details = True
-    column_list = ['name', 'books']
+    can_delete = False
+    column_list = ['name']
     column_labels = {
         'name': 'Thể loại',
-        'books': 'Sách'
+    }
+
+# tùy chỉnh trang tác giả
+class AuthorView(MyAdminView):
+    can_export = True
+    column_searchable_list = ['name']
+    column_filters = ['name']
+    can_delete = False
+    can_view_details = True
+    column_list = ['name']
+    column_labels = {
+        'name': 'Tác giả',
     }
 
 
 #  tùy chỉnh trang sách
 class BookView(MyAdminView):
-    column_list = ['name','quantity','price_physical']
+    column_list = ['name','category_name','author_name','quantity','price_physical']
     column_searchable_list = ['name']
     can_view_details = True
     can_export = True
     can_edit = True
+    can_delete = False
+    column_filters = ['category.name', 'author.name']
     column_labels = {
         'name': 'Tên sách',
+        'category_name': 'Thể loại',
+        'author_name': 'Tác giả',
         'quantity': 'Số lượng',
         'price_physical':'Giá'
     }
+
+    # Hiển thị tên Category và Author thay vì ID
+    def _category_name(view, context, model, name):
+        return model.category.name if model.category else ''
+
+    def _author_name(view, context, model, name):
+        return model.author.name if model.author else ''
+
+    column_formatters = {
+        'category_name': _category_name,
+        'author_name': _author_name,
+    }
+
+    form_columns = [
+        'name',
+        'author',
+        'category',
+        'image',
+        'price_physical',
+        'quantity',
+        'is_digital_avaible',
+        'description'
+    ]
 
 
 class UserView(MyAdminView):
@@ -244,8 +283,9 @@ class AddStaffView(AdminView):
 #         return selt.render('admin/import_books.html', current_datetime=current_datetime, rule=rule, books=books, books_data=books_data)
 
 #
-# admin.add_view(CategoryView(Category, db.session, name ='Thể loại'))
-# admin.add_view(BookView(Book, db.session, name='Sách'))
+admin.add_view(CategoryView(Category, db.session, name ='Thể loại'))
+admin.add_view(AuthorView(Author, db.session, name ='Tác giả'))
+admin.add_view(BookView(Book, db.session, name='Sách'))
 admin.add_view(UserView(User, db.session,name='Tài khoản'))
 # admin.add_view(StatsView(name='Thống kê - báo cáo'))
 # admin.add_view(ManageRuleView(name='Quy định'))

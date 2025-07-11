@@ -33,14 +33,12 @@ class User(db.Model, UserMixin):
 class Category(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)
-    books = relationship('Book', backref='category', lazy=True)
 
 
 # thông tin tác giả sách
 class Author(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)
-    books = relationship('Book', backref='author', lazy=True)
 
 
 # thông tin sách
@@ -49,6 +47,10 @@ class Book(db.Model):
     name = Column(String(100), nullable=False)
     author_id = Column(Integer, ForeignKey(Author.id), nullable=False)
     category_id = Column(Integer, ForeignKey(Category.id), nullable=False)
+
+    author = relationship('Author', backref='books', lazy=True)
+    category = relationship('Category', backref='books', lazy=True)
+
     image = Column(String(255), nullable=True)
     price_physical = Column(Float, default=0, nullable=False)
     quantity = Column(Integer, nullable=False, default=0)
@@ -168,11 +170,11 @@ if __name__ == '__main__':
         db.create_all()
 
 
-        # u = User(name='admin', username='a', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
-        #          user_role=UserRole.ADMIN)
-        # db.session.add(u)
-        # u = User(name='staff', username='s', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
-        #          user_role=UserRole.STAFF)
+        u = User(name='admin', username='a', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
+                 user_role=UserRole.ADMIN)
+        db.session.add(u)
+        u = User(name='staff', username='s', password=str(hashlib.md5('1'.encode('utf-8')).hexdigest()),
+                 user_role=UserRole.CUSTOMER)
         # db.session.add(u)
         # db.session.commit()
         #
