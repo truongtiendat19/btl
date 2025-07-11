@@ -1,35 +1,110 @@
-<!--trang chủ của khách hàng-->
-
 {% extends 'layout/base.html' %}
 
 {% block content %}
-{% if pages > 1 %}
-<ul class="pagination mt-2">
-    {% for i in range(1, pages + 1) %}
-    <li class="page-item"><a class="page-link" href="/?page={{ i }}">{{ i }}</a></li>
-    {% endfor %}
-</ul>
-{% endif %}
-
-{% if books %}
-<div class="container">
-    <div class="row">
-        {% for b in books %}
-        <div class="col-md-3 col-12 p-2">
-            <div class="card">
-                <img class="card-img-top" src="{{ b.image }}" alt="Book image">
-                <div class="card-body">
-                    <h4 class="card-title">{{ b.name }}</h4>
-                    <p class="card-text">{{ b.price }} VNĐ</p>
-                    <a href="/books/{{ b.id }}" class="btn btn-primary">Xem chi tiết</a>
-                    <button type="button" onclick="addToCart({{b.id}}, '{{ b.name }}', {{ b.price }})">Đặt hàng</button>
-                </div>
+<div class="container mt-5">
+    <h2>🔍 Tìm kiếm và lọc sách</h2>
+    <form method="GET" action="{{ url_for('index') }}">
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label for="kw" class="form-label">Từ khóa</label>
+                <input type="text" class="form-control" id="kw" name="kw" placeholder="Nhập tên sách" value="{{ request.args.get('kw', '') }}">
+            </div>
+            <div class="col-md-3">
+                <label for="category_id" class="form-label">Thể loại</label>
+                <select class="form-select" id="category_id" name="category_id">
+                    <option value="">Tất cả thể loại</option>
+                    {% if categories %}
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if request.args.get('category_id')|string == category.id|string %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="" disabled>Không có thể loại</option>
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="author_id" class="form-label">Tác giả</label>
+                <select class="form-select" id="author_id" name="author_id">
+                    <option value="">Tất cả tác giả</option>
+                    {% if authors %}
+                        {% for author in authors %}
+                            <option value="{{ author.id }}" {% if request.args.get('author_id')|string == author.id|string %}selected{% endif %}>
+                                {{ author.name }}
+                            </option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="" disabled>Không có tác giả</option>
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="price_filter" class="form-label">Loại giá</label>
+                <select class="form-select" id="price_filter" name="price_filter">
+                    <option value="">Tất cả</option>
+                    <option value="paid" {% if request.args.get('price_filter') == 'paid' %}selected{% endif %}>Có phí</option>
+                    <option value="free" {% if request.args.get('price_filter') == 'free' %}selected{% endif %}>Miễn phí</option>
+                </select>
             </div>
         </div>
-        {% endfor %}
-    </div>
+        <button type="submit" class="btn btn-primary">🔍 Tìm kiếm</button>
+    </form>
+
+    <h3 class="mt-5">📚 Danh sách sách</h3>
+    {% if books %}
+        <div class="row">
+            {% for book in books %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <img src="{{ book.image or 'https://res.cloudinary.com/dapckqqhj/image/upload/v1734438576/rlpkm5rn7kqct2k5jcir.jpg' }}" class="card-img-top" alt="{{ book.name }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ book.name }}</h5>
+                            <p class="card-text">Tác giả: {{ book.author.name if book.author else 'Không xác định' }}</p>
+                            <p class="card-text">Thể loại: {{ book.category.name if book.category else 'Không xác định' }}</p>
+                            <p class="card-text">Giá:
+                                {% if book.price_physical > 0 %}
+                                    {{ "{:,.0f}".format(book.price_physical) }} VNĐ
+                                {% else %}
+                                    Miễn phí
+                                {% endif %}
+                            </p>
+                            <a href="{{ url_for('details', book_id=book.id) }}" class="btn btn-primary">📖 Xem chi tiết</a>
+                            <button class="btn btn-success" onclick="addToCart({{ book.id }}, '{{ book.name }}', {{ book.price_physical }})">🛒 Mua</button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        {% if pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mt-3">
+                    {% for p in range(1, pages + 1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('index', kw=request.args.get('kw', ''), category_id=request.args.get('category_id', ''), author_id=request.args.get('author_id', ''), price_filter=request.args.get('price_filter', ''), page=p) }}">{{ p }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <p>Không tìm thấy sách nào phù hợp.</p>
+    {% endif %}
 </div>
-{% else %}
-<div class="alert alert-info mt-1">KHÔNG có sách nào.</div>
-{% endif %}
+
+<script>
+function addToCart(id, name, price) {
+    fetch('/api/carts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, name: name, price: price })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('Đã thêm vào giỏ hàng!');
+        document.querySelector('.cart-quantity').textContent = data.total_quantity;
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
 {% endblock %}
