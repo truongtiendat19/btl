@@ -17,7 +17,7 @@ class MyAdminIndexView(AdminIndexView):
 
 
 # tạo trang chủ admin
-admin = Admin(app, name='404 NOT FOUND', template_mode='bootstrap4', index_view=MyAdminIndexView(name='Trang chủ'))
+admin = Admin(app, name='404 NOT FOUND', index_view=MyAdminIndexView(name='Trang chủ'))
 
 
 class MyAdminView(ModelView):
