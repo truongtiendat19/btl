@@ -2,39 +2,220 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Trang bán sách</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <title>Thanh toán đơn hàng</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f1f3f9;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 40px;
+        }
+
+        .grid {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 20px;
+        }
+
+        ul li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 15px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background-color: #5c6ac4;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #3f4ac4;
+        }
+
+        .note {
+            font-size: 13px;
+            color: #888;
+        }
+    </style>
 </head>
 <body>
 
-<!-- Header -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold text-primary" href="/">📘 SáchStore</a>
-        <form class="d-flex mx-auto w-50">
-            <input class="form-control me-2" type="search" placeholder="Tìm sách..." aria-label="Search">
-            <button class="btn btn-outline-primary" type="submit">Tìm</button>
-        </form>
-        <a href="/cart" class="btn btn-outline-success position-relative">
-            <i class="fa fa-shopping-cart"></i>
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                {{ cart_quantity or 0 }}
-            </span>
-        </a>
+<div class="container">
+    <h2>Thanh toán đơn hàng</h2>
+    <div class="grid">
+
+        <!-- THÔNG TIN KHÁCH HÀNG -->
+        <div class="card">
+            <h3>Thông tin khách hàng</h3>
+            <form id="paymentForm">
+                <div class="form-group">
+                    <label>Họ và tên</label>
+                    <input type="text" name="customer_name" value="{{ user.name }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="text" name="customer_phone" required>
+                </div>
+                <div class="form-group">
+                    <label>Địa chỉ giao hàng</label>
+                    <textarea name="customer_address" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Phương thức thanh toán</label>
+                    <select name="payment_method">
+                        <option value="COD">Thanh toán khi nhận hàng (COD)</option>
+                        <option value="Online">Thanh toán trực tuyến</option>
+                        <option value="MoMo">Thanh toán qua MoMo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Phương thức giao hàng</label>
+                    <select name="delivery_method">
+                        <option value="Standard">Giao hàng tiêu chuẩn</option>
+                        <option value="Express">Giao hàng nhanh</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <!-- TÓM TẮT ĐƠN HÀNG -->
+        <div class="card">
+            <h3>Tóm tắt đơn hàng</h3>
+
+            {% if cart_stats.total_quantity > 0 %}
+                <ul>
+                    {% for item in session['cart'].values() %}
+                        <li>
+                            <span>{{ item.name }} (x{{ item.quantity }})</span>
+                            <span>{{ "{:,.0f}".format(item.price * item.quantity) }} VNĐ</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <div class="total-row">
+                    <span>Tổng số lượng</span>
+                    <span>{{ cart_stats.total_quantity }}</span>
+                </div>
+                <div class="total-row">
+                    <span>Tổng tiền</span>
+                    <span>{{ "{:,.0f}".format(cart_stats.total_amount) }} VNĐ</span>
+                </div>
+                <br>
+                <button class="btn" onclick="submitPayment()">Thanh toán</button>
+            {% else %}
+                <p>Giỏ hàng trống</p>
+                <a href="{{ url_for('index') }}">Quay lại mua sắm</a>
+            {% endif %}
+        </div>
+
     </div>
-</nav>
+</div>
 
-<!-- Nội dung chính -->
-<main class="mt-3">
-    {% block content %}{% endblock %}
-</main>
+<!-- JAVASCRIPT -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function submitPayment() {
+        const form = document.getElementById('paymentForm');
+        const data = {
+            customer_name: form.customer_name.value,
+            customer_phone: form.customer_phone.value,
+            customer_address: form.customer_address.value,
+            payment_method: form.payment_method.value,
+            delivery_method: form.delivery_method.value
+        };
 
-<!-- Footer -->
-<footer class="bg-light text-center text-muted py-3 mt-4">
-    © 2025 SáchStore. Tốt & Nhanh – Giao sách toàn quốc.
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        $.ajax({
+            url: '/api/pay',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (res) {
+                if (res.payUrl) {
+                    window.location.href = res.payUrl;
+                } else {
+                    window.location.href = '/';
+                }
+            },
+            error: function (xhr) {
+                alert('Có lỗi xảy ra: ' + (xhr.responseJSON?.error || 'Không xác định'));
+            }
+        });
+    }
+</script>
 </body>
 </html>

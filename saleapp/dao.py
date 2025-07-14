@@ -1,11 +1,12 @@
-from saleapp.models import Category, Book, User, Author, Review
+from datetime import datetime
+from flask import session
+from saleapp.models import Category, Book, User, Author, Review, OrderDetail, Order
 from saleapp import app, db
 import hashlib
 import cloudinary.uploader
-from flask_login import current_user
 from sqlalchemy import func
+from flask_login import current_user
 from operator import or_
-
 def load_comments(book_id):
     return Review.query.filter_by(book_id=book_id).order_by(Review.created_date.desc()).all()
 
@@ -81,6 +82,41 @@ def get_book_by_id(id):
 def stats_books():
     return db.session.query(Category.id, Category.name, func.count(Book.id))\
         .join(Book, Book.category_id.__eq__(Category.id), isouter=True).group_by(Category.id).all()
+
+
+def add_receipt(cart, customer_phone, customer_address, payment_method, delivery_method, order_id=None):
+    if not cart:
+        return None
+
+    total_amount = sum(item['quantity'] * item['price'] for item in cart.values())
+    order = Order(
+        user_id=current_user.id,
+        order_date=datetime.now(),
+        status='Pending',
+        payment_status='Pending' if payment_method else 'Unpaid',
+        payment_method='MoMo' if payment_method else 'COD',
+        shipping_address=customer_address,
+        total_amount=total_amount
+    )
+    if order_id:
+        order.id = order_id  # Set custom order ID for MoMo
+    db.session.add(order)
+    db.session.flush()  # Ensure order ID is generated
+
+    for item in cart.values():
+        order_detail = OrderDetail(
+            order_id=order.id,
+            book_id=item['id'],
+            quantity=item['quantity'],
+            unit_price=item['price']
+        )
+        db.session.add(order_detail)
+
+    db.session.commit()
+    if not payment_method:  # Clear cart for non-MoMo payments
+        session.pop('cart', None)
+    return order
+
 
 if __name__ == '__main__':
     with app.app_context():
