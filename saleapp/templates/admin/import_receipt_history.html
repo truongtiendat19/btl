@@ -1,0 +1,39 @@
+{% extends 'admin/master.html' %}
+
+
+{% block body %}
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Lịch sử Phiếu Nhập Sách</h2>
+    <table class="table table-bordered table-striped">
+        <thead class="table-light">
+            <tr>
+                <th>STT</th>
+                <th>Mã Phiếu</th>
+                <th>Người Nhập</th>
+                <th>Ngày Nhập</th>
+                <th>Tổng Tiền</th>
+                <th>Ghi chú</th>
+                <th>In PDF</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in receipts %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>#{{ r.id }}</td>
+                <td>{{ r.user.name }}</td>
+                <td>{{ r.import_date.strftime('%d/%m/%Y') }}</td>
+                <td>{{ "{:,.0f}".format(r.total_amount) }} đ</td>
+                <td>{{ r.note or '---' }}</td>
+                <td>
+                    <a href="{{ url_for('print_import_receipt', receipt_id=r.id) }}" target="_blank" class="btn btn-success btn-sm">
+                        In
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

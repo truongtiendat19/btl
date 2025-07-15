@@ -1,12 +1,14 @@
 import math
-from functools import wraps
-from flask import render_template, request, redirect, session, jsonify, url_for
+from xhtml2pdf import pisa
+import io
+import os
+from flask import render_template, request, redirect, session, jsonify, send_file, current_app
 import dao, utils
-from saleapp import app, login, db
+from saleapp import app, login
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
 from saleapp.dao import check_username_exists
-from saleapp.models import UserRole, Book, User, Category, Author
+from saleapp.models import UserRole, Book, ImportReceipt,ImportReceiptDetail
 
 @app.route('/api/books', methods=['GET'])
 def get_books():
@@ -175,6 +177,35 @@ def common_response_data():
         'categories': dao.load_categories(),
         'cart_stats': utils.cart_stats(session.get('cart'))
     }
+
+
+from flask import render_template, send_file, current_app
+from xhtml2pdf import pisa
+import io, os
+from datetime import datetime
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+@app.route('/admin/receipt/<int:receipt_id>/print')
+def print_import_receipt(receipt_id):
+    receipt = ImportReceipt.query.get_or_404(receipt_id)
+    receipt_details = ImportReceiptDetail.query.filter_by(import_receipt_id=receipt.id).all()
+
+    # Đăng ký font trước khi tạo PDF
+    font_path = os.path.join(current_app.root_path, 'static/fonts/DejaVuSans.ttf')
+    pdfmetrics.registerFont(TTFont('DejaVu', font_path))
+
+    html = render_template('admin/print_receipt.html',
+                           receipt=receipt,
+                           details=receipt_details,
+                           now=datetime.now())
+
+    result = io.BytesIO()
+    pisa.CreatePDF(io.StringIO(html), dest=result)
+    result.seek(0)
+
+    return send_file(result, download_name=f"phieu_nhap_{receipt.id}.pdf", as_attachment=True)
+
 
 if __name__ == '__main__':
     from saleapp import admin

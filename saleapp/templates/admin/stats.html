@@ -1,125 +1,29 @@
-
 {% extends 'admin/master.html' %}
+
 {% block body %}
-<br>
-<h1 class="text-center text-primary">Thống kê và báo cáo</h1>
-<br>
-<!-- Bộ lọc tháng và năm -->
-<form method="get" class="mb-3">
-    <label>Chọn tháng:</label>
-    <input type="number" name="month" value="{{ month }}" min="1" max="12">
-    <label>Chọn năm:</label>
-    <input type="number" name="year" value="{{ year }}" min="2000">
-    <button type="submit" class="btn btn-primary">Xem báo cáo</button>
-</form>
+<div class="container mt-4">
+    <h2 class="text-center">Báo Cáo Doanh Thu Tháng {{ month }}/{{ year }}</h2>
+    <hr>
+    <p><strong>Tổng đơn hàng:</strong> {{ total_orders }}</p>
+    <p><strong>Tổng doanh thu:</strong> {{ "{:,.0f}".format(total_revenue) }} VNĐ</p>
 
-<div class="row">
-    <!-- Bảng doanh thu -->
-    <div class="col-md-6">
-        <h3>Báo cáo doanh thu theo tháng</h3>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Thể loại sách</th>
-                    <th>Doanh thu</th>
-                    <th>Số lượt thuê</th>
-                    <th>Tỷ lệ (%)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for idx, stat in enumerate(revenue_stats) %}
-                <tr>
-                    <td>{{ idx + 1 }}</td>
-                    <td>{{ stat[0] }}</td>
-                    <td>{{ "{:,.0f}".format(stat[1]) }} VNĐ</td>
-                    <td>{{ stat[2] }}</td>
-                    <td>{{ "{:.2f}".format((stat[1] / total_revenue * 100) if total_revenue else 0) }}</td>
-                </tr>
-                {% endfor %}
-                <tr>
-                    <td colspan="2"><b>Tổng doanh thu:</b></td>
-                    <td colspan="3">{{ "{:,.0f}".format(total_revenue) }} VNĐ</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Biểu đồ doanh thu -->
-    <div class="col-md-6">
-        <canvas id="revenueChart"></canvas>
-    </div>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Tên sách</th>
+                <th>Số lượng bán</th>
+                <th>Doanh thu</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name, quantity, revenue in stats %}
+            <tr>
+                <td>{{ name }}</td>
+                <td>{{ quantity or 0 }}</td>
+                <td>{{ "{:,.0f}".format(revenue or 0) }} VNĐ</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
-<hr>
-
-<div class="row">
-    <!-- Bảng tần suất -->
-    <div class="col-md-6">
-        <h3>Báo cáo tần suất sách bán</h3>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Tên sách</th>
-                    <th>Thể loại</th>
-                    <th>Số lượng</th>
-                    <th>Tỷ lệ (%)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for idx, stat in enumerate(book_frequency_stats) %}
-                <tr>
-                    <td>{{ idx + 1 }}</td>
-                    <td>{{ stat[0] }}</td>
-                    <td>{{ stat[1] }}</td>
-                    <td>{{ stat[2] }}</td>
-                    <td>{{ "{:.2f}".format(stat[3]) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Biểu đồ tần suất -->
-    <div style="width: 38%; margin: 0 auto;">
-            <canvas id="frequencyChart"></canvas>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Lấy dữ liệu từ context
-    const revenueLabels = {{ revenue_stats|map(attribute=0)|list|tojson }};
-    const revenueData = {{ revenue_stats|map(attribute=1)|list|tojson }};
-    const frequencyLabels = {{ book_frequency_stats|map(attribute=0)|list|tojson }};
-    const frequencyData = {{ book_frequency_stats|map(attribute=2)|list|tojson }};
-
-    // Biểu đồ doanh thu
-    new Chart(document.getElementById('revenueChart'), {
-        type: 'bar',
-        data: {
-            labels: revenueLabels,
-            datasets: [{
-                label: 'Doanh thu',
-                data: revenueData,
-                backgroundColor: 'blue',
-            }]
-        },
-        options: { responsive: true }
-    });
-
-    // Biểu đồ tần suất
-    new Chart(document.getElementById('frequencyChart'), {
-        type: 'pie',
-        data: {
-            labels: frequencyLabels,
-            datasets: [{
-                label: 'Số lượng',
-                data: frequencyData,
-                backgroundColor: ['red', 'green', 'yellow', 'orange', 'purple'],
-            }]
-        },
-        options: { responsive: true }
-    });
-</script>
 {% endblock %}

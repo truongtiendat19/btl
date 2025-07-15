@@ -8,7 +8,7 @@
 <div class=" justify-content-center align-items-center vh-100">
     <br>
     <div class="container text-center">
-        <h2 class="text-info">Chào {{ current_user.name }} đến với trang Quản Trị Viên !!!</h2>
+        <h2 class="text-info">Chào {{ current_user.name }} đến với trang của Nhà Bán Hàng !!!</h2>
         <br>
         <div class="row justify-content-center">
             <div class="col-md-6 col-12">
@@ -16,16 +16,16 @@
                     <thead>
                         <tr>
                             <th>STT</th>
-                            <th>Thể loại</th>
-                            <th>Số đầu sách</th>
+                            <th>Tên sách</th>
+                            <th>Số lượng tồn</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for s in cates %}
+                        {% for b in books %}
                         <tr>
-                            <td>{{ s[0] }}</td>
-                            <td>{{ s[1] }}</td>
-                            <td>{{ s[2] }}</td>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ b[1] }}</td>
+                            <td>{{ b[2] }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -34,16 +34,5 @@
         </div>
     </div>
 </div>
-
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    let data = [];
-    let labels = [];
-    {% for s in category %}
-        data.push({{ s[2] }});
-        labels.push('{{ s[1] }}');
-    {% endfor %}
-</script>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Phiếu Nhập #{{ receipt.id }}</title>
+    <style>
+
+        body {
+            font-family: 'DejaVu', sans-serif;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td, th {
+            border: 1px solid #000;
+            padding: 8px;
+        }
+
+        .print-btn {
+            display: none; /* Ẩn nút khi in PDF */
+        }
+    </style>
+</head>
+<body>
+
+    <h2>PHIẾU NHẬP SÁCH</h2>
+
+    <div>
+        <strong>Mã phiếu:</strong> #{{ receipt.id }}<br>
+        <strong>Người nhập:</strong> {{ receipt.user.name }}<br>
+        <strong>Ngày nhập:</strong> {{ receipt.import_date.strftime('%d/%m/%Y %H:%M') }}
+    </div>
+
+    <br>
+
+    <table>
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Tên sách</th>
+                <th>Số lượng</th>
+                <th>Đơn giá (đ)</th>
+                <th>Thành tiền (đ)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in receipt.import_receipt_detail %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ item.book.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ "{:,.0f}".format(item.unit_price) }}</td>
+                <td>{{ "{:,.0f}".format(item.quantity * item.unit_price) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <br>
+
+    <div><strong>Tổng cộng:</strong> {{ "{:,.0f}".format(receipt.total_amount) }} đ</div>
+    <div><strong>Ghi chú:</strong> {{ receipt.note or 'Không có' }}</div>
+
+    <br><br>
+    <div><em>Ngày in: {{ now.strftime('%d/%m/%Y %H:%M') }}</em></div>
+
+</body>
+</html>
