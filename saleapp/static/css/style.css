@@ -164,7 +164,7 @@ footer {
     color: #0056b3;
 }
 
-/* Dòng cuối footer */
+
 .footer-bottom {
     text-align: center;
     margin-top: 30px;
@@ -172,6 +172,7 @@ footer {
     color: #666;
 }
 
+/*css cho trang login và register*/
 .login-wrapper {
     min-height: 100vh;
     display: flex;
@@ -250,6 +251,3 @@ footer {
 .btn-login:hover {
     background-color: #0b5ed7;
 }
-
-
-

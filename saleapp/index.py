@@ -1,9 +1,6 @@
-import math
 from xhtml2pdf import pisa
-import io
-import os
+import io, filetype, os, dao, utils, math
 from flask import render_template, request, redirect, session, jsonify, send_file, current_app
-import dao, utils
 from saleapp import app, login
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
@@ -87,27 +84,37 @@ def logout_process():
     logout_user()
     return redirect('/login')
 
+
 @app.route('/register', methods=['get', 'post'])
 def register_process():
     err_msg = ''
-    if request.method.__eq__('POST'):
+    if request.method == 'POST':
         password = request.form.get('password')
         confirm = request.form.get('confirm')
         username = request.form.get('username')
 
         if dao.check_username_exists(username):
             err_msg = 'Tên đăng nhập đã tồn tại.'
+        elif password != confirm:
+            err_msg = 'Mật khẩu không khớp!'
         else:
-            if password.__eq__(confirm):
-                data = request.form.copy()
-                del data['confirm']
-                avatar = request.files.get('avatar')
-                dao.add_user(avatar=avatar, **data)
-                return redirect('/login')
-            else:
-                err_msg = 'Mật khẩu không khớp!'
+            avatar = request.files.get('avatar')
+
+            if avatar and avatar.filename:
+                kind = filetype.guess(avatar.read())
+                avatar.stream.seek(0)
+
+                if not kind or kind.mime.split('/')[0] != 'image':
+                    err_msg = 'Tệp tải lên không phải là ảnh hợp lệ!'
+                    return render_template('register.html', err_msg=err_msg)
+
+            data = request.form.copy()
+            del data['confirm']
+            dao.add_user(avatar=avatar, **data)
+            return redirect('/login')
 
     return render_template('register.html', err_msg=err_msg)
+
 
 @app.route("/api/carts", methods=['post'])
 def add_to_cart():

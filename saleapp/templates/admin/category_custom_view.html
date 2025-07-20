@@ -1,0 +1,93 @@
+{% extends 'admin/master.html' %}
+{% block body %}
+<style>
+  .custom-row {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  .form-column {
+    flex: 1;
+    position: sticky;
+    top: 20px;
+    height: fit-content;
+    z-index: 100;
+  }
+
+  .form-section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .table-column {
+    flex: 2;
+    overflow-x: auto;
+  }
+
+  .table thead {
+    background: #0d6efd;
+    color: white;
+  }
+</style>
+
+<div class="container-fluid px-5 py-4">
+  <h3 class="text-center text-primary mb-4">Quản lý Thể loại</h3>
+
+  <div class="custom-row">
+    <!-- Form bên trái -->
+    <div class="form-column">
+      <div class="form-section">
+        <form method="POST">
+          <input type="hidden" name="category_id" id="category_id">
+
+          <div class="mb-3">
+            <label for="category_name">Tên thể loại</label>
+            <input type="text" class="form-control" id="category_name" name="name" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Thêm / Sửa</button>
+          <button type="reset" class="btn btn-secondary">Reset</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bảng bên phải -->
+    <div class="table-column">
+      <table class="table table-bordered text-center">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Tên thể loại</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in categories %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ c.name }}</td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="selectCategory({{ c.id }})">Sửa</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function selectCategory(id) {
+  fetch(`/admin/categories/${id}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('category_id').value = data.id;
+      document.getElementById('category_name').value = data.name;
+    });
+}
+</script>
+{% endblock %}

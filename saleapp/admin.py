@@ -3,12 +3,13 @@ from sqlalchemy import extract, func
 from saleapp import db, app
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
-from saleapp.models import Category, Author, Book, User, UserRole, ImportReceipt, ImportReceiptDetail, Order,OrderDetail
+from saleapp.models import Category, Author, Book, User, UserRole, ImportReceipt, ImportReceiptDetail, Order,OrderDetail, Book, Author, Category
 from flask_login import current_user, logout_user
-from flask_admin import BaseView, expose
-from flask import redirect, request, flash, url_for
 from datetime import  datetime
 from sqlalchemy.exc import SQLAlchemyError
+from flask_admin import BaseView, expose
+from flask import request, redirect, url_for, flash, jsonify
+import cloudinary.uploader
 
 
 # tùy chỉnh trang admin
@@ -128,17 +129,6 @@ class LogoutView(BaseView):
         return redirect('/login')
 
 
-from flask_admin import BaseView, expose
-from flask import request, redirect, url_for, flash, jsonify
-from saleapp.models import Book, Author, Category
-from saleapp import db
-
-from flask import request, redirect, url_for, render_template, flash
-from flask_admin import BaseView, expose
-from saleapp import db
-from saleapp.models import Book, Author, Category
-import cloudinary.uploader
-
 class BookAdminView(BaseView):
     @expose('/', methods=['GET', 'POST'])
     def index(self):
@@ -160,7 +150,6 @@ class BookAdminView(BaseView):
             book.author_id = request.form['author_id']
             book.category_id = request.form['category_id']
             book.price_physical = float(request.form.get('price_physical', 0))
-            book.quantity = int(request.form.get('quantity', 0))
             book.is_digital_avaible = 'is_digital_avaible' in request.form
             book.description = request.form.get('description')
 
@@ -191,9 +180,80 @@ class BookAdminView(BaseView):
         })
 
 
-# Đăng ký trong app.py hoặc nơi khởi tạo admin:
-# admin.add_view(BookAdminView(name='Quản lý Sách', endpoint='books'))
+# Tạo View cho Category
+class CategoryAdminView(AdminView):
+    @expose('/', methods=['GET', 'POST'])
+    def index(self):
+        categories = Category.query.all()
 
+        if request.method == 'POST':
+            category_id = request.form.get('category_id')
+            name = request.form['name'].strip()
+
+            # Kiểm tra trùng tên khi thêm mới
+            if not category_id and Category.query.filter_by(name=name).first():
+                flash('❌ Thể loại đã tồn tại!', 'danger')
+            else:
+                if category_id:
+                    category = Category.query.get(category_id)
+                    category.name = name
+                    msg = '✅ Cập nhật thể loại thành công!'
+                else:
+                    category = Category(name=name)
+                    db.session.add(category)
+                    msg = '✅ Thêm thể loại thành công!'
+
+                db.session.commit()
+                flash(msg, 'success')
+                return redirect(url_for('.index'))
+
+        return self.render('admin/category_custom_view.html', categories=categories)
+
+    @expose('/<int:category_id>')
+    def get_category(self, category_id):
+        category = Category.query.get_or_404(category_id)
+        return jsonify({
+            'id': category.id,
+            'name': category.name
+        })
+
+
+# Tạo View cho Author
+class AuthorAdminView(AdminView):
+    @expose('/', methods=['GET', 'POST'])
+    def index(self):
+        authors = Author.query.all()
+
+        if request.method == 'POST':
+            author_id = request.form.get('author_id')
+            name = request.form['name'].strip()
+
+            # Kiểm tra trùng khi thêm mới
+            if not author_id and Author.query.filter_by(name=name).first():
+                flash('❌ Tác giả đã tồn tại!', 'danger')
+            else:
+                if author_id:
+                    author = Author.query.get(author_id)
+                    author.name = name
+                    msg = "✅ Cập nhật tác giả thành công!"
+                else:
+                    author = Author(name=name)
+                    db.session.add(author)
+                    msg = "✅ Thêm tác giả thành công!"
+
+                db.session.commit()
+                flash(msg, 'success')
+                return redirect(url_for('.index'))
+
+        return self.render('admin/author_custom_view.html', authors=authors)
+
+    @expose('/<int:author_id>')
+    def get_author(self, author_id):
+        author = Author.query.get_or_404(author_id)
+        return jsonify({
+            'id': author.id,
+            'name': author.name
+        })
 
 
 # trang nhập sách
@@ -325,11 +385,9 @@ class RevenueStatsView(AdminView):
                            year=year)
 
 
-
-
-admin.add_view(CategoryView(Category, db.session, name ='Thể loại', category='Quản lý thông tin sách'))
-admin.add_view(AuthorView(Author, db.session, name ='Tác giả', category='Quản lý thông tin sách'))
-admin.add_view(BookAdminView(name='Quản lý Sách', endpoint='books'))
+admin.add_view(CategoryAdminView(name='Thể loại', category='Quản lý sách', endpoint='categories'))
+admin.add_view(AuthorAdminView(name='Tác giả', category='Quản lý sách', endpoint='authors'))
+admin.add_view(BookAdminView(name='Sách', category='Quản lý sách', endpoint='books'))
 admin.add_view(ImportBooksView(name='Nhập sách', category='Quản lý kho'))
 admin.add_view(ImportReceiptHistoryView(name='Xuất phiếu nhập', category='Quản lý kho'))
 admin.add_view(UserView(User, db.session,name='Tài khoản'))
