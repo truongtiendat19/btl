@@ -3,7 +3,7 @@ from sqlalchemy import extract, func
 from saleapp import db, app
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
-from saleapp.models import Category, Author, Book, User, UserRole, ImportReceipt, ImportReceiptDetail, Order,OrderDetail, Book, Author, Category
+from saleapp.models import Category, Author, Book, User, UserRole, ImportReceipt, ImportReceiptDetail, Order,OrderDetail, Book, Author, Category, DigitalPricing
 from flask_login import current_user, logout_user
 from datetime import  datetime
 from sqlalchemy.exc import SQLAlchemyError
@@ -349,25 +349,99 @@ class ImportReceiptHistoryView(AdminView):
         return self.render("admin/import_receipt_history.html", receipts=receipts)
 
 
+class AddDigitalPricingView(BaseView):
+    @expose('/', methods=['GET', 'POST'])
+    def index(self):
+        books = Book.query.all()
+        pricings = DigitalPricing.query.all()
+
+        if request.method == 'POST':
+            pricing_id = request.form.get('pricing_id')
+            book_ids = request.form.getlist('book_ids')  # lấy nhiều sách
+            access_type = request.form.get('access_type')
+            price = request.form.get('price')
+            duration = request.form.get('duration')
+
+            if not access_type or not price or not duration:
+                flash("Vui lòng nhập đầy đủ thông tin gói.", "danger")
+                return redirect(url_for('.index'))
+
+            if pricing_id:
+                pricing = DigitalPricing.query.get(pricing_id)
+                if not pricing:
+                    flash("Gói đọc không tồn tại.", "danger")
+                    return redirect(url_for('.index'))
+                msg = "Cập nhật gói đọc thành công!"
+            else:
+                pricing = DigitalPricing()
+                db.session.add(pricing)
+                msg = "Thêm gói đọc mới thành công!"
+
+            pricing.access_type = access_type
+            pricing.price = float(price)
+            pricing.duration_day = int(duration)
+
+
+            if book_ids:
+                books_selected = Book.query.filter(Book.id.in_(book_ids)).all()
+                pricing.books = books_selected
+            else:
+                pricing.books = []
+
+            db.session.commit()
+            flash(msg, "success")
+            return redirect(url_for('.index'))
+
+        return self.render('admin/add_digital_pricing.html',
+                           books=books,
+                           pricings=pricings)
+
+    @expose('/<int:pricing_id>')
+    def get_pricing(self, pricing_id):
+        pricing = DigitalPricing.query.get_or_404(pricing_id)
+        book_ids = [b.id for b in pricing.books]
+        return jsonify({
+            'id': pricing.id,
+            'book_ids': book_ids,
+            'access_type': pricing.access_type,
+            'price': pricing.price,
+            'duration_day': pricing.duration_day,
+        })
+
+
 class RevenueStatsView(AdminView):
     @expose('/')
     def revenue_stats(self):
-
-        # Lấy tháng & năm hiện tại
         now = datetime.now()
         month = int(request.args.get('month', now.month))
         year = int(request.args.get('year', now.year))
 
-        # Thống kê doanh thu đơn hàng trong tháng
-        orders_in_month = db.session.query(Order).filter(
+        # Tổng doanh thu
+        total_revenue = db.session.query(
+            func.sum(OrderDetail.quantity * OrderDetail.unit_price)
+        ).join(Order).filter(
             extract('month', Order.order_date) == month,
             extract('year', Order.order_date) == year
-        ).all()
+        ).scalar() or 0
 
-        total_revenue = sum(order.total_amount for order in orders_in_month)
-        total_orders = len(orders_in_month)
+        # Tổng đơn hàng
+        total_orders = db.session.query(Order).filter(
+            extract('month', Order.order_date) == month,
+            extract('year', Order.order_date) == year
+        ).count()
 
-        # Thống kê số lượng bán ra của từng sách
+        # Chi phí nhập hàng
+        total_cost = db.session.query(
+            func.sum(ImportReceiptDetail.quantity * ImportReceiptDetail.unit_price)
+        ).join(ImportReceipt).filter(
+            extract('month', ImportReceipt.import_date) == month,
+            extract('year', ImportReceipt.import_date) == year
+        ).scalar() or 0
+
+        # Lợi nhuận
+        profit = total_revenue - total_cost
+
+        # Thống kê từng sách
         stats = db.session.query(
             Book.name,
             func.sum(OrderDetail.quantity),
@@ -380,10 +454,12 @@ class RevenueStatsView(AdminView):
         return self.render('admin/stats.html',
                            total_revenue=total_revenue,
                            total_orders=total_orders,
+                           total_cost=total_cost,
+                           profit=profit,
                            stats=stats,
                            month=month,
-                           year=year)
-
+                           year=year,
+                           now=now)
 
 admin.add_view(CategoryAdminView(name='Thể loại', category='Quản lý sách', endpoint='categories'))
 admin.add_view(AuthorAdminView(name='Tác giả', category='Quản lý sách', endpoint='authors'))
@@ -391,5 +467,6 @@ admin.add_view(BookAdminView(name='Sách', category='Quản lý sách', endpoint
 admin.add_view(ImportBooksView(name='Nhập sách', category='Quản lý kho'))
 admin.add_view(ImportReceiptHistoryView(name='Xuất phiếu nhập', category='Quản lý kho'))
 admin.add_view(UserView(User, db.session,name='Tài khoản'))
-admin.add_view(RevenueStatsView(name="Thống kê - Báo cáo", endpoint="revenue_stats"))
+admin.add_view(AddDigitalPricingView(name='Gói đọc sách', category='Quản lý đọc sách'))
+admin.add_view(RevenueStatsView(name="Thống kê bán sách",category = 'Thống kê - Báo cáo', endpoint="revenue_stats"))
 admin.add_view(LogoutView(name='Đăng xuất'))

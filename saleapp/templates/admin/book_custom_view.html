@@ -2,6 +2,7 @@
 {% block body %}
 
 <style>
+
   .custom-row {
     display: flex;
     gap: 2%;
@@ -23,6 +24,9 @@
     border: 1px solid #e0e0e0;
   }
 
+  .table {
+    background-color: #fff
+  }
   .table-column {
     width: 63%;
     overflow-x: auto;
@@ -108,7 +112,7 @@
 
           <div class="mb-2">
             <label>Giá</label>
-            <input type="number" step="0.01" name="price_physical" id="price_physical" class="form-control">
+            <input type="number" step="0.01" name="price_physical" id="price_physical" class="form-control" required>
           </div>
 
           <div class="form-check mb-2">
@@ -135,9 +139,9 @@
             <th>STT</th>
             <th>Tên</th>
             <th>Ảnh</th>
-            <th>Tác giả</th> <!-- Mới -->
-            <th>Thể loại</th> <!-- Mới -->
-            <th>Giá</th> <!-- Mới -->
+            <th>Tác giả</th>
+            <th>Thể loại</th>
+            <th>Giá</th>
             <th>Thao tác</th>
           </tr>
         </thead>

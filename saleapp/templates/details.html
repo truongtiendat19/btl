@@ -28,6 +28,27 @@
                     🛒 Đặt hàng
                 </button>
             </div>
+            {% if book.is_digital_avaible %}
+                <div class="mt-3">
+                {% if current_user.is_authenticated %}
+                    {% if has_access or book.is_free_reading %}
+                        <a href="{{ url_for('read_book', book_id=book.id) }}" class="btn btn-success btn-lg">
+                            📖 Đọc sách
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('buy_book_access', book_id=book.id) }}" class="btn btn-outline-primary btn-lg">
+                            💳 Mua quyền đọc
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a href="/login?next=/books/{{ book.id }}" class="btn btn-outline-secondary btn-lg">
+                        🔐 Đăng nhập để đọc
+                    </a>
+        {% endif %}
+    </div>
+            {% endif %}
+
+
         </div>
     </div>
 

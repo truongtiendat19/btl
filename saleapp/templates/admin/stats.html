@@ -1,11 +1,46 @@
 {% extends 'admin/master.html' %}
 
 {% block body %}
+<div class="row mb-4">
+    <div class="col-md-6 offset-md-3">
+        <form method="get" class="row g-2 align-items-center justify-content-center">
+            <div class="col-auto">
+                <label for="month" class="form-label mb-0 me-2">Tháng:</label>
+                <select name="month" id="month" class="form-select">
+                    {% for m in range(1, 13) %}
+                    <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-auto">
+                <label for="year" class="form-label mb-0 me-2">Năm:</label>
+                <select name="year" id="year" class="form-select">
+                    {% for y in range(now.year - 5, now.year + 1) %}
+                    <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Xem</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="container mt-4">
     <h2 class="text-center">Báo Cáo Doanh Thu Tháng {{ month }}/{{ year }}</h2>
     <hr>
+
     <p><strong>Tổng đơn hàng:</strong> {{ total_orders }}</p>
     <p><strong>Tổng doanh thu:</strong> {{ "{:,.0f}".format(total_revenue) }} VNĐ</p>
+    <p><strong>Chi phí nhập hàng:</strong> {{ "{:,.0f}".format(total_cost) }} VNĐ</p>
+    <p><strong>Lợi nhuận:</strong>
+        <span class="{% if profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+            {{ "{:,.0f}".format(profit) }} VNĐ
+        </span>
+    </p>
 
     <table class="table table-bordered">
         <thead>

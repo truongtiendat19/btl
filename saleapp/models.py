@@ -49,6 +49,11 @@ class Author(db.Model):
     def __str__(self):
         return self.name
 
+digitalpricing_books = db.Table('digitalpricing_books',
+    db.Column('digitalpricing_id', db.Integer, db.ForeignKey('digital_pricing.id')),
+    db.Column('book_id', db.Integer, db.ForeignKey('book.id'))
+)
+
 
 # thông tin sách
 class Book(db.Model):
@@ -66,7 +71,7 @@ class Book(db.Model):
     is_digital_avaible = Column(Boolean, default= False)
     description = Column(String(255), nullable=True)
     book_contents = relationship('BookContent', backref='book', lazy=True)
-    digital_pricings = relationship('DigitalPricing', backref='book', lazy=True)
+    digital_pricings = relationship('DigitalPricing', secondary=digitalpricing_books, back_populates='books')
     purchases = relationship('Purchase', backref='book', lazy=True)
     order_detail = relationship('OrderDetail', backref='book', lazy=True)
     import_receipt_detail = relationship('ImportReceiptDetail', back_populates='book', lazy=True)
@@ -111,11 +116,11 @@ class CartItem(db.Model):
 # giá thuê sách đọc online
 class DigitalPricing(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
     access_type = Column(String(100), nullable = False)
     price = Column(Float, nullable = False)
     duration_day = Column(Integer, nullable = False)
     purchases = relationship('Purchase', backref='digital_pricing', lazy=True)
+    books = relationship('Book', secondary=digitalpricing_books, back_populates='digital_pricings')
 
 
 # lịch sử mua quyền đọc sách online
@@ -272,6 +277,6 @@ if __name__ == '__main__':
         #             is_digital_avaible=True
         #         )
         #         db.session.add(book)
-
-            # db.session.commit()
+        #
+        #     db.session.commit()
 
