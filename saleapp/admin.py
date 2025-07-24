@@ -1,15 +1,15 @@
-import cloudinary.uploader
+import cloudinary.uploader, io
 from sqlalchemy import extract, func
 from saleapp import db, app
-from flask_admin import Admin, AdminIndexView
+from flask_admin import Admin, AdminIndexView, BaseView, expose
 from flask_admin.contrib.sqla import ModelView
-from saleapp.models import Category, Author, Book, User, UserRole, ImportReceipt, ImportReceiptDetail, Order,OrderDetail, Book, Author, Category, DigitalPricing
+from saleapp.models import (Category, Author, Book, User, UserRole, ImportReceipt,ImportReceiptDetail,
+                            Order,OrderDetail, Book, Author, Category, DigitalPricing, BookContent)
 from flask_login import current_user, logout_user
 from datetime import  datetime
 from sqlalchemy.exc import SQLAlchemyError
-from flask_admin import BaseView, expose
 from flask import request, redirect, url_for, flash, jsonify
-import cloudinary.uploader
+from PIL import Image
 
 
 # tùy chỉnh trang admin
@@ -17,6 +17,7 @@ class MyAdminIndexView(AdminIndexView):
     @expose("/")
     def index(self):
         books = db.session.query(Book.id, Book.name, Book.quantity).all()
+
         return self.render('admin/index.html', books=books, current_user=current_user)
 
 
@@ -138,10 +139,16 @@ class BookAdminView(BaseView):
 
         if request.method == 'POST':
             book_id = request.form.get('book_id')
+
             if book_id:
                 book = Book.query.get(book_id)
                 msg = "Cập nhật sách thành công!"
             else:
+                existing_book = Book.query.filter_by(name=request.form['name']).first()
+                if existing_book:
+                    flash("Sách này đã tồn tại.", 'danger')
+                    return redirect(url_for('.index'))
+
                 book = Book()
                 db.session.add(book)
                 msg = "Thêm sách mới thành công!"
@@ -155,6 +162,15 @@ class BookAdminView(BaseView):
 
             image_file = request.files.get('image')
             if image_file and image_file.filename != '':
+                try:
+                    from PIL import Image
+                    image = Image.open(image_file.stream)
+                    image.verify()
+                    image_file.stream.seek(0)
+                except (IOError, SyntaxError):
+                    flash("File ảnh bìa không hợp lệ! Vui lòng chọn ảnh đúng định dạng.", 'danger')
+                    return redirect(url_for('.index'))
+
                 result = cloudinary.uploader.upload(image_file, folder="book_images")
                 book.image = result['secure_url']
 
@@ -190,22 +206,31 @@ class CategoryAdminView(AdminView):
             category_id = request.form.get('category_id')
             name = request.form['name'].strip()
 
-            # Kiểm tra trùng tên khi thêm mới
-            if not category_id and Category.query.filter_by(name=name).first():
-                flash('❌ Thể loại đã tồn tại!', 'danger')
-            else:
-                if category_id:
-                    category = Category.query.get(category_id)
-                    category.name = name
-                    msg = '✅ Cập nhật thể loại thành công!'
-                else:
-                    category = Category(name=name)
-                    db.session.add(category)
-                    msg = '✅ Thêm thể loại thành công!'
+            if category_id:
+                duplicate = Category.query.filter(
+                    Category.name == name,
+                    Category.id != int(category_id)
+                ).first()
+                if duplicate:
+                    flash('Tên thể loại đã tồn tại.', 'danger')
+                    return redirect(url_for('.index'))
 
-                db.session.commit()
-                flash(msg, 'success')
-                return redirect(url_for('.index'))
+                category = Category.query.get(category_id)
+                category.name = name
+                msg = 'Cập nhật thể loại thành công.'
+            else:
+                # Thêm mới: kiểm tra trùng bình thường
+                if Category.query.filter_by(name=name).first():
+                    flash('Thể loại đã tồn tại.', 'danger')
+                    return redirect(url_for('.index'))
+
+                category = Category(name=name)
+                db.session.add(category)
+                msg = 'Thêm thể loại mới thành công.'
+
+            db.session.commit()
+            flash(msg, 'success')
+            return redirect(url_for('.index'))
 
         return self.render('admin/category_custom_view.html', categories=categories)
 
@@ -216,6 +241,19 @@ class CategoryAdminView(AdminView):
             'id': category.id,
             'name': category.name
         })
+
+    @expose('/delete/<int:category_id>')
+    def delete_category(self, category_id):
+        category = Category.query.get_or_404(category_id)
+
+        if category.books:
+            flash('Không thể xoá. Vẫn còn sách thuộc thể loại này.', 'danger')
+        else:
+            db.session.delete(category)
+            db.session.commit()
+            flash('Xoá thể loại thành công.', 'success')
+
+        return redirect(url_for('.index'))
 
 
 # Tạo View cho Author
@@ -228,22 +266,30 @@ class AuthorAdminView(AdminView):
             author_id = request.form.get('author_id')
             name = request.form['name'].strip()
 
-            # Kiểm tra trùng khi thêm mới
-            if not author_id and Author.query.filter_by(name=name).first():
-                flash('❌ Tác giả đã tồn tại!', 'danger')
-            else:
-                if author_id:
-                    author = Author.query.get(author_id)
-                    author.name = name
-                    msg = "✅ Cập nhật tác giả thành công!"
-                else:
-                    author = Author(name=name)
-                    db.session.add(author)
-                    msg = "✅ Thêm tác giả thành công!"
+            if author_id:
+                duplicate = Author.query.filter(
+                    Author.name == name,
+                    Author.id != int(author_id)
+                ).first()
+                if duplicate:
+                    flash('Tên tác giả đã tồn tại.', 'danger')
+                    return redirect(url_for('.index'))
 
-                db.session.commit()
-                flash(msg, 'success')
-                return redirect(url_for('.index'))
+                author = Author.query.get(author_id)
+                author.name = name
+                msg = "Cập nhật tác giả thành công."
+            else:
+                if Author.query.filter_by(name=name).first():
+                    flash('Tác giả đã tồn tại.', 'danger')
+                    return redirect(url_for('.index'))
+
+                author = Author(name=name)
+                db.session.add(author)
+                msg = "Thêm tác giả thành công."
+
+            db.session.commit()
+            flash(msg, 'success')
+            return redirect(url_for('.index'))
 
         return self.render('admin/author_custom_view.html', authors=authors)
 
@@ -254,6 +300,19 @@ class AuthorAdminView(AdminView):
             'id': author.id,
             'name': author.name
         })
+
+    @expose('/delete/<int:author_id>')
+    def delete_author(self, author_id):
+        author = Author.query.get_or_404(author_id)
+
+        if author.books:
+            flash('Không thể xoá. Vẫn còn sách thuộc tác giả này.', 'danger')
+        else:
+            db.session.delete(author)
+            db.session.commit()
+            flash('Đã xoá tác giả thành công.', 'success')
+
+        return redirect(url_for('.index'))
 
 
 # trang nhập sách
@@ -351,7 +410,7 @@ class ImportReceiptHistoryView(AdminView):
 
 class AddDigitalPricingView(BaseView):
     @expose('/', methods=['GET', 'POST'])
-    def index(self):
+    def add_digital_pricing(self):
         books = Book.query.all()
         pricings = DigitalPricing.query.all()
 
@@ -364,7 +423,7 @@ class AddDigitalPricingView(BaseView):
 
             if not access_type or not price or not duration:
                 flash("Vui lòng nhập đầy đủ thông tin gói.", "danger")
-                return redirect(url_for('.index'))
+                return redirect(url_for('.add_digital_pricing'))
 
             if pricing_id:
                 pricing = DigitalPricing.query.get(pricing_id)
@@ -390,7 +449,7 @@ class AddDigitalPricingView(BaseView):
 
             db.session.commit()
             flash(msg, "success")
-            return redirect(url_for('.index'))
+            return redirect(url_for('.add_digital_pricing'))
 
         return self.render('admin/add_digital_pricing.html',
                            books=books,
@@ -407,6 +466,47 @@ class AddDigitalPricingView(BaseView):
             'price': pricing.price,
             'duration_day': pricing.duration_day,
         })
+
+
+class AddBookContentView(BaseView):
+    @expose('/', methods=['GET', 'POST'])
+    def add_book_content(self):
+        all_books = Book.query.all()
+
+        # Lấy những sách đã có nội dung
+        book_ids_with_content = db.session.query(BookContent.book_id).distinct().all()
+        book_ids_with_content = [b[0] for b in book_ids_with_content]
+        books_with_content = Book.query.filter(Book.id.in_(book_ids_with_content)).all()
+
+        selected_book = None
+        contents = []
+
+        book_id = request.args.get('book_id')
+        if book_id:
+            selected_book = Book.query.get(book_id)
+            contents = BookContent.query.filter_by(book_id=book_id).order_by(BookContent.page_number).all()
+
+        if request.method == 'POST':
+            book_id = request.form.get('book_id')
+            page_numbers = request.form.getlist('page_number[]')
+            content_texts = request.form.getlist('content[]')
+
+            BookContent.query.filter_by(book_id=book_id).delete()
+            for i in range(len(page_numbers)):
+                db.session.add(BookContent(
+                    book_id=book_id,
+                    page_number=int(page_numbers[i]),
+                    content=content_texts[i]
+                ))
+            db.session.commit()
+            flash("Đã lưu nội dung sách!", "success")
+            return redirect(url_for('.add_book_content'))
+
+        return self.render('admin/add_book_content.html',
+                           all_books=all_books,
+                           books_with_content=books_with_content,
+                           selected_book=selected_book,
+                           contents=contents)
 
 
 class RevenueStatsView(AdminView):
@@ -461,12 +561,14 @@ class RevenueStatsView(AdminView):
                            year=year,
                            now=now)
 
+
 admin.add_view(CategoryAdminView(name='Thể loại', category='Quản lý sách', endpoint='categories'))
 admin.add_view(AuthorAdminView(name='Tác giả', category='Quản lý sách', endpoint='authors'))
 admin.add_view(BookAdminView(name='Sách', category='Quản lý sách', endpoint='books'))
 admin.add_view(ImportBooksView(name='Nhập sách', category='Quản lý kho'))
 admin.add_view(ImportReceiptHistoryView(name='Xuất phiếu nhập', category='Quản lý kho'))
-admin.add_view(UserView(User, db.session,name='Tài khoản'))
+# admin.add_view(UserView(User, db.session,name='Tài khoản'))
 admin.add_view(AddDigitalPricingView(name='Gói đọc sách', category='Quản lý đọc sách'))
+admin.add_view(AddBookContentView(name='Nội dung sách', category='Quản lý đọc sách', endpoint='add_book_content'))
 admin.add_view(RevenueStatsView(name="Thống kê bán sách",category = 'Thống kê - Báo cáo', endpoint="revenue_stats"))
 admin.add_view(LogoutView(name='Đăng xuất'))

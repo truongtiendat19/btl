@@ -1,6 +1,6 @@
 from xhtml2pdf import pisa
-import io, filetype, os, dao, utils, math
-from flask import render_template, request, redirect, session, jsonify, send_file, current_app
+import io, filetype, os, dao, utils, math, pdfkit
+from flask import render_template, request, redirect, session, jsonify, send_file, current_app, make_response
 from saleapp import app, login
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
@@ -8,10 +8,9 @@ from saleapp.dao import check_username_exists
 from saleapp.models import UserRole, Book, ImportReceipt,ImportReceiptDetail, DigitalPricing
 from flask import render_template, send_file, current_app
 from xhtml2pdf import pisa
-import io, os
 from datetime import datetime
 from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
+
 
 @app.route('/api/books', methods=['GET'])
 def get_books():
@@ -191,25 +190,26 @@ def common_response_data():
         'cart_stats': utils.cart_stats(session.get('cart'))
     }
 
+
 @app.route('/admin/receipt/<int:receipt_id>/print')
 def print_import_receipt(receipt_id):
     receipt = ImportReceipt.query.get_or_404(receipt_id)
-    receipt_details = ImportReceiptDetail.query.filter_by(import_receipt_id=receipt.id).all()
+    html = render_template('admin/print_receipt.html', receipt=receipt, now=datetime.now())
 
-    # Đăng ký font trước khi tạo PDF
-    font_path = os.path.join(current_app.root_path, 'static/fonts/DejaVuSans.ttf')
-    pdfmetrics.registerFont(TTFont('DejaVu', font_path))
+    config = pdfkit.configuration(wkhtmltopdf=r'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
 
-    html = render_template('admin/print_receipt.html',
-                           receipt=receipt,
-                           details=receipt_details,
-                           now=datetime.now())
+    pdf_data = pdfkit.from_string(
+        html,
+        False,
+        configuration=config,
+        options={"enable-local-file-access": ""}
+    )
 
-    result = io.BytesIO()
-    pisa.CreatePDF(io.StringIO(html), dest=result)
-    result.seek(0)
+    response = make_response(pdf_data)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=phieu_nhap_{receipt_id}.pdf'
 
-    return send_file(result, download_name=f"phieu_nhap_{receipt.id}.pdf", as_attachment=True)
+    return response
 
 
 @app.route("/read/<int:book_id>/")
@@ -242,6 +242,7 @@ def read_book(book_id):
                            page=page,
                            total_pages=total_pages,
                            book_id=book_id)
+
 
 @app.route('/book/<int:book_id>/buy', methods=['GET', 'POST'])
 @login_required

@@ -1,54 +1,71 @@
 {% extends 'admin/master.html' %}
 
 {% block body %}
-<style>
-  .form-check {
-      display: flex;
-      align-items: center; /* Căn giữa theo chiều dọc */
-      gap: 8px; /* Khoảng cách giữa checkbox và chữ */
-      margin-bottom: 6px; /* Khoảng cách giữa các dòng checkbox */
-    }
 
-  .form-check-input {
-    margin: 0; /* Loại bỏ margin mặc định nếu lệch */
-    flex-shrink: 0; /* Không bị thu nhỏ */
+<style>
+  body {
+    background: #efefef;
+    padding: 40px 0;
   }
 
-  .form-check-label {
-    margin: 0;
-    cursor: pointer; /* Con trỏ chuột thành tay khi hover */
+  .content-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    padding: 30px;
+    max-width: 1200px;
+    margin: auto;
   }
 
   .custom-row {
     display: flex;
-    gap: 2%;
+    gap: 40px;
+    flex-wrap: wrap;
   }
 
   .form-column {
-    width: 35%;
+    flex: 1;
+    min-width: 300px;
+    max-width: 400px;
     position: sticky;
     top: 20px;
-    height: fit-content;
-    z-index: 100;
+    align-self: flex-start;
   }
 
   .form-section {
-    background-color: #fff;
+    background: #fff;
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    box-shadow: 0 0 8px rgba(0,0,0,0.05);
     border: 1px solid #e0e0e0;
   }
 
   .table-column {
-    width: 63%;
+    flex: 2;
     overflow-x: auto;
+    min-width: 500px;
   }
 
-  .table thead {
-    background-color: #0d6efd;
-    color: white;
+  .table {
+    background: #fff;
+  }
+
+  .table thead th {
+    background: #0d6efd;
+    color: #fff;
     text-align: center;
+    vertical-align: middle;
+  }
+
+  .form-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .btn {
+    min-width: 100px;
   }
 
   .btn-sm {
@@ -56,15 +73,11 @@
     padding: 4px 10px;
   }
 
-  .btn {
-    min-width: 100px;
-  }
-
-  .form-section input, .form-section select {
+  input, select {
     font-size: 14px;
   }
 
-  .form-section label {
+  label {
     font-weight: 500;
     margin-bottom: 4px;
   }
@@ -76,132 +89,114 @@
 
 <div class="container-fluid px-5 py-4">
   <h3 class="text-center text-primary mb-4">Quản lý Gói đọc sách</h3>
+  <div class="custom-row content-wrapper">
+      <div class="form-column">
+        <div class="form-section">
+          <form method="POST">
+            <input type="hidden" name="pricing_id" id="pricing_id">
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
-
-  <div class="custom-row">
-    <!-- Form thêm/sửa -->
-    <div class="form-column">
-      <div class="form-section">
-        <form method="POST">
-          <input type="hidden" name="pricing_id" id="pricing_id">
-
-          <div class="mb-2">
-            <label>Loại truy cập</label>
-            <select name="access_type" id="access_type" class="form-control" required>
-              <option value="">-- Chọn loại --</option>
-              <option value="daily">Truy cập ngày</option>
-              <option value="monthly">Truy cập tháng</option>
-              <option value="yearly">Truy cập năm</option>
-              <option value="lifetime">Truy cập trọn đời</option>
-            </select>
-          </div>
-
-          <div class="mb-2">
-            <label>Giá (VNĐ)</label>
-            <input type="number" name="price" id="price" class="form-control" step="0.01" min="0" required>
-          </div>
-
-          <div class="mb-2">
-            <label>Thời gian (ngày)</label>
-            <input type="number" name="duration" id="duration" class="form-control" min="1" required>
-          </div>
-
-          <label>Tìm kiếm sách:</label>
-          <input type="text" id="bookSearchInput" class="form-control mb-2" placeholder="Nhập tên sách...">
-
-          <div id="book-list" class="form-control" style="height: 140px; overflow-y: auto; padding: 10px;">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="checkAllBooks">
-              <label class="form-check-label" for="checkAllBooks"><strong>Chọn tất cả</strong></label>
+            <div class="mb-2">
+              <label>Loại truy cập</label>
+              <select name="access_type" id="access_type" class="form-control" required>
+                <option value="">-- Chọn loại --</option>
+                <option value="daily">Truy cập ngày</option>
+                <option value="monthly">Truy cập tháng</option>
+                <option value="yearly">Truy cập năm</option>
+                <option value="lifetime">Truy cập vĩnh viễn</option>
+              </select>
             </div>
-            {% for b in books %}
+
+            <div class="mb-2">
+              <label>Thời gian (ngày)</label>
+              <input type="number" name="duration" id="duration" class="form-control" min="1" required>
+            </div>
+
+            <div class="mb-2">
+              <label>Giá (VNĐ)</label>
+              <input type="number" name="price" id="price" class="form-control" step="0.01" min="0" required>
+            </div>
+
+            <label>Tìm kiếm sách:</label>
+            <input type="text" id="bookSearchInput" class="form-control mb-2" placeholder="Nhập tên sách...">
+
+            <div id="book-list" class="form-control" style="height: 140px; overflow-y: auto; padding: 10px;">
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="book_ids" value="{{ b.id }}" id="book_{{ b.id }}">
-                <label class="form-check-label" for="book_{{ b.id }}">{{ b.name }}</label>
+                <input class="form-check-input" type="checkbox" id="checkAllBooks">
+                <label class="form-check-label" for="checkAllBooks"><strong>Chọn tất cả</strong></label>
               </div>
+              {% for b in books %}
+                {% if b.is_digital_avaible %}
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="book_ids" value="{{ b.id }}" id="book_{{ b.id }}">
+                    <label class="form-check-label" for="book_{{ b.id }}">{{ b.name }}</label>
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3">Thêm/Sửa</button>
+            <button type="reset" class="btn btn-secondary mt-3" onclick="resetForm()">Reset</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="table-column">
+        <table class="table table-bordered align-middle text-center">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Sách</th>
+              <th>Loại truy cập</th>
+              <th>Thời gian (ngày)</th>
+              <th>Giá (VNĐ)</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in pricings %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>
+                {% if p.books %}
+                  {% for b in p.books %}
+                    <span class="badge bg-info text-dark">{{ b.name }}</span>
+                  {% endfor %}
+                {% else %}
+                  <em>Không có sách</em>
+                {% endif %}
+              </td>
+              <td>{{ p.access_type }}</td>
+              <td>{{ p.duration_day }}</td>
+              <td>{{ "{:,.0f}".format(p.price) }}</td>
+              <td>
+                <button class="btn btn-primary btn-sm" onclick="selectPricing({{ p.id }})">Sửa</button>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6"><em>Chưa có gói đọc nào.</em></td>
+            </tr>
             {% endfor %}
-          </div>
-
-
-
-
-          <button type="submit" class="btn btn-primary">Thêm/Sửa</button>
-          <button type="reset" class="btn btn-secondary" onclick="resetForm()">Reset</button>
-        </form>
+          </tbody>
+        </table>
       </div>
     </div>
-
-    <!-- Bảng hiển thị các gói -->
-    <div class="table-column">
-      <table class="table table-bordered align-middle text-center">
-        <thead>
-          <tr>
-            <th>STT</th>
-            <th>Sách</th>
-            <th>Loại truy cập</th>
-            <th>Giá (VNĐ)</th>
-            <th>Thời gian (ngày)</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in pricings %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td>
-              {% if p.books %}
-                {% for b in p.books %}
-                  <span class="badge bg-info text-dark">{{ b.name }}</span>
-                {% endfor %}
-              {% else %}
-                <em>Không có sách</em>
-              {% endif %}
-            </td>
-            <td>{{ p.access_type }}</td>
-            <td>{{ "{:,.0f}".format(p.price) }}</td>
-            <td>{{ p.duration_day }}</td>
-            <td>
-              <button class="btn btn-primary btn-sm" onclick="selectPricing({{ p.id }})">Sửa</button>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="6"><em>Chưa có gói đọc nào.</em></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
 </div>
 
 <script>
 function selectPricing(pricingId) {
-  fetch(`/admin/adddigitalpricingview/${pricingId}`)  //
+  fetch(`/admin/adddigitalpricingview/${pricingId}`)
     .then(res => {
       if (!res.ok) throw new Error('Không tìm thấy gói đọc');
       return res.json();
     })
     .then(data => {
       document.getElementById('pricing_id').value = data.id;
-
       document.querySelectorAll('input[name="book_ids"]').forEach(cb => cb.checked = false);
-
       data.book_ids.forEach(id => {
         const cb = document.getElementById('book_' + id);
         if (cb) cb.checked = true;
       });
-
       document.getElementById('access_type').value = data.access_type;
       document.getElementById('price').value = data.price;
       document.getElementById('duration').value = data.duration_day;
@@ -218,19 +213,12 @@ document.getElementById('checkAllBooks').addEventListener('change', function() {
   });
 });
 
-
 document.getElementById('bookSearchInput').addEventListener('input', function() {
   const filter = this.value.toLowerCase();
-  const bookList = document.getElementById('book-list');
-  const checkboxes = bookList.querySelectorAll('.form-check');
-
+  const checkboxes = document.querySelectorAll('#book-list .form-check');
   checkboxes.forEach(div => {
     const label = div.querySelector('label').textContent.toLowerCase();
-    if (label.includes(filter)) {
-      div.style.display = '';  // hiện
-    } else {
-      div.style.display = 'none';  // ẩn
-    }
+    div.style.display = label.includes(filter) ? '' : 'none';
   });
 });
 
@@ -241,7 +229,6 @@ function resetForm() {
   document.getElementById('price').value = '';
   document.getElementById('duration').value = '';
 }
-
 </script>
 
 {% endblock %}

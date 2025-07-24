@@ -1,38 +1,100 @@
-
 {% extends 'admin/master.html' %}
 
 {% block body %}
 
 {% if current_user.is_authenticated and current_user.user_role.name == 'ADMIN' %}
-<br><br>
-<div class=" justify-content-center align-items-center vh-100">
-    <br>
-    <div class="container text-center">
-        <h2 class="text-info">Chào {{ current_user.name }} đến với trang của Nhà Bán Hàng !!!</h2>
-        <br>
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-12">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>STT</th>
-                            <th>Tên sách</th>
-                            <th>Số lượng tồn</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for b in books %}
-                        <tr>
-                            <td>{{ loop.index }}</td>
-                            <td>{{ b[1] }}</td>
-                            <td>{{ b[2] }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+<style>
+  body {
+    background-color: #efefef;
+    padding: 40px 0;
+    font-family: 'DejaVu', sans-serif;
+  }
+
+  .admin-wrapper {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 30px;
+  }
+
+  .admin-header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .admin-header h2 {
+    color: #0d6efd;
+    font-weight: 600;
+  }
+
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+  }
+
+  .admin-table thead th {
+    background-color: #0d6efd;
+    color: #fff;
+    text-align: center;
+  }
+
+  .admin-table th, .admin-table td {
+    border: 1px solid #dee2e6;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .admin-table tbody td {
+    text-align: center;
+  }
+
+  .admin-table tbody td:first-child {
+    width: 60px;
+  }
+
+  .admin-table tbody td:nth-child(2) {
+    text-align: left;
+  }
+
+  .card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+  }
+
+</style>
+<div class="container">
+  <div class="admin-header">
+      <h2>Chào {{ current_user.name }}!!!</h2>
+      <p class="text-muted">Trang quản trị Nhà Bán Hàng</p>
+  </div>
+  <div class="admin-wrapper">
+
+    <div class="card">
+      <div class="card-body p-0">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Tên sách</th>
+              <th>Số lượng tồn</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in books %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ b[1] }}</td>
+              <td>{{ b[2] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
+  </div>
 </div>
 {% endif %}
+
 {% endblock %}

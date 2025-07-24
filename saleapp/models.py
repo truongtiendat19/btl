@@ -1,5 +1,5 @@
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, DateTime, Boolean, func
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, DateTime, Boolean, func, Text
 from saleapp import db, app
 from enum import Enum as RoleEnum
 import hashlib
@@ -139,7 +139,7 @@ class BookContent(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
     page_number = Column(Integer, nullable=False)
-    content = Column(String(10000), nullable=False)
+    content = Column(Text, nullable=False)
 
 
 # phiếu nhập sách

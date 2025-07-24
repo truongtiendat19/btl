@@ -1,70 +1,99 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Import Receipt #{{ receipt.id }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <style>
+  <meta charset="UTF-8" />
+  <title>Phiếu Nhập Sách #{{ receipt.id }}</title>
+  <style>
+    @font-face {
+      font-family: 'DejaVu';
+      src: url('file:///D:/btl/saleapp/static/fonts/DejaVuSans.ttf');
+    }
 
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-        }
+    body {
+      font-family: 'DejaVu', Arial, sans-serif;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+      margin: 20px;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-        td, th {
-            border: 1px solid #000;
-            padding: 8px;
-        }
-    </style>
+    .info {
+      margin-bottom: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: #0d6efd;
+      color: #fff;
+      text-align: center;
+    }
+
+    td, th {
+      border: 1px solid #000;
+      padding: 8px;
+    }
+
+    td {
+      text-align: center;
+    }
+
+    .total, .note {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    em {
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
 </head>
+
 <body>
+  <h2>PHIẾU NHẬP SÁCH</h2>
 
-    <h2>BOOK IMPORT RECEIPT</h2>
+  <div class="info">
+    <strong>Mã phiếu:</strong> #{{ receipt.id }}<br>
+    <strong>Người nhập:</strong> {{ receipt.user.name }}<br>
+    <strong>Ngày nhập:</strong> {{ receipt.import_date.strftime('%d/%m/%Y %H:%M') }}
+  </div>
 
-    <div>
-        <strong>Receipt ID:</strong> #{{ receipt.id }}<br>
-        <strong>Imported by:</strong> {{ receipt.user.name }}<br>
-        <strong>Import Date:</strong> {{ receipt.import_date.strftime('%d/%m/%Y %H:%M') }}
-    </div>
+  <table>
+    <thead>
+      <tr>
+        <th>STT</th>
+        <th>Tên Sách</th>
+        <th>Số Lượng</th>
+        <th>Đơn Giá (VNĐ)</th>
+        <th>Thành Tiền (VNĐ)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in receipt.import_receipt_detail %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td style="text-align: left; padding-left: 10px;">{{ item.book.name }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ "{:,.0f}".format(item.unit_price) }}</td>
+        <td>{{ "{:,.0f}".format(item.quantity * item.unit_price) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
-    <br>
+  <div class="total">Tổng cộng: {{ "{:,.0f}".format(receipt.total_amount) }} VNĐ</div>
+  <div class="note">Ghi chú: {{ receipt.note or 'Không có' }}</div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>No.</th>
-                <th>Book Title</th>
-                <th>Quantity</th>
-                <th>Unit Price (VND)</th>
-                <th>Total (VND)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in receipt.import_receipt_detail %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ item.book.name }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>{{ "{:,.0f}".format(item.unit_price) }}</td>
-                <td>{{ "{:,.0f}".format(item.quantity * item.unit_price) }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <br>
-
-    <div><strong>Grand Total:</strong> {{ "{:,.0f}".format(receipt.total_amount) }} VND</div>
-    <div><strong>Note:</strong> {{ receipt.note or 'None' }}</div>
-
-    <br><br>
-    <div><em>Printed on: {{ now.strftime('%d/%m/%Y %H:%M') }}</em></div>
-
+  <br>
+  <div><em>Ngày in: {{ now.strftime('%d/%m/%Y %H:%M') }}</em></div>
 </body>
 </html>

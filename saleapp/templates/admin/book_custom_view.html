@@ -2,6 +2,17 @@
 {% block body %}
 
 <style>
+  body {
+    background: #efefef;
+    padding: 40px 0;
+  }
+
+  .content-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    padding: 30px;
+  }
 
   .custom-row {
     display: flex;
@@ -16,163 +27,163 @@
     z-index: 100;
   }
 
+  input[type="checkbox"] {
+    display: inline-block !important;
+    margin: 6px;
+  }
+
+  label[for="is_digital_avaible"] {
+    display: inline-block !important;
+  }
+
   .form-section {
-    background-color: #ffffff;
+    background: #fff;
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 0 8px rgba(0,0,0,0.05);
     border: 1px solid #e0e0e0;
   }
 
   .table {
-    background-color: #fff
+    background: #fff;
   }
+
   .table-column {
     width: 63%;
     overflow-x: auto;
   }
 
-  .table thead {
-    background-color: #0d6efd;
-    color: white;
+  .table thead th{
+    background: #0d6efd;
+    color: #fff;
     text-align: center;
- }
+    vertical-align: middle;
+  }
 
-  table img {
+  .table thead th:nth-child(1),
+  .table thead th:nth-child(7),
+  .table tbody td:nth-child(1),
+  .table tbody td:nth-child(7) {
+    text-align: center;
+  }
+
+  img {
     width: 80px;
     height: 80px;
     object-fit: cover;
     border-radius: 4px;
   }
 
-
   .btn-sm {
     font-size: 13px;
     padding: 4px 10px;
   }
 
-  .form-check-label {
-    margin-left: 5px;
-    font-weight: 500;
-  }
-
-  .btn {
-    min-width: 100px;
-  }
-
-  .form-section input,
-  .form-section select,
-  .form-section textarea {
-    font-size: 14px;
-  }
-
-  .form-section label {
-    font-weight: 500;
-    margin-bottom: 4px;
-  }
 </style>
 
 <div class="container-fluid px-5 py-4">
   <h3 class="text-center text-primary mb-4">Quản lý Sách</h3>
+  <div class="custom-row content-wrapper">
+      <div class="form-column">
+        <div class="form-section">
+          <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="book_id" id="book_id">
 
-  <div class="custom-row">
-    <!-- Cột trái: Form -->
-    <div class="form-column">
-      <div class="form-section">
-        <form method="POST" enctype="multipart/form-data">
-          <input type="hidden" name="book_id" id="book_id">
+            <div class="mb-2">
+              <label>Tên sách</label>
+              <input type="text" name="name" id="name" class="form-control" required>
+            </div>
 
-          <div class="mb-2">
-            <label>Tên sách</label>
-            <input type="text" name="name" id="name" class="form-control" required>
+            <div class="mb-2">
+              <label>Ảnh bìa</label>
+              <input type="file" name="image" id="image" class="form-control">
+            </div>
+
+            <div class="mb-2">
+              <label>Tác giả</label>
+              <select name="author_id" id="author_id" class="form-control">
+                {% for a in authors %}
+                  <option value="{{ a.id }}">{{ a.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-2">
+              <label>Thể loại</label>
+              <select name="category_id" id="category_id" class="form-control">
+                {% for c in categories %}
+                  <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-2">
+              <label>Giá</label>
+              <input type="number" step="0.01" name="price_physical" id="price_physical" class="form-control" required>
+            </div>
+
+            <div class="mb-2 d-flex align-items-center">
+              <input type="checkbox" name="is_digital_avaible" id="is_digital_avaible" class="me-2">
+              <label for="is_digital_avaible" class="mb-0">Bản điện tử</label>
+            </div>
+
+            <div class="mb-3">
+              <label>Mô tả</label>
+              <textarea name="description" id="description" class="form-control"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Thêm/Sửa</button>
+            <button type="reset" class="btn btn-secondary">Reset</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Bảng -->
+      <div class="table-column">
+        <div class="mb-3">
+          <div class="input-group">
+            <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm tên sách...">
+            <button class="btn btn-outline-secondary" id="clearButton">❌</button>
           </div>
+        </div>
 
-          <div class="mb-2">
-            <label>Ảnh bìa (upload)</label>
-            <input type="file" name="image" id="image" class="form-control">
-          </div>
-
-          <div class="mb-2">
-            <label>Tác giả</label>
-            <select name="author_id" id="author_id" class="form-control">
-              {% for a in authors %}
-                <option value="{{ a.id }}">{{ a.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="mb-2">
-            <label>Thể loại</label>
-            <select name="category_id" id="category_id" class="form-control">
-              {% for c in categories %}
-                <option value="{{ c.id }}">{{ c.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="mb-2">
-            <label>Giá</label>
-            <input type="number" step="0.01" name="price_physical" id="price_physical" class="form-control" required>
-          </div>
-
-          <div class="form-check mb-2">
-            <label class="form-check-label" for="is_digital_avaible">Bản điện tử</label>
-            <input class="form-check-input" type="checkbox" name="is_digital_avaible" id="is_digital_avaible">
-          </div>
-          <br>
-          <div class="mb-3">
-            <label>Mô tả</label>
-            <textarea name="description" id="description" class="form-control" rows="3"></textarea>
-          </div>
-
-          <button type="submit" class="btn btn-primary">Thêm/Sửa</button>
-          <button type="reset" class="btn btn-secondary">Reset</button>
-        </form>
+        <table class="table table-bordered align-middle text-center">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Tên</th>
+              <th>Ảnh</th>
+              <th>Tác giả</th>
+              <th>Thể loại</th>
+              <th>Giá</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in books %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ b.name }}</td>
+              <td>{% if b.image %}<img src="{{ b.image }}">{% else %}Không có ảnh{% endif %}</td>
+              <td>{{ b.author.name }}</td>
+              <td>{{ b.category.name }}</td>
+              <td>{{ "{:,.0f}".format(b.price_physical) }}₫</td>
+              <td>
+                <button class="btn btn-primary btn-sm" onclick="selectBook({{ b.id }})">Sửa</button>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7">Không có sách nào.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
-
-    <!-- Cột phải: Bảng -->
-    <div class="table-column">
-      <table class="table table-bordered align-middle text-center">
-        <thead>
-          <tr>
-            <th>STT</th>
-            <th>Tên</th>
-            <th>Ảnh</th>
-            <th>Tác giả</th>
-            <th>Thể loại</th>
-            <th>Giá</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for b in books %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ b.name }}</td>
-            <td>
-              {% if b.image %}
-                <img src="{{ b.image }}">
-              {% else %}
-                Không có ảnh
-              {% endif %}
-            </td>
-            <td>{{ b.author.name }}</td>     <!-- Mới -->
-            <td>{{ b.category.name }}</td>   <!-- Mới -->
-            <td>{{ "{:,.0f}".format(b.price_physical) }}₫</td> <!-- Mới -->
-            <td>
-              <button class="btn btn-primary btn-sm" onclick="selectBook({{ b.id }})">Sửa</button>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-  </div>
 </div>
 
 <script>
-function selectBook(bookId) {
-  fetch(`/admin/books/${bookId}`)
+function selectBook(id) {
+  fetch(`/admin/books/${id}`)
     .then(res => res.json())
     .then(data => {
       document.getElementById('book_id').value = data.id;
@@ -181,35 +192,67 @@ function selectBook(bookId) {
       document.getElementById('description').value = data.description ?? '';
       document.getElementById('is_digital_avaible').checked = data.is_digital_avaible;
 
-      // Chuyển ID sang chuỗi khi gán value
-      const authorSelect = document.getElementById('author_id');
-      const categorySelect = document.getElementById('category_id');
-
-      // Gán value bình thường
-      authorSelect.value = String(data.author_id);
-      categorySelect.value = String(data.category_id);
-
-      // Fallback nếu không khớp option
-      if (authorSelect.value !== String(data.author_id)) {
-        for (let option of authorSelect.options) {
-          if (parseInt(option.value) === data.author_id) {
-            option.selected = true;
-            break;
-          }
-        }
-      }
-
-      if (categorySelect.value !== String(data.category_id)) {
-        for (let option of categorySelect.options) {
-          if (parseInt(option.value) === data.category_id) {
-            option.selected = true;
-            break;
-          }
-        }
-      }
+      document.getElementById('author_id').value = data.author_id;
+      document.getElementById('category_id').value = data.category_id;
     });
 }
+
+function filterTable() {
+  const filter = document.getElementById('searchInput').value.toLowerCase();
+  const rows = document.querySelectorAll('.table tbody tr');
+
+  rows.forEach(row => {
+    const name = row.cells[1].textContent.toLowerCase();
+    if (name.includes(filter)) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+
+document.getElementById('searchInput').addEventListener('keyup', filterTable);
+document.getElementById('clearButton').addEventListener('click', () => {
+  document.getElementById('searchInput').value = '';
+  filterTable();
+});
+
+function validateImage(input) {
+  const file = input.files[0];
+  const errorId = 'image-error-message';
+  let errorDiv = document.getElementById(errorId);
+
+  if (!errorDiv) {
+    errorDiv = document.createElement('div');
+    errorDiv.id = errorId;
+    errorDiv.style.color = 'red';
+    input.parentNode.appendChild(errorDiv);
+  }
+
+  errorDiv.textContent = '';
+
+  if (file) {
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    const maxSizeMB = 5;
+
+    if (!validTypes.includes(file.type)) {
+      errorDiv.textContent = 'Chỉ chấp nhận ảnh JPG, PNG hoặc GIF.';
+      input.value = '';
+      return;
+    }
+
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      errorDiv.textContent = 'Ảnh không được vượt quá 5MB.';
+      input.value = '';
+      return;
+    }
+  }
+}
+
+document.getElementById('image').addEventListener('change', function () {
+  validateImage(this);
+});
+
 </script>
 
 {% endblock %}
-</div>
