@@ -1,15 +1,16 @@
 from xhtml2pdf import pisa
 import io, filetype, os, dao, utils, math, pdfkit
-from flask import render_template, request, redirect, session, jsonify, send_file, current_app, make_response
-from saleapp import app, login
+from flask import render_template, request, redirect, session, jsonify, send_file, current_app, make_response, url_for, abort
+from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
 from saleapp.dao import check_username_exists
-from saleapp.models import UserRole, Book, ImportReceipt,ImportReceiptDetail, DigitalPricing
+from saleapp.models import UserRole, Book, ImportReceipt,ImportReceiptDetail, DigitalPricing, digitalpricing_books, Purchase, BookContent
 from flask import render_template, send_file, current_app
 from xhtml2pdf import pisa
 from datetime import datetime
 from reportlab.pdfbase import pdfmetrics
+from sqlalchemy import func
 
 
 # MoMo configuration
@@ -76,7 +77,17 @@ def index():
 @app.route("/books/<book_id>")
 def details(book_id):
     comments = dao.load_comments(book_id)
-    return render_template('details.html', book=dao.get_book_by_id(book_id), comments=comments)
+    book = Book.query.get(book_id)
+    reading_packages = book.digital_pricings
+
+    ORDER = {'free':1 ,'prenium': 2}
+    reading_packages = sorted(
+        book.digital_pricings,
+        key=lambda x: ORDER.get(x.access_type, 99)
+    )
+
+    return render_template('details.html',
+                           book=dao.get_book_by_id(book_id), comments=comments, reading_packages=reading_packages)
 
 @app.route("/api/books/<book_id>/comments", methods=['post'])
 @login_required
@@ -300,10 +311,50 @@ def print_import_receipt(receipt_id):
     return response
 
 
+from datetime import datetime, timedelta
+
+@app.route('/api/buy_reading_package', methods=['POST'])
+@login_required
+def buy_reading_package():
+    data = request.json
+    package_id = data.get('package_id')
+    book_id = data.get('book_id')
+
+    now = datetime.now()
+    pkg = DigitalPricing.query.get(package_id)
+
+    if not pkg:
+        return jsonify({'success': False, 'message': 'Không tìm thấy gói đọc!'})
+
+    if pkg.access_type == 'free':
+        existing = Purchase.query.filter_by(
+            user_id=current_user.id,
+            digital_pricing_id=package_id,
+            book_id=book_id
+        ).filter(Purchase.time_end >= now).first()
+
+        if existing:
+            # Đã có gói free và còn hạn → Cho đọc luôn
+            return jsonify({'success': True})
+
+        # Chưa có hoặc đã hết hạn → Tạo mới
+        p = Purchase(
+            user_id=current_user.id,
+            book_id=book_id,
+            digital_pricing_id=package_id,
+            time_start=now,
+            time_end=now + timedelta(days=pkg.duration_day)
+        )
+        db.session.add(p)
+        db.session.commit()
+        return jsonify({'success': True})
+
+    return jsonify({'success': False, 'message': 'Sai loại gói!'})
+
+
 @app.route("/read/<int:book_id>/")
 @login_required
 def read_book(book_id):
-    # Kiểm tra quyền truy cập
     now = datetime.now()
 
     purchase = db.session.query(Purchase).filter(
@@ -316,12 +367,11 @@ def read_book(book_id):
     if not purchase:
         return redirect(url_for("access_denied"))
 
-    # Lấy nội dung trang đầu tiên
     page = int(request.args.get('page', 1))
     content = db.session.query(BookContent).filter_by(book_id=book_id, page_number=page).first()
 
     if not content:
-        return redirect(url_for("not_found"))
+        abort(404)
 
     total_pages = db.session.query(func.count(BookContent.id)).filter_by(book_id=book_id).scalar()
 
@@ -330,40 +380,6 @@ def read_book(book_id):
                            page=page,
                            total_pages=total_pages,
                            book_id=book_id)
-
-
-@app.route('/book/<int:book_id>/buy', methods=['GET', 'POST'])
-@login_required
-def buy_book_access(book_id):
-    book = Book.query.get_or_404(book_id)
-    pricings = DigitalPricing.query.filter_by(book_id=book_id).all()
-
-    if request.method == 'POST':
-        pricing_id = request.form.get('pricing_id')
-        pricing = DigitalPricing.query.get(pricing_id)
-
-        if not pricing or pricing.book_id != book.id:
-            flash("Gói đọc không hợp lệ.", "danger")
-            return redirect(url_for('buy_book_access', book_id=book_id))
-
-        now = datetime.now()
-        time_end = now + timedelta(days=pricing.duration_day)
-
-        # Tạo lịch sử mua quyền đọc
-        purchase = Purchase(
-            user_id=current_user.id,
-            book_id=book.id,
-            digital_pricing_id=pricing.id,
-            time_start=now,
-            time_end=time_end
-        )
-        db.session.add(purchase)
-        db.session.commit()
-
-        flash("✅ Mua quyền đọc thành công!", "success")
-        return redirect(url_for('read_book', book_id=book.id))
-
-    return render_template('buy_access.html', book=book, pricings=pricings)
 
 
 if __name__ == '__main__':

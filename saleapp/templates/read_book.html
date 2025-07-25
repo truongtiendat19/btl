@@ -1,26 +1,140 @@
-{% extends "layout.html" %}
-{% block content %}
-<div class="container mt-4">
-    <h3 class="text-center">Đọc sách: {{ content.book.name }}</h3>
-    <hr>
-    <div class="border p-3" style="min-height: 300px; background: #f8f9fa;">
-        <p style="white-space: pre-line;">{{ content.content }}</p>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Đọc sách: {{ content.book.name }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .noselect {
+      user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+    }
+
+    body {
+      background-color: #f0f2f5;
+    }
+
+    .reader-container {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 2rem;
+      max-width: 800px;
+      margin: 4rem auto;
+      position: relative;
+    }
+
+    .book-content {
+      white-space: pre-line;
+      line-height: 1.7;
+      font-size: 1.1rem;
+      min-height: 400px;
+    }
+
+    /* Nút trang chủ */
+    .back-home {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+    }
+
+    /* Nút trang trước / sau cố định 2 bên màn hình */
+    .fixed-nav {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 1000;
+    }
+
+    .nav-prev {
+      left: 20%;
+    }
+
+    .nav-next {
+      right: 20%;
+    }
+  </style>
+</head>
+<body>
+  <!-- Nút Trang chủ ở góc trên bên trái -->
+  <a href="{{ url_for('index') }}" class="btn btn-outline-secondary back-home">🏠 Trang chủ</a>
+  <div class="text-center mt-4">
+      <button id="speakBtn" class="btn btn-success">🔊 Đọc to</button>
+      <button id="pauseBtn" class="btn btn-warning">⏸️ Tạm dừng</button>
+      <button id="resumeBtn" class="btn btn-primary">▶️ Tiếp tục</button>
+      <button id="stopBtn" class="btn btn-danger">⏹️ Dừng</button>
     </div>
 
-    <div class="d-flex justify-content-between mt-3">
-        {% if page > 1 %}
-        <a href="{{ url_for('read_book', book_id=book_id, page=page-1) }}" class="btn btn-secondary">Trang trước</a>
-        {% else %}
-        <span></span>
-        {% endif %}
+  <!-- Nội dung đọc sách -->
+  <div class="reader-container">
+    <h3 class="text-center mb-4">{{ content.book.name }}</h3>
 
-        <span>Trang {{ page }} / {{ total_pages }}</span>
-
-        {% if page < total_pages %}
-        <a href="{{ url_for('read_book', book_id=book_id, page=page+1) }}" class="btn btn-secondary">Trang sau</a>
-        {% else %}
-        <span></span>
-        {% endif %}
+    <div class="book-content border p-4 noselect">
+      {{ content.content }}
     </div>
-</div>
-{% endblock %}
+
+
+    <div class="text-center mt-4">
+      <span>Trang {{ page }} / {{ total_pages }}</span>
+    </div>
+  </div>
+
+  <!-- Nút Trang trước cố định -->
+  {% if page > 1 %}
+    <a href="{{ url_for('read_book', book_id=book_id, page=page-1) }}"
+       class="btn btn-outline-primary fixed-nav nav-prev">⬅</a>
+  {% endif %}
+
+  <!-- Nút Trang sau cố định -->
+  {% if page < total_pages %}
+    <a href="{{ url_for('read_book', book_id=book_id, page=page+1) }}"
+       class="btn btn-outline-primary fixed-nav nav-next">➡</a>
+  {% endif %}
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+      document.addEventListener('contextmenu', event => event.preventDefault());
+
+      document.addEventListener('copy', e => e.preventDefault());
+  const speakBtn = document.getElementById('speakBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const stopBtn = document.getElementById('stopBtn');
+
+  let utterance = null;
+
+  speakBtn.onclick = function() {
+    const bookText = document.querySelector('.book-content').innerText.trim();
+    if (!bookText) {
+      alert('Không có nội dung để đọc.');
+      return;
+    }
+
+    if (utterance) {
+      window.speechSynthesis.cancel();
+    }
+
+    utterance = new SpeechSynthesisUtterance(bookText);
+    utterance.lang = 'vi-VN';
+    utterance.rate = 1; // tốc độ đọc
+    window.speechSynthesis.speak(utterance);
+  }
+
+  pauseBtn.onclick = function() {
+    window.speechSynthesis.pause();
+  }
+
+  resumeBtn.onclick = function() {
+    window.speechSynthesis.resume();
+  }
+
+  stopBtn.onclick = function() {
+    window.speechSynthesis.cancel();
+  }
+
+  </script>
+</body>
+</html>

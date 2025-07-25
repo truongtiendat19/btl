@@ -99,10 +99,8 @@
               <label>Loại truy cập</label>
               <select name="access_type" id="access_type" class="form-control" required>
                 <option value="">-- Chọn loại --</option>
-                <option value="daily">Truy cập ngày</option>
-                <option value="monthly">Truy cập tháng</option>
-                <option value="yearly">Truy cập năm</option>
-                <option value="lifetime">Truy cập vĩnh viễn</option>
+                <option value="free">Miễn phí</option>
+                <option value="prenium">Prenium</option>
               </select>
             </div>
 
@@ -184,6 +182,18 @@
 </div>
 
 <script>
+document.getElementById('access_type').addEventListener('change', function() {
+  const accessType = this.value;
+  const priceInput = document.getElementById('price');
+
+  if (accessType === 'free') {
+    priceInput.value = 0;
+    priceInput.setAttribute('readonly', 'readonly');
+  } else {
+    priceInput.removeAttribute('readonly');
+  }
+});
+
 function selectPricing(pricingId) {
   fetch(`/admin/adddigitalpricingview/${pricingId}`)
     .then(res => {

@@ -59,29 +59,69 @@
                     </div>
                 </div>
             </div>
+
             {% if book.is_digital_avaible %}
-                <div class="mt-3">
+              <div class="mt-3">
                 {% if current_user.is_authenticated %}
-                    {% if has_access or book.is_free_reading %}
-                        <a href="{{ url_for('read_book', book_id=book.id) }}" class="btn btn-success btn-lg">
-                            📖 Đọc sách
-                        </a>
-                    {% else %}
-                        <a href="{{ url_for('buy_book_access', book_id=book.id) }}" class="btn btn-outline-primary btn-lg">
-                            💳 Mua quyền đọc
-                        </a>
-                    {% endif %}
+                  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#readModal">Đọc sách</button>
                 {% else %}
-                    <a href="/login?next=/books/{{ book.id }}" class="btn btn-outline-secondary btn-lg">
-                        🔐 Đăng nhập để đọc
-                    </a>
-        {% endif %}
-    </div>
+                  <a href="/login?next=/books/{{ book.id }}" class="btn btn-primary">Đăng nhập để đọc</a>
+                {% endif %}
+              </div>
             {% endif %}
 
+           <!-- Modal Gói đọc sách -->
+            <div class="modal fade" id="readModal" tabindex="-1" aria-labelledby="readModalLabel" aria-hidden="true">
+              <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="readModalLabel">Các gói đọc sách</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                  </div>
 
-        </div>
-    </div>
+                  <div class="modal-body">
+                    {% if reading_packages %}
+                      <div class="row g-3">
+                        {% for pkg in reading_packages %}
+                          <div class="col-md-4">
+                            <div class="card h-100 shadow-sm border">
+                              <div class="card-body d-flex flex-column">
+                                <h5 class="card-title text-primary">
+                                  {% if pkg.access_type == 'free' %}
+                                    Miễn phí
+                                  {% elif pkg.access_type == 'prenium' %}
+                                    Prenium
+                                  {% endif %}
+                                </h5>
+                                <p class="mb-1"><strong>Thời gian:</strong> {{ pkg.duration_day }} ngày</p>
+
+                                {% if pkg.access_type != 'free' %}
+                                  <p class="mb-1">
+                                    <strong>Giá:</strong>
+                                    <span class="text-danger">{{ "{:,.0f}".format(pkg.price) }}₫</span>
+                                  </p>
+                                {% endif %}
+
+                                <p class="small text-muted">{{ pkg.description }}</p>
+                                <div class="mt-auto">
+                                  <button class="btn btn-primary" onclick="buyReadingPackage({{ pkg.id }}, '{{ pkg.access_type }}')">
+                                      {% if pkg.access_type == 'free' %} Đọc {% else %} Mua {% endif %}
+                                  </button>
+
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      <p>Hiện chưa có gói đọc nào khả dụng.</p>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
 
     <!-- Bình luận -->
     <div class="mt-5">
@@ -111,8 +151,9 @@
             {% endfor %}
         </ul>
     </div>
+    </div>
+    </div>
 </div>
-
 <!-- JavaScript -->
 <script>
     window.onload = function () {
@@ -171,5 +212,31 @@
         const desc = document.getElementById("book-description");
         desc.style.display = (desc.style.display === "none") ? "block" : "none";
     }
+  const bookId = {{ book.id | tojson }};
+
+  function buyReadingPackage(packageId, accessType) {
+    if (accessType === 'free') {
+      fetch(`/api/buy_reading_package`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          package_id: packageId,
+          book_id: bookId
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = `/read/${bookId}`;
+        } else {
+          alert(data.message || 'Bạn đã sử dụng gói đọc miễn phí!');
+        }
+      })
+      .catch(err => console.error(err));
+    } else {
+      window.location.href = `/checkout_reading_package?package_id=${packageId}&book_id=${bookId}`;
+    }
+  }
+
 </script>
 {% endblock %}
