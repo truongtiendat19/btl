@@ -17,9 +17,9 @@ from reportlab.pdfbase import pdfmetrics
 
 
 # MoMo configuration
-MOMO_PARTNER_CODE = "YOUR_MOMO_PARTNER_CODE"  # Replace with your MoMo partner code
-MOMO_ACCESS_KEY = "YOUR_MOMO_ACCESS_KEY"      # Replace with your MoMo access key
-MOMO_SECRET_KEY = "YOUR_MOMO_SECRET_KEY"      # Replace with your MoMo secret key
+MOMO_PARTNER_CODE = "MOMODMJ120250721_TEST"  # Replace with your MoMo partner code
+MOMO_ACCESS_KEY = "Csil0yiSO0r7Ete4"      # Replace with your MoMo access key
+MOMO_SECRET_KEY = "YY3r7SE6ZjBEvf6DuZGfKQQwYFbP7W6t"      # Replace with your MoMo secret key
 MOMO_ENDPOINT = "https://test-payment.momo.vn/v2/gateway/api/create"
 MOMO_REDIRECT_URL = "http://localhost:5000/momo/callback"  # Thay bằng URL của bạn
 MOMO_IPN_URL = "http://127.0.0.1:5000/momo/ipn"           # Thay bằng URL của bạn
