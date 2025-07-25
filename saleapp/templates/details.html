@@ -51,34 +51,6 @@
                 </div>
             </div>
 
-            <!-- Mô tả sách -->
-<div class="mt-4">
-    <h5 class="fw-bold mb-3">📘 Mô tả sách</h5>
-    <div class="card card-body">
-        {{ book.description | safe if book.description else 'Không có mô tả cho sách này.' }}
-    </div>
-</div>
-
-{% if book.is_digital_avaible %}
-    <div class="mt-3">
-        {% if current_user.is_authenticated %}
-            {% if has_access or book.is_free_reading %}
-                <a href="{{ url_for('read_book', book_id=book.id) }}" class="btn btn-success btn-lg">
-                    📖 Đọc sách
-                </a>
-            {% else %}
-                <a href="{{ url_for('buy_book_access', book_id=book.id) }}" class="btn btn-outline-primary btn-lg">
-                    💳 Mua quyền đọc
-                </a>
-            {% endif %}
-        {% else %}
-            <a href="/login?next=/books/{{ book.id }}" class="btn btn-outline-secondary btn-lg">
-                🔐 Đăng nhập để đọc
-            </a>
-        {% endif %}
-    </div>
-{% endif %}
-
 
             <div class="mt-4">
                 <button class="btn btn-outline-secondary" onclick="toggleDescription()">📘 Xem mô tả sách</button>
@@ -240,5 +212,35 @@
         const desc = document.getElementById("book-description");
         desc.style.display = (desc.style.display === "none") ? "block" : "none";
     }
+
+   const bookId = {{ book.id | tojson }};
+
+function buyReadingPackage(packageId, accessType) {
+  if (accessType === 'free') {
+    fetch('/api/buy_reading_package', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        package_id: packageId,
+        book_id: bookId
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        window.location.href = `/read/${bookId}`;
+      } else {
+        alert(data.message || 'Bạn đã dùng gói đọc miễn phí!');
+      }
+    })
+    .catch(err => {
+      console.error('Lỗi:', err);
+      alert('Có lỗi xảy ra khi xử lý gói đọc!');
+    });
+  } else {
+    window.location.href = `/checkout_reading_package?package_id=${packageId}&book_id=${bookId}`;
+  }
+}
+
 </script>
 {% endblock %}

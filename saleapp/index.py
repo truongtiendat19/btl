@@ -376,39 +376,39 @@ def buy_reading_package():
     if not pkg:
         return jsonify({'success': False, 'message': 'Không tìm thấy gói đọc!'})
 
-    if pkg.access_type == 'free':
-        existing = Purchase.query.filter_by(
-            user_id=current_user.id,
-            digital_pricing_id=package_id,
-            book_id=book_id
-        ).filter(Purchase.time_end >= now).first()
+    if pkg.access_type != 'free':
+        return jsonify({'success': False, 'message': 'Sai loại gói!'})
 
-        if existing:
-            # Đã có gói free và còn hạn → Cho đọc luôn
-            return jsonify({'success': True})
+    existing = Purchase.query.filter_by(
+        user_id=current_user.id,
+        digital_pricing_id=package_id,
+        book_id=book_id
+    ).filter(Purchase.time_end >= now).first()
 
-        # Chưa có hoặc đã hết hạn → Tạo mới
-        p = Purchase(
-            user_id=current_user.id,
-            book_id=book_id,
-            digital_pricing_id=package_id,
-            time_start=now,
-            time_end=now + timedelta(days=pkg.duration_day)
-        )
-        db.session.add(p)
-        db.session.commit()
+    if existing:
+        # Đã có gói free và còn hạn → Cho đọc luôn
         return jsonify({'success': True})
 
-    return jsonify({'success': False, 'message': 'Sai loại gói!'})
+    # Tạo mới gói free
+    purchase = Purchase(
+        user_id=current_user.id,
+        book_id=book_id,
+        digital_pricing_id=package_id,
+        time_start=now,
+        time_end=now + timedelta(days=pkg.duration_day)
+    )
+    db.session.add(purchase)
+    db.session.commit()
+
+    return jsonify({'success': True})
+
 
 
 @app.route("/read/<int:book_id>/")
 @login_required
 def read_book(book_id):
-    # Kiểm tra quyền truy cập
     now = datetime.now()
-
-    purchase = db.session.query(Purchase).filter(
+    purchase = Purchase.query.filter(
         Purchase.book_id == book_id,
         Purchase.user_id == current_user.id,
         Purchase.time_start <= now,
@@ -416,22 +416,22 @@ def read_book(book_id):
     ).first()
 
     if not purchase:
-        return redirect(url_for("access_denied"))
+        return render_template("access_denied.html")
 
-    # Lấy nội dung trang đầu tiên
     page = int(request.args.get('page', 1))
-    content = db.session.query(BookContent).filter_by(book_id=book_id, page_number=page).first()
+    content = BookContent.query.filter_by(book_id=book_id, page_number=page).first()
 
     if not content:
         abort(404)
 
-    total_pages = db.session.query(func.count(BookContent.id)).filter_by(book_id=book_id).scalar()
+    total_pages = BookContent.query.filter_by(book_id=book_id).count()
 
     return render_template("read_book.html",
                            content=content,
                            page=page,
                            total_pages=total_pages,
                            book_id=book_id)
+
 
 
 if __name__ == '__main__':
