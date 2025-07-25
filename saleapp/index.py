@@ -1,15 +1,16 @@
-import json
-import math
-import uuid
-import hmac
-import hashlib
-import requests
-from flask import render_template, request, redirect, session, jsonify, url_for
-import dao, utils
-from saleapp import app, login, db
+from xhtml2pdf import pisa
+import io, filetype, os, dao, utils, math, pdfkit
+from flask import render_template, request, redirect, session, jsonify, send_file, current_app, make_response
+from saleapp import app, login
 from flask_login import login_user, logout_user, login_required, current_user
+from datetime import datetime
 from saleapp.dao import check_username_exists
-from saleapp.models import UserRole, Book, User, Category, Author, Order
+from saleapp.models import UserRole, Book, ImportReceipt,ImportReceiptDetail, DigitalPricing
+from flask import render_template, send_file, current_app
+from xhtml2pdf import pisa
+from datetime import datetime
+from reportlab.pdfbase import pdfmetrics
+
 
 # MoMo configuration
 MOMO_PARTNER_CODE = "YOUR_MOMO_PARTNER_CODE"  # Replace with your MoMo partner code
@@ -95,27 +96,37 @@ def logout_process():
     logout_user()
     return redirect('/login')
 
+
 @app.route('/register', methods=['get', 'post'])
 def register_process():
     err_msg = ''
-    if request.method.__eq__('POST'):
+    if request.method == 'POST':
         password = request.form.get('password')
         confirm = request.form.get('confirm')
         username = request.form.get('username')
 
         if dao.check_username_exists(username):
             err_msg = 'Tên đăng nhập đã tồn tại.'
+        elif password != confirm:
+            err_msg = 'Mật khẩu không khớp!'
         else:
-            if password.__eq__(confirm):
-                data = request.form.copy()
-                del data['confirm']
-                avatar = request.files.get('avatar')
-                dao.add_user(avatar=avatar, **data)
-                return redirect('/login')
-            else:
-                err_msg = 'Mật khẩu không khớp!'
+            avatar = request.files.get('avatar')
+
+            if avatar and avatar.filename:
+                kind = filetype.guess(avatar.read())
+                avatar.stream.seek(0)
+
+                if not kind or kind.mime.split('/')[0] != 'image':
+                    err_msg = 'Tệp tải lên không phải là ảnh hợp lệ!'
+                    return render_template('register.html', err_msg=err_msg)
+
+            data = request.form.copy()
+            del data['confirm']
+            dao.add_user(avatar=avatar, **data)
+            return redirect('/login')
 
     return render_template('register.html', err_msg=err_msg)
+
 
 @app.route("/api/carts", methods=['post'])
 def add_to_cart():
@@ -266,6 +277,94 @@ def common_response_data():
         'categories': dao.load_categories(),
         'cart_stats': utils.cart_stats(session.get('cart'))
     }
+
+
+@app.route('/admin/receipt/<int:receipt_id>/print')
+def print_import_receipt(receipt_id):
+    receipt = ImportReceipt.query.get_or_404(receipt_id)
+    html = render_template('admin/print_receipt.html', receipt=receipt, now=datetime.now())
+
+    config = pdfkit.configuration(wkhtmltopdf=r'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
+
+    pdf_data = pdfkit.from_string(
+        html,
+        False,
+        configuration=config,
+        options={"enable-local-file-access": ""}
+    )
+
+    response = make_response(pdf_data)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=phieu_nhap_{receipt_id}.pdf'
+
+    return response
+
+
+@app.route("/read/<int:book_id>/")
+@login_required
+def read_book(book_id):
+    # Kiểm tra quyền truy cập
+    now = datetime.now()
+
+    purchase = db.session.query(Purchase).filter(
+        Purchase.book_id == book_id,
+        Purchase.user_id == current_user.id,
+        Purchase.time_start <= now,
+        Purchase.time_end >= now
+    ).first()
+
+    if not purchase:
+        return redirect(url_for("access_denied"))
+
+    # Lấy nội dung trang đầu tiên
+    page = int(request.args.get('page', 1))
+    content = db.session.query(BookContent).filter_by(book_id=book_id, page_number=page).first()
+
+    if not content:
+        return redirect(url_for("not_found"))
+
+    total_pages = db.session.query(func.count(BookContent.id)).filter_by(book_id=book_id).scalar()
+
+    return render_template("read_book.html",
+                           content=content,
+                           page=page,
+                           total_pages=total_pages,
+                           book_id=book_id)
+
+
+@app.route('/book/<int:book_id>/buy', methods=['GET', 'POST'])
+@login_required
+def buy_book_access(book_id):
+    book = Book.query.get_or_404(book_id)
+    pricings = DigitalPricing.query.filter_by(book_id=book_id).all()
+
+    if request.method == 'POST':
+        pricing_id = request.form.get('pricing_id')
+        pricing = DigitalPricing.query.get(pricing_id)
+
+        if not pricing or pricing.book_id != book.id:
+            flash("Gói đọc không hợp lệ.", "danger")
+            return redirect(url_for('buy_book_access', book_id=book_id))
+
+        now = datetime.now()
+        time_end = now + timedelta(days=pricing.duration_day)
+
+        # Tạo lịch sử mua quyền đọc
+        purchase = Purchase(
+            user_id=current_user.id,
+            book_id=book.id,
+            digital_pricing_id=pricing.id,
+            time_start=now,
+            time_end=time_end
+        )
+        db.session.add(purchase)
+        db.session.commit()
+
+        flash("✅ Mua quyền đọc thành công!", "success")
+        return redirect(url_for('read_book', book_id=book.id))
+
+    return render_template('buy_access.html', book=book, pricings=pricings)
+
 
 if __name__ == '__main__':
     from saleapp import admin

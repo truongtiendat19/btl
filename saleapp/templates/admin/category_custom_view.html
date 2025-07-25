@@ -1,0 +1,164 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<style>
+  body {
+    background: #efefef;
+    padding: 40px 0;
+  }
+
+  .content-wrapper {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+  }
+
+  .custom-row {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+  }
+
+  .form-column {
+    flex: 1;
+    position: sticky;
+    top: 40px;
+    align-self: flex-start;
+    z-index: 10;
+  }
+
+  .form-section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .table-column {
+    flex: 2;
+    overflow-x: auto;
+  }
+
+  .table thead th{
+    background: #0d6efd;
+    color: white;
+    text-align:center;
+  }
+
+  .table th:nth-child(3),
+  .table td:nth-child(3) {
+    width: 120px;
+    white-space: nowrap;
+  }
+
+  .table thead th:nth-child(1),
+  .table thead th:nth-child(3),
+  .table tbody td:nth-child(1),
+  .table tbody td:nth-child(3) {
+    text-align: center;
+  }
+</style>
+
+<div class="container-fluid px-5 py-4">
+  <h3 class="text-center text-primary mb-4">Quản lý Thể loại</h3>
+
+  <div class="content-wrapper p-4">
+    <div class="custom-row">
+    <!-- Form bên trái -->
+      <div class="form-column">
+      <div class="form-section">
+        <form method="POST">
+          <input type="hidden" name="category_id" id="category_id">
+
+          <div class="mb-3">
+            <label for="category_name">Tên thể loại</label>
+            <input type="text" class="form-control" id="category_name" name="name" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Thêm / Sửa</button>
+          <button type="reset" class="btn btn-secondary">Reset</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bảng bên phải -->
+      <div class="table-column">
+      <!-- Form tìm kiếm -->
+      <div class="mb-3">
+        <div class="input-group">
+          <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm tên thể loại...">
+          <button class="btn btn-outline-secondary" type="button" id="clearButton">❌</button>
+        </div>
+      </div>
+
+      <!-- Bảng dữ liệu -->
+      <table class="table table-bordered text-center">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Tên thể loại</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in categories %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ c.name }}</td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="selectCategory({{ c.id }})">Sửa</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteCategory({{ c.id }})">Xoá</button>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3">Không tìm thấy kết quả.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function selectCategory(id) {
+  fetch(`/admin/categories/${id}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('category_id').value = data.id;
+      document.getElementById('category_name').value = data.name;
+    });
+}
+
+function filterTable() {
+  const filter = document.getElementById('searchInput').value.toLowerCase();
+  const rows = document.querySelectorAll('.table tbody tr');
+
+  rows.forEach(row => {
+    const name = row.cells[1].textContent.toLowerCase();
+    if (name.includes(filter)) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+
+document.getElementById('searchInput').addEventListener('keyup', filterTable);
+
+document.getElementById('clearButton').addEventListener('click', function() {
+  document.getElementById('searchInput').value = '';
+  filterTable();
+});
+
+function deleteCategory(id) {
+  if (confirm("Bạn chắc chắn muốn xoá thể loại này?")) {
+    window.location.href = `/admin/categories/delete/${id}`;
+  }
+}
+</script>
+
+{% endblock %}

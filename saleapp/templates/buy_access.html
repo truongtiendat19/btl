@@ -1,0 +1,21 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Mua quyền đọc sách: <strong>{{ book.name }}</strong></h3>
+    <hr>
+
+    <form method="post">
+        <div class="list-group">
+            {% for p in pricings %}
+            <label class="list-group-item">
+                <input type="radio" class="form-check-input me-2" name="pricing_id" value="{{ p.id }}" required>
+                {{ p.access_type }} - {{ p.duration_day }} ngày - {{ "{:,.0f}".format(p.price) }} VNĐ
+            </label>
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">💳 Xác nhận mua</button>
+    </form>
+</div>
+{% endblock %}
