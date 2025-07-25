@@ -1,64 +1,170 @@
 {% extends 'admin/master.html' %}
 
 {% block body %}
-<div class="row mb-4">
-    <div class="col-md-6 offset-md-3">
-        <form method="get" class="row g-2 align-items-center justify-content-center">
-            <div class="col-auto">
-                <label for="month" class="form-label mb-0 me-2">Tháng:</label>
-                <select name="month" id="month" class="form-select">
-                    {% for m in range(1, 13) %}
-                    <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+<style>
+  body {
+    background: #efefef;
+    padding: 40px 0;
+  }
 
-            <div class="col-auto">
-                <label for="year" class="form-label mb-0 me-2">Năm:</label>
-                <select name="year" id="year" class="form-select">
-                    {% for y in range(now.year - 5, now.year + 1) %}
-                    <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+  .content-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    padding: 30px;
+    max-width: 1200px;
+    margin: auto;
+  }
 
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary">Xem</button>
-            </div>
-        </form>
+  .col-auto {
+    margin-left: 20px;
+  }
+
+  .summary p {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+
+  .row-flex {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+
+  .left-col {
+    flex: 1 1 55%;
+  }
+
+  .right-col {
+    flex: 1 1 40%;
+  }
+
+  table {
+    width: 100%;
+    font-size: 14px;
+    margin-top: 20px;
+  }
+
+  table th {
+    background: #0d6efd;
+    color: #fff;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  table td {
+    vertical-align: middle;
+  }
+
+  .table th, .table td {
+    padding: 8px;
+    text-align: center;
+  }
+
+  select {
+    font-size: 14px;
+  }
+
+  .btn {
+    min-width: 80px;
+  }
+</style>
+<h3 class="text-center mb-4 text-primary">Thống kê - Báo cáo Bán sách</h3>
+<div class="content-wrapper">
+    <form method="get" class="row g-2 align-items-center justify-content-center mb-4">
+        <div class="col-auto">
+            <label for="month" class="form-label mb-0 me-2">Tháng:</label>
+            <select name="month" id="month" class="form-select">
+                {% for m in range(1, 13) %}
+                <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <label for="year" class="form-label mb-0 me-2">Năm:</label>
+            <select name="year" id="year" class="form-select">
+                {% for y in range(now.year - 5, now.year + 1) %}
+                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Xem</button>
+        </div>
+    </form>
+
+    <h2 class="text-center text-primary">Báo Cáo Doanh Thu Tháng {{ month }}/{{ year }}</h2>
+
+    <div class="summary mb-3">
+        <p><strong>Tổng đơn hàng:</strong> {{ total_orders }}</p>
+        <p><strong>Tổng doanh thu:</strong> {{ "{:,.0f}".format(total_revenue) }} VNĐ</p>
+    </div>
+
+    <div class="row-flex">
+        <div class="left-col">
+            <h5 class="text-center mt-3 mb-3">Bảng Doanh Thu theo Sách</h5>
+            <table class="table table-bordered">
+                <thead>
+                <tr>
+                    <th>Tên sách</th>
+                    <th>Số lượng bán</th>
+                    <th>Doanh thu</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for name, quantity, revenue in stats %}
+                <tr>
+                    <td class="text-start">{{ name }}</td>
+                    <td>{{ quantity or 0 }}</td>
+                    <td>{{ "{:,.0f}".format(revenue or 0) }} VNĐ</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3"><em>Không có dữ liệu.</em></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="right-col">
+            <h5 class="text-center mt-3 mb-3">Biểu đồ Doanh Thu theo Sách</h5>
+            <canvas id="revenueChart" height="300"></canvas>
+        </div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const chartLabels = {{ stats | map(attribute=0) | list | tojson }};
+  const chartData = {{ stats | map(attribute=2) | list | tojson }};
 
-<div class="container mt-4">
-    <h2 class="text-center">Báo Cáo Doanh Thu Tháng {{ month }}/{{ year }}</h2>
-    <hr>
+  const ctx = document.getElementById('revenueChart').getContext('2d');
 
-    <p><strong>Tổng đơn hàng:</strong> {{ total_orders }}</p>
-    <p><strong>Tổng doanh thu:</strong> {{ "{:,.0f}".format(total_revenue) }} VNĐ</p>
-    <p><strong>Chi phí nhập hàng:</strong> {{ "{:,.0f}".format(total_cost) }} VNĐ</p>
-    <p><strong>Lợi nhuận:</strong>
-        <span class="{% if profit >= 0 %}text-success{% else %}text-danger{% endif %}">
-            {{ "{:,.0f}".format(profit) }} VNĐ
-        </span>
-    </p>
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: chartLabels,
+      datasets: [{
+        label: 'Doanh Thu (VNĐ)',
+        data: chartData,
+        backgroundColor: '#0d6efd'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: value => value.toLocaleString() + ' VNĐ'
+          }
+        }
+      }
+    }
+  });
+</script>
 
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Tên sách</th>
-                <th>Số lượng bán</th>
-                <th>Doanh thu</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for name, quantity, revenue in stats %}
-            <tr>
-                <td>{{ name }}</td>
-                <td>{{ quantity or 0 }}</td>
-                <td>{{ "{:,.0f}".format(revenue or 0) }} VNĐ</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
 {% endblock %}
