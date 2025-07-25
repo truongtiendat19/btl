@@ -1,27 +1,19 @@
-import hashlib
-import hmac
-import io, filetype, os, dao, utils, math, pdfkit
-from flask import render_template, request, redirect, session, jsonify, send_file, current_app, make_response, url_for, abort
-from saleapp import app, login, db
-import uuid
-
-import requests
-from flask import render_template, request, redirect, session, jsonify, send_file, current_app, make_response, json, \
-    url_for, flash
-from sqlalchemy import func
-
-from saleapp import app, login, db
-from flask_login import login_user, logout_user, login_required, current_user
+import hashlib, hmac, io, os, uuid, math, requests, filetype, pdfkit
 from datetime import datetime, timedelta
-from saleapp.dao import check_username_exists
-from saleapp.models import UserRole, Book, ImportReceipt,ImportReceiptDetail, DigitalPricing, digitalpricing_books, Purchase, BookContent
-from saleapp.models import UserRole, Book, ImportReceipt, ImportReceiptDetail, DigitalPricing, Purchase, BookContent, \
-    Order
-from flask import render_template, send_file, current_app
-from xhtml2pdf import pisa
-from datetime import datetime
-from reportlab.pdfbase import pdfmetrics
+from flask import (
+    render_template, request, redirect, session, jsonify,
+    send_file, current_app, make_response, url_for, abort, flash)
+from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy import func
+from saleapp import app, login, db, dao, utils
+from saleapp.dao import check_username_exists
+from saleapp.models import (
+    UserRole, Book, ImportReceipt, ImportReceiptDetail,
+    DigitalPricing, Purchase, BookContent, Order
+)
+from xhtml2pdf import pisa
+from reportlab.pdfbase import pdfmetrics
+
 
 
 # MoMo configuration
