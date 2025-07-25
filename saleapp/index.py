@@ -1,11 +1,22 @@
-from xhtml2pdf import pisa
+import hashlib
+import hmac
 import io, filetype, os, dao, utils, math, pdfkit
 from flask import render_template, request, redirect, session, jsonify, send_file, current_app, make_response, url_for, abort
 from saleapp import app, login, db
+import uuid
+
+import requests
+from flask import render_template, request, redirect, session, jsonify, send_file, current_app, make_response, json, \
+    url_for, flash
+from sqlalchemy import func
+
+from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required, current_user
-from datetime import datetime
+from datetime import datetime, timedelta
 from saleapp.dao import check_username_exists
 from saleapp.models import UserRole, Book, ImportReceipt,ImportReceiptDetail, DigitalPricing, digitalpricing_books, Purchase, BookContent
+from saleapp.models import UserRole, Book, ImportReceipt, ImportReceiptDetail, DigitalPricing, Purchase, BookContent, \
+    Order
 from flask import render_template, send_file, current_app
 from xhtml2pdf import pisa
 from datetime import datetime
@@ -18,9 +29,9 @@ MOMO_PARTNER_CODE = "YOUR_MOMO_PARTNER_CODE"  # Replace with your MoMo partner c
 MOMO_ACCESS_KEY = "YOUR_MOMO_ACCESS_KEY"      # Replace with your MoMo access key
 MOMO_SECRET_KEY = "YOUR_MOMO_SECRET_KEY"      # Replace with your MoMo secret key
 MOMO_ENDPOINT = "https://test-payment.momo.vn/v2/gateway/api/create"
-MOMO_REDIRECT_URL = "http://yourdomain.com/momo/callback"  # Replace with your domain
-MOMO_IPN_URL = "http://yourdomain.com/momo/ipn"           # Replace with your domain
-@app.route('/api/books', methods=['GET'])
+MOMO_REDIRECT_URL = "http://localhost:5000/momo/callback"  # Thay bằng URL của bạn
+MOMO_IPN_URL = "http://127.0.0.1:5000/momo/ipn"           # Thay bằng URL của bạn
+
 def get_books():
     books = Book.query.all()
     book_list = [{
@@ -180,20 +191,25 @@ def delete_cart(book_id):
     return jsonify(utils.cart_stats(cart))
 
 
-@app.route("/api/pay", methods=['post', 'get'])
+@app.route("/api/pay", methods=['POST', 'GET'])
 @login_required
 def pay():
-    if request.method.__eq__('POST'):
+    if request.method == 'POST':
         data = request.get_json()
         cart = session.get('cart')
+        if not cart:
+            return jsonify({"error": "Giỏ hàng trống"}), 400
         customer_phone = data.get('customer_phone')
         customer_address = data.get('customer_address')
         payment_method = data.get('payment_method')
         delivery_method = data.get('delivery_method')
 
+        if not all([customer_phone, customer_address, payment_method, delivery_method]):
+            return jsonify({"error": "Vui lòng điền đầy đủ thông tin"}), 400
+
         if payment_method == 'MoMo':
             order_id = str(uuid.uuid4())
-            amount = int(utils.cart_stats(cart)['total_amount'])
+            amount = str(int(utils.cart_stats(cart)['total_amount']))  # Đảm bảo là chuỗi
             request_id = str(uuid.uuid4())
             order_info = f"Payment for order {order_id}"
             items = [
@@ -201,7 +217,9 @@ def pay():
                 for item in cart.values()
             ]
 
-            raw_signature = f"accessKey={MOMO_ACCESS_KEY}&amount={amount}&extraData=&ipnUrl={MOMO_IPN_URL}&orderId={order_id}&orderInfo={order_info}&partnerCode={MOMO_PARTNER_CODE}&redirectUrl={MOMO_REDIRECT_URL}&requestId={request_id}&requestType=captureWallet"
+            raw_signature = (f"accessKey={MOMO_ACCESS_KEY}&amount={amount}&extraData=&ipnUrl={MOMO_IPN_URL}"
+                             f"&orderId={order_id}&orderInfo={order_info}&partnerCode={MOMO_PARTNER_CODE}"
+                             f"&redirectUrl={MOMO_REDIRECT_URL}&requestId={request_id}&requestType=captureWallet")
             signature = hmac.new(
                 MOMO_SECRET_KEY.encode('utf-8'),
                 raw_signature.encode('utf-8'),
@@ -225,41 +243,81 @@ def pay():
                 "items": items
             }
 
-            print("Payload:", json.dumps(payload, indent=2))  # Gỡ lỗi payload
+            print("====== MOMO CREATE REQUEST ======")
+            print("Payload:", payload)
+            print("Raw Signature:", raw_signature)
+            print("Calculated Signature:", signature)
+
             try:
-                response = requests.post(MOMO_ENDPOINT, json=payload)
+                response = requests.post(MOMO_ENDPOINT, json=payload, headers={"Content-Type": "application/json"}, timeout=10)
+                response.raise_for_status()
                 response_data = response.json()
-                print("Phản hồi MoMo:", response.text)  # Gỡ lỗi phản hồi
+                print("MoMo Response:", response_data)
                 if response_data.get("resultCode") == 0:
                     dao.add_receipt(cart, customer_phone, customer_address, True, delivery_method, order_id=order_id)
                     return jsonify({"payUrl": response_data.get("payUrl")})
                 else:
-                    return jsonify({"error": response_data.get("message")}), 400
-            except Exception as e:
-                print("Lỗi:", str(e))
-                return jsonify({"error": str(e)}), 500
+                    return jsonify({"error": response_data.get("message", "Thanh toán MoMo thất bại")}), 400
+            except requests.exceptions.RequestException as e:
+                print("MoMo Error:", str(e))
+                return jsonify({"error": f"Lỗi kết nối MoMo: {str(e)}"}), 500
 
-        dao.add_receipt(cart, customer_phone, customer_address, payment_method == 'Online', delivery_method)
-        return redirect('/')
+        # Xử lý COD
+        order = dao.add_receipt(cart, customer_phone, customer_address, False, delivery_method)
+        session.pop('cart', None)
+        return jsonify({"message": "Thanh toán COD thành công", "redirect_url": url_for('index')})
     return render_template('order_books.html', user=current_user)
 
+@app.route("/momo/callback", methods=['GET'])
+@login_required
+def momo_callback():
+    result_code = request.args.get('resultCode')
+    order_id = request.args.get('orderId')
 
-# @app.route("/momo/callback", methods=['GET'])
-# @login_required
-# def momo_callback():
-#     result_code = request.args.get('resultCode')
-#     order_id = request.args.get('orderId')
-#
-#     if result_code == '0':
-#         # Payment successful, update order status
-#         order = Order.query.filter_by(id=order_id).first()
-#         if order:
-#             order.payment_status = 'Paid'
-#             order.status = 'Confirmed'
-#             db.session.commit()
-#             session.pop('cart', None)  # Clear cart
-#             return redirect(url_for('index'))
-#     return render_template('index.html', success=result_code == '0')
+    if result_code == '0':  # Thanh toán thành công
+        order = Order.query.filter_by(order_id=order_id).first()
+        if order:
+            order.payment_status = 'Paid'
+            order.status = 'Confirmed'
+            db.session.commit()
+            session.pop('cart', None)
+            flash("Thanh toán thành công!", "success")
+            return redirect(url_for('index'))
+    else:
+        flash("Thanh toán thất bại: " + request.args.get('message', 'Lỗi không xác định'), "danger")
+    return redirect(url_for('index'))
+
+@app.route("/momo/ipn", methods=['POST'])
+def momo_ipn():
+    data = request.get_json()
+    print("=== MoMo IPN received ===")
+    print(data)
+    print(f"orderId: {data.get('orderId')}")
+    print(f"resultCode: {data.get('resultCode')}")
+    print("========================")
+
+    received_signature = data.get('signature')
+    raw_signature = (f"accessKey={MOMO_ACCESS_KEY}&amount={data.get('amount')}&extraData={data.get('extraData')}"
+                     f"&ipnUrl={MOMO_IPN_URL}&orderId={data.get('orderId')}&orderInfo={data.get('orderInfo')}"
+                     f"&partnerCode={data.get('partnerCode')}&redirectUrl={MOMO_REDIRECT_URL}"
+                     f"&requestId={data.get('requestId')}&requestType={data.get('requestType')}")
+    expected_signature = hmac.new(
+        MOMO_SECRET_KEY.encode('utf-8'),
+        raw_signature.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+
+    if received_signature != expected_signature:
+        return jsonify({"message": "Chữ ký không hợp lệ"}), 400
+
+    if data.get('resultCode') == 0:
+        order_id = data.get('orderId')
+        order = Order.query.filter_by(order_id=order_id).first()
+        if order:
+            order.payment_status = 'Paid'
+            order.status = 'Confirmed'
+            db.session.commit()
+    return jsonify({"message": "IPN received"}), 200
 
 
 # @app.route("/momo/ipn", methods=['POST'])
@@ -355,6 +413,7 @@ def buy_reading_package():
 @app.route("/read/<int:book_id>/")
 @login_required
 def read_book(book_id):
+    # Kiểm tra quyền truy cập
     now = datetime.now()
 
     purchase = db.session.query(Purchase).filter(
@@ -367,6 +426,7 @@ def read_book(book_id):
     if not purchase:
         return redirect(url_for("access_denied"))
 
+    # Lấy nội dung trang đầu tiên
     page = int(request.args.get('page', 1))
     content = db.session.query(BookContent).filter_by(book_id=book_id, page_number=page).first()
 

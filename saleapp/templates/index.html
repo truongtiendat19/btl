@@ -49,54 +49,65 @@
             </div>
         </aside>
 
-        <!-- Danh sách sách -->
-        <section class="col-lg-9">
-            <h4 class="mb-4 text-dark">📚 Danh sách sách</h4>
-            {% if books %}
-                <div class="row">
-                    {% for book in books %}
-                        <div class="col-md-4 mb-4">
-                            <div class="card h-100 shadow-sm">
-                                <img src="{{ book.image or 'https://via.placeholder.com/300x400?text=No+Image' }}" class="card-img-top" alt="{{ book.name }}">
-                                <div class="card-body d-flex flex-column">
-                                    <h6 class="card-title">{{ book.name }}</h6>
-                                    <small class="text-muted">✍️ {{ book.author.name if book.author else 'Không rõ' }}</small>
-                                    <small class="text-muted">📚 {{ book.category.name if book.category else 'Không rõ' }}</small>
-                                    <p class="text-success fw-semibold mt-2">
-                                        {% if book.price_physical > 0 %}
-                                            {{ "{:,.0f}".format(book.price_physical) }} VNĐ
-                                        {% else %}
-                                            Miễn phí
-                                        {% endif %}
-                                    </p>
-                                    <div class="mt-auto d-flex justify-content-between">
-                                        <a href="{{ url_for('details', book_id=book.id) }}" class="btn btn-outline-primary btn-sm">Chi tiết</a>
-                                        <button class="btn btn-success btn-sm" onclick="addToCart({{ book.id }}, '{{ book.name }}', {{ book.price_physical }})">🛒</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
+       <!-- Danh sách sách -->
+<section class="col-lg-9">
+    <h4 class="mb-4 text-dark">📚 Danh sách sách</h4>
+    {% if books %}
+        <div class="row">
+            {% for book in books %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm position-relative">
+                        <!-- Hình ảnh -->
+                        <img src="{{ book.image or 'https://via.placeholder.com/300x400?text=No+Image' }}"
+                             class="card-img-top" alt="{{ book.name }}">
 
-                {% if pages > 1 %}
-                    <nav class="mt-4">
-                        <ul class="pagination justify-content-center">
-                            {% for p in range(1, pages + 1) %}
-                                <li class="page-item {% if p == page %}active{% endif %}">
-                                    <a class="page-link"
-                                       href="{{ url_for('index', kw=request.args.get('kw', ''), category_id=request.args.get('category_id', ''), author_id=request.args.get('author_id', ''), price_filter=request.args.get('price_filter', ''), page=p) }}">
-                                       {{ p }}
-                                    </a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </nav>
-                {% endif %}
-            {% else %}
-                <div class="alert alert-warning">Không tìm thấy sách nào phù hợp.</div>
-            {% endif %}
-        </section>
+                        <!-- Nội dung sách -->
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title mb-1">{{ book.name }}</h6>
+                            <small class="text-muted">✍️ {{ book.author.name if book.author else 'Không rõ' }}</small><br>
+                            <small class="text-muted">📚 {{ book.category.name if book.category else 'Không rõ' }}</small>
+                            <p class="text-success fw-semibold mt-2 mb-0">
+                                {% if book.price_physical > 0 %}
+                                    {{ "{:,.0f}".format(book.price_physical) }} VNĐ
+                                {% else %}
+                                    Miễn phí
+                                {% endif %}
+                            </p>
+
+                            <!-- Link được kéo giãn toàn card -->
+                            <a href="{{ url_for('details', book_id=book.id) }}" class="stretched-link"></a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Phân trang -->
+        {% if pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% for p in range(1, pages + 1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a class="page-link"
+                               href="{{ url_for('index',
+                                   kw=request.args.get('kw', ''),
+                                   category_id=request.args.get('category_id', ''),
+                                   author_id=request.args.get('author_id', ''),
+                                   price_filter=request.args.get('price_filter', ''),
+                                   page=p) }}">
+                               {{ p }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-warning">Không tìm thấy sách nào phù hợp.</div>
+    {% endif %}
+</section>
+
+
     </div>
 </div>
 

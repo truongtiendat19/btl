@@ -1,3 +1,5 @@
+import json
+import uuid
 from datetime import datetime
 from flask import session
 from saleapp.models import Category, Book, User, Author, Review, OrderDetail, Order
@@ -7,6 +9,16 @@ import cloudinary.uploader
 from sqlalchemy import func
 from flask_login import current_user
 from operator import or_
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_v1_5
+from base64 import b64encode
+
+def encrypt_payload(data):
+    with open('mykey.pem', 'r') as f:
+        key = RSA.importKey(f.read())
+    cipher = PKCS1_v1_5.new(key)
+    cipher_text = cipher.encrypt(json.dumps(data).encode())
+    return b64encode(cipher_text).decode()
 def load_comments(book_id):
     return Review.query.filter_by(book_id=book_id).order_by(Review.created_date.desc()).all()
 
@@ -98,8 +110,11 @@ def add_receipt(cart, customer_phone, customer_address, payment_method, delivery
         shipping_address=customer_address,
         total_amount=total_amount
     )
+
+    # Chỉ gán order_id nếu có (UUID chuỗi), và gán vào cột order_id, KHÔNG gán vào id (int)
     if order_id:
-        order.id = order_id  # Set custom order ID for MoMo
+        order.order_id = order_id
+
     db.session.add(order)
     db.session.flush()  # Ensure order ID is generated
 
@@ -113,9 +128,13 @@ def add_receipt(cart, customer_phone, customer_address, payment_method, delivery
         db.session.add(order_detail)
 
     db.session.commit()
-    if not payment_method:  # Clear cart for non-MoMo payments
+
+    # Xoá giỏ hàng nếu là COD (MoMo sẽ xoá sau khi callback thành công)
+    if not payment_method:
         session.pop('cart', None)
+
     return order
+
 
 
 if __name__ == '__main__':
