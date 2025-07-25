@@ -131,8 +131,10 @@ class Purchase(db.Model):
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
     digital_pricing_id = Column(Integer, ForeignKey(DigitalPricing.id), nullable=False)
     time_start = Column(DateTime, nullable=False)
-    time_end = Column(DateTime, nullable=False)
+    time_end = Column(DateTime, nullable=True)
     create_date =  Column(DateTime, server_default=func.now(), nullable=False)
+    status = Column(String(20), default="PENDING", nullable=False)
+    momo_order_id = Column(String(100), nullable=True)
 
 
 # nội dung sách đọc online

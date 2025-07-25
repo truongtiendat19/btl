@@ -80,45 +80,101 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                   </div>
 
-                  <div class="modal-body">
-                    {% if reading_packages %}
-                      <div class="row g-3">
-                        {% for pkg in reading_packages %}
-                          <div class="col-md-4">
-                            <div class="card h-100 shadow-sm border">
-                              <div class="card-body d-flex flex-column">
-                                <h5 class="card-title text-primary">
-                                  {% if pkg.access_type == 'free' %}
-                                    Miễn phí
-                                  {% elif pkg.access_type == 'prenium' %}
-                                    Prenium
-                                  {% endif %}
-                                </h5>
-                                <p class="mb-1"><strong>Thời gian:</strong> {{ pkg.duration_day }} ngày</p>
+                    <div class="modal-body">
+                      {% if reading_packages %}
+                        <div class="row g-3">
+                          {% for pkg in reading_packages %}
+                            {% set my_purchase = purchases_dict.get(pkg.id) %}
 
-                                {% if pkg.access_type != 'free' %}
-                                  <p class="mb-1">
-                                    <strong>Giá:</strong>
-                                    <span class="text-danger">{{ "{:,.0f}".format(pkg.price) }}₫</span>
-                                  </p>
+                            {% if pkg.access_type == 'free' %}
+                              {% if my_purchase %}
+                                {% if my_purchase.time_end > now %}
+                                  <!-- FREE: Đã đọc, còn hạn -->
+                                  <div class="col-md-4">
+                                    <div class="card h-100 shadow-sm border">
+                                      <div class="card-body d-flex flex-column">
+                                        <h5 class="card-title text-primary">Miễn phí</h5>
+                                        <p class="mb-1"><strong>Thời gian:</strong> {{ pkg.duration_day }} ngày</p>
+
+                                        {% set delta = my_purchase.time_end - now %}
+                                        <p class="text-success mb-1">
+                                          Bạn đã dùng gói miễn phí.<br>⏳ Thời gian còn:
+                                          {% if delta.days >= 1 %}
+                                            {{ delta.days }} ngày
+                                          {% else %}
+                                            {{ "%.1f"|format(delta.seconds / 3600) }} giờ
+                                          {% endif %}
+                                        </p>
+
+                                        <p class="small text-muted">{{ pkg.description }}</p>
+
+                                        <div class="mt-auto">
+                                          <button class="btn btn-primary" onclick="buyReadingPackage({{ pkg.id }}, 'free')">Đọc ngay</button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
                                 {% endif %}
+                              {% else %}
+                                <!-- FREE: Chưa đọc -->
+                                <div class="col-md-4">
+                                  <div class="card h-100 shadow-sm border">
+                                    <div class="card-body d-flex flex-column">
+                                      <h5 class="card-title text-primary">Miễn phí</h5>
+                                      <p class="mb-1"><strong>Thời gian:</strong> {{ pkg.duration_day }} ngày</p>
+                                      <p class="mb-1"><span class="text-danger">*Chỉ đọc miễn phí 1 lần</span></p>
 
-                                <p class="small text-muted">{{ pkg.description }}</p>
-                                <div class="mt-auto">
-                                  <button class="btn btn-primary" onclick="buyReadingPackage({{ pkg.id }}, '{{ pkg.access_type }}')">
-                                      {% if pkg.access_type == 'free' %} Đọc {% else %} Mua {% endif %}
-                                  </button>
+                                      <p class="small text-muted">{{ pkg.description }}</p>
 
+                                      <div class="mt-auto">
+                                        <button class="btn btn-primary" onclick="buyReadingPackage({{ pkg.id }}, 'free')">Đọc ngay</button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              {% endif %}
+                            {% elif pkg.access_type == 'prenium' %}
+                              <div class="col-md-4">
+                                <div class="card h-100 shadow-sm border">
+                                  <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title text-primary">Prenium</h5>
+                                    <p class="mb-1"><strong>Thời gian:</strong> {{ pkg.duration_day }} ngày</p>
+
+                                    {% if my_purchase and my_purchase.time_end > now %}
+                                      {% set delta = my_purchase.time_end - now %}
+                                      <p class="text-success mb-1">Bạn đã mua gói này.<br>⏳ Thời gian còn:
+                                        {% if delta.days >= 1 %}
+                                          {{ delta.days }} ngày
+                                        {% else %}
+                                          {{ "%.1f"|format(delta.seconds / 3600) }} giờ
+                                        {% endif %}
+                                      </p>
+                                    {% else %}
+                                      <p class="mb-1"><strong>Giá:</strong> <span class="text-danger">{{ "{:,.0f}".format(pkg.price) }}₫</span></p>
+                                    {% endif %}
+
+                                    <p class="small text-muted">{{ pkg.description }}</p>
+
+                                    <div class="mt-auto">
+                                      {% if my_purchase and my_purchase.time_end > now %}
+                                        <button class="btn btn-primary" onclick="buyReadingPackage({{ pkg.id }}, 'prenium')">Đọc ngay</button>
+                                      {% else %}
+                                        <button class="btn btn-primary" onclick="buyReadingPackage({{ pkg.id }}, 'prenium')">Mua gói</button>
+                                      {% endif %}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        {% endfor %}
-                      </div>
-                    {% else %}
-                      <p>Hiện chưa có gói đọc nào khả dụng.</p>
-                    {% endif %}
-                  </div>
+                            {% endif %}
+
+                          {% endfor %}
+</div>
+
+                      {% else %}
+                        <p>Hiện chưa có gói đọc nào khả dụng.</p>
+                      {% endif %}
+</div>
+
                 </div>
               </div>
             </div>
@@ -151,6 +207,8 @@
             </li>
             {% endfor %}
         </ul>
+    </div>
+    </div>
     </div>
 </div>
 
@@ -228,7 +286,7 @@ function buyReadingPackage(packageId, accessType) {
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        window.location.href = `/read/${bookId}`;
+        window.location.href = `/read/${bookId}`, 300;
       } else {
         alert(data.message || 'Bạn đã dùng gói đọc miễn phí!');
       }
@@ -238,7 +296,7 @@ function buyReadingPackage(packageId, accessType) {
       alert('Có lỗi xảy ra khi xử lý gói đọc!');
     });
   } else {
-    window.location.href = `/checkout_reading_package?package_id=${packageId}&book_id=${bookId}`;
+    window.location.href = `/api/pay_reading_package?package_id=${packageId}&book_id=${bookId}`;
   }
 }
 

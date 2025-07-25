@@ -13,6 +13,7 @@ from saleapp.models import (
 )
 from xhtml2pdf import pisa
 from reportlab.pdfbase import pdfmetrics
+from gtts import gTTS
 
 
 
@@ -82,6 +83,13 @@ def details(book_id):
     comments = dao.load_comments(book_id)
     book = Book.query.get(book_id)
     reading_packages = book.digital_pricings
+    my_purchases = Purchase.query.filter_by(user_id=current_user.id,
+                                            book_id=book_id).all() if current_user.is_authenticated else []
+    purchases_dict = {}
+    now = datetime.now()
+    for p in my_purchases:
+        if p.time_end >= now:
+            purchases_dict[p.digital_pricing_id] = p
 
     ORDER = {'free':1 ,'prenium': 2}
     reading_packages = sorted(
@@ -90,7 +98,8 @@ def details(book_id):
     )
 
     return render_template('details.html',
-                           book=dao.get_book_by_id(book_id), comments=comments, reading_packages=reading_packages)
+                           book=dao.get_book_by_id(book_id), comments=comments, reading_packages=reading_packages,
+                           purchases_dict=purchases_dict,now=now)
 
 @app.route("/api/books/<book_id>/comments", methods=['post'])
 @login_required
@@ -261,32 +270,40 @@ def pay():
     return render_template('order_books.html', user=current_user)
 
 @app.route("/momo/callback", methods=['GET'])
-@login_required
 def momo_callback():
     result_code = request.args.get('resultCode')
     order_id = request.args.get('orderId')
 
     if result_code == '0':  # Thanh toán thành công
+
         order = Order.query.filter_by(order_id=order_id).first()
         if order:
             order.payment_status = 'Paid'
             order.status = 'Confirmed'
             db.session.commit()
             session.pop('cart', None)
-            flash("Thanh toán thành công!", "success")
+            flash("Thanh toán đơn hàng thành công!", "success")
             return redirect(url_for('index'))
+
+        purchase = Purchase.query.filter_by(momo_order_id=order_id).first()
+        if purchase:
+            pricing = DigitalPricing.query.get(purchase.digital_pricing_id)
+            purchase.time_end = purchase.time_start + timedelta(days=pricing.duration_day)
+            purchase.status = 'COMPLETED'
+            db.session.commit()
+            flash("Thanh toán gói đọc thành công!", "success")
+            return redirect(url_for('read_book', book_id=purchase.book_id))
+
+        flash("Không tìm thấy đơn hàng!", "danger")
     else:
         flash("Thanh toán thất bại: " + request.args.get('message', 'Lỗi không xác định'), "danger")
+
     return redirect(url_for('index'))
+
 
 @app.route("/momo/ipn", methods=['POST'])
 def momo_ipn():
     data = request.get_json()
-    print("=== MoMo IPN received ===")
-    print(data)
-    print(f"orderId: {data.get('orderId')}")
-    print(f"resultCode: {data.get('resultCode')}")
-    print("========================")
 
     received_signature = data.get('signature')
     raw_signature = (f"accessKey={MOMO_ACCESS_KEY}&amount={data.get('amount')}&extraData={data.get('extraData')}"
@@ -308,6 +325,13 @@ def momo_ipn():
         if order:
             order.payment_status = 'Paid'
             order.status = 'Confirmed'
+            db.session.commit()
+
+        purchase = Purchase.query.filter_by(momo_order_id=order_id).first()
+        if purchase:
+            pricing = DigitalPricing.query.get(purchase.digital_pricing_id)
+            purchase.time_end = purchase.time_start + timedelta(days=pricing.duration_day)
+            purchase.status = 'COMPLETED'
             db.session.commit()
     return jsonify({"message": "IPN received"}), 200
 
@@ -358,6 +382,12 @@ def print_import_receipt(receipt_id):
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = f'inline; filename=phieu_nhap_{receipt_id}.pdf'
 
+    def cleanup():
+        try:
+            os.remove(pdf_data)
+        except Exception as e:
+            print("Lỗi xoá file tạm:", e)
+
     return response
 
 
@@ -386,7 +416,6 @@ def buy_reading_package():
     ).filter(Purchase.time_end >= now).first()
 
     if existing:
-        # Đã có gói free và còn hạn → Cho đọc luôn
         return jsonify({'success': True})
 
     # Tạo mới gói free
@@ -395,13 +424,13 @@ def buy_reading_package():
         book_id=book_id,
         digital_pricing_id=package_id,
         time_start=now,
-        time_end=now + timedelta(days=pkg.duration_day)
+        time_end=now + timedelta(days=pkg.duration_day),
+        status='COMPLETED'
     )
     db.session.add(purchase)
     db.session.commit()
 
     return jsonify({'success': True})
-
 
 
 @app.route("/read/<int:book_id>/")
@@ -412,7 +441,7 @@ def read_book(book_id):
         Purchase.book_id == book_id,
         Purchase.user_id == current_user.id,
         Purchase.time_start <= now,
-        Purchase.time_end >= now
+        Purchase.time_end >= now,
     ).first()
 
     if not purchase:
@@ -432,6 +461,134 @@ def read_book(book_id):
                            total_pages=total_pages,
                            book_id=book_id)
 
+
+@app.route("/read_audio_temp/<int:book_id>/<int:page>")
+@login_required
+def read_audio(book_id, page):
+    now = datetime.now()
+    purchase = Purchase.query.filter(
+        Purchase.book_id == book_id,
+        Purchase.user_id == current_user.id,
+        Purchase.time_start <= now,
+        Purchase.time_end >= now
+    ).first()
+    if not purchase:
+        return render_template("access_denied.html")
+
+    content = BookContent.query.filter_by(book_id=book_id, page_number=page).first()
+    if not content:
+        abort(404)
+
+    from tempfile import NamedTemporaryFile
+    import os
+
+    with NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
+        tts = gTTS(content.content, lang="vi")
+        tts.save(tmp_file.name)
+        tmp_file_path = tmp_file.name
+
+    response = send_file(tmp_file_path, mimetype="audio/mpeg", as_attachment=False)
+
+    @response.call_on_close
+    def cleanup():
+        try:
+            os.remove(tmp_file_path)
+        except Exception as e:
+            print("Lỗi xoá file tạm:", e)
+
+    return response
+
+
+@app.route("/api/pay_reading_package", methods=['GET'])
+@login_required
+def pay_reading_package():
+    package_id = request.args.get('package_id')
+    book_id = request.args.get('book_id')
+
+    if not all([package_id, book_id]):
+        return "Thiếu thông tin", 400
+
+    pricing = DigitalPricing.query.get(package_id)
+    book = Book.query.get(book_id)
+
+    if not pricing or not book:
+        return "Không tìm thấy gói đọc hoặc sách", 404
+
+    if pricing.price == 0:
+        return "Gói miễn phí không cần thanh toán", 400
+
+    now = datetime.now()
+    existing_purchase = Purchase.query.filter(
+        Purchase.user_id == current_user.id,
+        Purchase.book_id == book.id,
+        Purchase.digital_pricing_id == pricing.id,
+        Purchase.time_end >= now
+    ).first()
+
+    if existing_purchase:
+        return redirect(url_for('read_book', book_id=book.id))
+
+    order_id = str(uuid.uuid4())
+    request_id = str(uuid.uuid4())
+    amount = str(int(pricing.price))
+    order_info = f"Mua gói đọc {pricing.access_type} cho sách {book.name}"
+
+    raw_signature = (f"accessKey={MOMO_ACCESS_KEY}&amount={amount}&extraData=&ipnUrl={MOMO_IPN_URL}"
+                     f"&orderId={order_id}&orderInfo={order_info}&partnerCode={MOMO_PARTNER_CODE}"
+                     f"&redirectUrl={MOMO_REDIRECT_URL}&requestId={request_id}&requestType=captureWallet")
+
+    signature = hmac.new(
+        MOMO_SECRET_KEY.encode('utf-8'),
+        raw_signature.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+
+    payload = {
+        "partnerCode": MOMO_PARTNER_CODE,
+        "partnerName": "ReadZone",
+        "storeId": "ReadZone",
+        "requestId": request_id,
+        "amount": amount,
+        "orderId": order_id,
+        "orderInfo": order_info,
+        "redirectUrl": MOMO_REDIRECT_URL,
+        "ipnUrl": MOMO_IPN_URL,
+        "lang": "vi",
+        "extraData": "",
+        "requestType": "captureWallet",
+        "signature": signature,
+        "items": [{
+            "id": book.id,
+            "name": book.name,
+            "price": pricing.price,
+            "quantity": 1
+        }]
+    }
+
+    try:
+        response = requests.post(MOMO_ENDPOINT, json=payload, headers={"Content-Type": "application/json"}, timeout=10)
+        response.raise_for_status()
+        response_data = response.json()
+        if response_data.get("resultCode") == 0:
+            # Lưu tạm thông tin đơn hàng gói đọc
+            purchase = Purchase(
+                user_id=current_user.id,
+                book_id=book.id,
+                digital_pricing_id=pricing.id,
+                time_start=datetime.now(),
+                time_end=datetime.now(),
+                create_date=datetime.now(),
+                momo_order_id=order_id
+            )
+            db.session.add(purchase)
+            db.session.commit()
+
+            return redirect(response_data.get("payUrl"))
+        else:
+            return f"Lỗi MoMo: {response_data.get('message', 'Không xác định')}", 400
+
+    except requests.exceptions.RequestException as e:
+        return f"Lỗi kết nối MoMo: {str(e)}", 500
 
 
 if __name__ == '__main__':

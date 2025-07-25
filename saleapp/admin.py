@@ -25,101 +25,9 @@ class MyAdminIndexView(AdminIndexView):
 admin = Admin(app, name='ReadZone', index_view=MyAdminIndexView(name='Trang chủ'))
 
 
-class MyAdminView(ModelView):
-    def is_accessible(self):
-        return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
-
-
 class AdminView(BaseView):
     def is_accessible(self):
         return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
-
-
-# trang quản lí thể loại sách
-class CategoryView(MyAdminView):
-    can_export = True
-    column_searchable_list = ['name']
-    can_delete = False
-    column_list = ['name']
-    column_labels = {
-        'name': 'Thể loại',
-    }
-
-
-# trang quản lí thông tin tác giả
-class AuthorView(MyAdminView):
-    can_export = True
-    column_searchable_list = ['name']
-    can_delete = False
-    column_list = ['name']
-    column_labels = {
-        'name': 'Tác giả',
-    }
-
-
-# trang quản lí thông tin sách
-class BookView(MyAdminView):
-    column_list = ['name', 'category', 'author', 'price_physical']
-    column_searchable_list = ['name']
-    can_view_details = True
-    can_export = True
-    can_edit = True
-    can_delete = False
-    column_labels = {
-        'name': 'Tên sách',
-        'category': 'Thể loại',
-        'author': 'Tác giả',
-        'quantity': 'Số lượng',
-        'image': 'Ảnh bìa',
-        'price_physical': 'Giá',
-        'is_digital_avaible':'Đọc trực tuyến',
-        'description': 'Mô tả'
-    }
-    form_columns = [
-        'name',
-        'author',
-        'category',
-        'image',
-        'price_physical',
-        'is_digital_avaible',
-        'description'
-    ]
-
-    def _category_formatter(view, context, model, name):
-        return model.category.name if model.category else ''
-
-    def _author_formatter(view, context, model, name):
-        return model.author.name if model.author else ''
-
-    column_formatters = {
-        'category': _category_formatter,
-        'author': _author_formatter,
-    }
-
-
-# trang quản lí user
-class UserView(MyAdminView):
-    column_list = ['name','user_role','email','phone']
-    column_searchable_list = ['name', 'user_role']
-    can_export = True
-    can_delete = False
-    can_edit = False
-    column_labels = {
-        'name': 'Tên',
-        'username': 'Tên tài khoản',
-        'user_role':'Vai trò',
-        'password': 'Mật khẩu',
-        'email':'Email',
-        'phone':'Số điện thoại'
-    }
-    form_columns = [
-        'name',
-        'username',
-        'password',
-        'email',
-        'phone',
-        'user_role'
-    ]
 
 
 # đăng xuất
@@ -130,7 +38,7 @@ class LogoutView(BaseView):
         return redirect('/login')
 
 
-class BookAdminView(BaseView):
+class BookAdminView(AdminView):
     @expose('/', methods=['GET', 'POST'])
     def index(self):
         books = Book.query.all()
@@ -316,7 +224,7 @@ class AuthorAdminView(AdminView):
 
 
 # trang nhập sách
-class ImportBooksView(BaseView):
+class ImportBooksView(AdminView):
     @expose('/', methods=['GET', 'POST'])
     def import_books(self):
         current_datetime = datetime.now()
@@ -408,7 +316,7 @@ class ImportReceiptHistoryView(AdminView):
         return self.render("admin/import_receipt_history.html", receipts=receipts)
 
 
-class AddDigitalPricingView(BaseView):
+class AddDigitalPricingView(AdminView):
     @expose('/', methods=['GET', 'POST'])
     def add_digital_pricing(self):
         books = Book.query.all()
@@ -468,7 +376,7 @@ class AddDigitalPricingView(BaseView):
         })
 
 
-class AddBookContentView(BaseView):
+class AddBookContentView(AdminView):
     @expose('/', methods=['GET', 'POST'])
     def add_book_content(self):
         all_books = Book.query.all()
@@ -567,7 +475,6 @@ admin.add_view(AuthorAdminView(name='Tác giả', category='Quản lý sách', e
 admin.add_view(BookAdminView(name='Sách', category='Quản lý sách', endpoint='books'))
 admin.add_view(ImportBooksView(name='Nhập sách', category='Quản lý kho'))
 admin.add_view(ImportReceiptHistoryView(name='Xuất phiếu nhập', category='Quản lý kho'))
-# admin.add_view(UserView(User, db.session,name='Tài khoản'))
 admin.add_view(AddDigitalPricingView(name='Gói đọc sách', category='Quản lý đọc sách'))
 admin.add_view(AddBookContentView(name='Nội dung sách', category='Quản lý đọc sách', endpoint='add_book_content'))
 admin.add_view(RevenueStatsView(name="Thống kê bán sách",category = 'Thống kê - Báo cáo', endpoint="revenue_stats"))
