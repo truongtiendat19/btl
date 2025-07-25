@@ -2,220 +2,138 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thanh toán đơn hàng</title>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f1f3f9;
-            padding: 40px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: auto;
-        }
-
-        h2 {
-            text-align: center;
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 40px;
-        }
-
-        .grid {
-            display: flex;
-            gap: 40px;
-            flex-wrap: wrap;
-        }
-
-        .card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-            flex: 1;
-            min-width: 300px;
-        }
-
-        .card h3 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        input[type="text"], textarea, select {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-            resize: vertical;
-        }
-
-        ul {
-            list-style: none;
-            padding-left: 0;
-            margin-bottom: 20px;
-        }
-
-        ul li {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-            font-size: 15px;
-        }
-
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            font-weight: bold;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 14px;
-            background-color: #5c6ac4;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
-
-        .btn:hover {
-            background-color: #3f4ac4;
-        }
-
-        .note {
-            font-size: 13px;
-            color: #888;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4 max-w-4xl">
+        <h1 class="text-3xl font-bold text-center mb-8">Thanh toán đơn hàng</h1>
 
-<div class="container">
-    <h2>Thanh toán đơn hàng</h2>
-    <div class="grid">
+        {% if cart_stats.total_quantity > 0 %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Customer Information -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold mb-4">Thông tin khách hàng</h2>
+                <form id="payment-form">
+                    <div class="mb-4">
+                        <label for="customer_name" class="block text-sm font-medium text-gray-700">Họ và tên</label>
+                        <input type="text" id="customer_name" name="customer_name" value="{{ current_user.name }}" class="mt-1 p-2 w-full border rounded-md" required readonly>
+                    </div>
+                    <div class="mb-4">
+                        <label for="customer_phone" class="block text-sm font-medium text-gray-700">Số điện thoại</label>
+                        <input type="tel" id="customer_phone" name="customer_phone" class="mt-1 p-2 w-full border rounded-md" required pattern="[0-9]{10}" placeholder="Nhập số điện thoại">
+                    </div>
+                    <div class="mb-4">
+                        <label for="customer_address" class="block text-sm font-medium text-gray-700">Địa chỉ giao hàng</label>
+                        <input type="text" id="customer_address" name="customer_address" class="mt-1 p-2 w-full border rounded-md" required placeholder="Nhập địa chỉ giao hàng">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Phương thức thanh toán</label>
+                        <div class="mt-2">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="payment_method" value="COD" class="form-radio" required>
+                                <span class="ml-2">Thanh toán khi nhận hàng (COD)</span>
+                            </label>
+                            <label class="inline-flex items-center ml-6">
+                                <input type="radio" name="payment_method" value="MoMo" class="form-radio">
+                                <span class="ml-2">Thanh toán qua MoMo</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Phương thức giao hàng</label>
+                        <div class="mt-2">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="delivery_method" value="Tiêu chuẩn" class="form-radio" required>
+                                <span class="ml-2">Giao hàng tiêu chuẩn</span>
+                            </label>
+                            <label class="inline-flex items-center ml-6">
+                                <input type="radio" name="delivery_method" value="Nhanh" class="form-radio">
+                                <span class="ml-2">Giao hàng nhanh</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button id="btn-order" type="button" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Thanh toán</button>
+                </form>
+            </div>
 
-        <!-- THÔNG TIN KHÁCH HÀNG -->
-        <div class="card">
-            <h3>Thông tin khách hàng</h3>
-            <form id="paymentForm">
-                <div class="form-group">
-                    <label>Họ và tên</label>
-                    <input type="text" name="customer_name" value="{{ user.name }}" required>
-                </div>
-                <div class="form-group">
-                    <label>Số điện thoại</label>
-                    <input type="text" name="customer_phone" required>
-                </div>
-                <div class="form-group">
-                    <label>Địa chỉ giao hàng</label>
-                    <textarea name="customer_address" rows="3" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Phương thức thanh toán</label>
-                    <select name="payment_method">
-                        <option value="COD">Thanh toán khi nhận hàng (COD)</option>
-                        <option value="Online">Thanh toán trực tuyến</option>
-                        <option value="MoMo">Thanh toán qua MoMo</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Phương thức giao hàng</label>
-                    <select name="delivery_method">
-                        <option value="Standard">Giao hàng tiêu chuẩn</option>
-                        <option value="Express">Giao hàng nhanh</option>
-                    </select>
-                </div>
-            </form>
-        </div>
-
-        <!-- TÓM TẮT ĐƠN HÀNG -->
-        <div class="card">
-            <h3>Tóm tắt đơn hàng</h3>
-
-            {% if cart_stats.total_quantity > 0 %}
-                <ul>
+            <!-- Order Summary -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold mb-4">Tóm tắt đơn hàng</h2>
+                <div class="space-y-4">
                     {% for item in session['cart'].values() %}
-                        <li>
-                            <span>{{ item.name }} (x{{ item.quantity }})</span>
-                            <span>{{ "{:,.0f}".format(item.price * item.quantity) }} VNĐ</span>
-                        </li>
+                    <div class="flex justify-between">
+                        <span>{{ item.name }} (x{{ item.quantity }})</span>
+                        <span>{{ "{:,.0f}".format(item.price * item.quantity) }} VNĐ</span>
+                    </div>
                     {% endfor %}
-                </ul>
-                <div class="total-row">
-                    <span>Tổng số lượng</span>
-                    <span>{{ cart_stats.total_quantity }}</span>
+                    <hr>
+                    <div class="flex justify-between font-semibold">
+                        <span>Tổng số lượng</span>
+                        <span>{{ cart_stats.total_quantity }}</span>
+                    </div>
+                    <div class="flex justify-between font-semibold">
+                        <span>Tổng tiền</span>
+                        <span>{{ "{:,.0f}".format(cart_stats.total_amount) }} VNĐ</span>
+                    </div>
                 </div>
-                <div class="total-row">
-                    <span>Tổng tiền</span>
-                    <span>{{ "{:,.0f}".format(cart_stats.total_amount) }} VNĐ</span>
-                </div>
-                <br>
-                <button class="btn" onclick="submitPayment()">Thanh toán</button>
-            {% else %}
-                <p>Giỏ hàng trống</p>
-                <a href="{{ url_for('index') }}">Quay lại mua sắm</a>
-            {% endif %}
+            </div>
         </div>
-
+        {% else %}
+        <div class="text-center">
+            <p class="text-lg text-gray-600 mb-4">Giỏ hàng trống</p>
+            <a href="{{ url_for('index') }}" class="inline-block bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Quay lại mua sắm</a>
+        </div>
+        {% endif %}
     </div>
-</div>
 
-<!-- JAVASCRIPT -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    function submitPayment() {
-        const form = document.getElementById('paymentForm');
-        const data = {
-            customer_name: form.customer_name.value,
-            customer_phone: form.customer_phone.value,
-            customer_address: form.customer_address.value,
-            payment_method: form.payment_method.value,
-            delivery_method: form.delivery_method.value
-        };
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnOrder = document.getElementById('btn-order');
+            let isOrdering = false;
 
-        $.ajax({
-            url: '/api/pay',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(data),
-            success: function (res) {
-                if (res.payUrl) {
-                    window.location.href = res.payUrl;
-                } else {
-                    window.location.href = '/';
-                }
-            },
-            error: function (xhr) {
-                alert('Có lỗi xảy ra: ' + (xhr.responseJSON?.error || 'Không xác định'));
-            }
+            btnOrder.addEventListener('click', function() {
+                if (isOrdering) return;
+
+                isOrdering = true;
+                btnOrder.disabled = true;
+
+                const paymentMethod = document.querySelector('input[name="payment_method"]:checked')?.value || 'COD';
+                const customerPhone = document.getElementById('customer_phone').value;
+                const customerAddress = document.getElementById('customer_address').value;
+                const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked')?.value || 'Tiêu chuẩn';
+
+                fetch('/api/pay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customer_phone: customerPhone,
+                        customer_address: customerAddress,
+                        payment_method: paymentMethod,
+                        delivery_method: deliveryMethod
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.payUrl) {
+                        window.location.href = data.payUrl;  // Chuyển đến trang thanh toán MoMo
+                    } else if (data.redirect_url) {
+                        window.location.href = data.redirect_url;  // Quay lại trang chính cho COD
+                    } else {
+                        alert(data.error || data.message);
+                        btnOrder.disabled = false;
+                        isOrdering = false;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Có lỗi xảy ra!");
+                    btnOrder.disabled = false;
+                    isOrdering = false;
+                });
+            });
         });
-    }
-</script>
+    </script>
 </body>
 </html>
