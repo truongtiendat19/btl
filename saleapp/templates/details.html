@@ -34,19 +34,34 @@
                 </div>
 
                 <!-- Giá -->
-                <h4 class="text-danger fw-bold">
-                    {% if book.price_physical > 0 %}
-                        {{ "{:,.0f}".format(book.price_physical) }}₫
-                    {% else %}
-                        Miễn phí
-                    {% endif %}
-                </h4>
+                <div class="mb-3">
+                    <h4 class="text-danger fw-bold">
+                        Giá sách in:
+                        {% if book.price_physical > 0 %}
+                            {{ "{:,.0f}".format(book.price_physical) }}₫
+                        {% else %}
+                            Miễn phí
+                        {% endif %}
+                    </h4>
+                    <h4 class="text-primary fw-bold">
+                        Giá đọc online:
+                        {% if digital_pricing and digital_pricing.price > 0 %}
+                            {{ "{:,.0f}".format(digital_pricing.price) }}₫
+                            {% if digital_pricing.access_type %} ({{ digital_pricing.access_type }}) {% endif %}
+                        {% else %}
+                            {% if digital_pricing and digital_pricing.price == 0 %}
+                                Miễn phí
+                            {% else %}
+                                Không khả dụng
+                            {% endif %}
+                        {% endif %}
+                    </h4>
+                </div>
 
                 <!-- Hành động -->
                 <div class="d-grid gap-2 mt-3">
                     <button class="btn btn-danger btn-lg" onclick="buyNow()">Mua ngay</button>
                     <button class="btn btn-outline-primary" onclick="addToCart({{ book.id }}, '{{ book.name }}', {{ book.price_physical }})">Thêm vào giỏ</button>
-                    <button class="btn btn-outline-secondary">Mua trước trả sau</button>
                 </div>
             </div>
 

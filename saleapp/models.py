@@ -4,7 +4,7 @@ from saleapp import db, app
 from enum import Enum as RoleEnum
 import hashlib
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime,timedelta
 
 # phân quyền
 class UserRole(RoleEnum):
@@ -195,7 +195,7 @@ if __name__ == '__main__':
             db.session.add_all([c1, c2, c3])
             db.session.commit()  # Commit trước để các ID được tạo
 
-            # Thêm sách
+            # Thêm sách và giảm giá
             books_data = [
                 {
                     "name": "Bà già xông pha",
@@ -203,7 +203,10 @@ if __name__ == '__main__':
                     "price_physical": 76000,
                     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734544786/m6pygvphn7zlrd3stzbl.jpg",
                     "author": author_objects[0],
-                    "category": c1
+                    "category": c1,
+                    "digital_pricing": {"access_type": "read_once", "price": 30000, "duration_day": 30},
+                    "discount": {"discount_type": "percentage", "value": 10, "start_date": datetime.now(),
+                                 "end_date": datetime.now() + timedelta(days=30), "is_active": True}
                 },
                 {
                     "name": "Hiểu Về Quyền Trẻ Em - Người Sên",
@@ -211,7 +214,10 @@ if __name__ == '__main__':
                     "price_physical": 50000,
                     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734544786/cda1cvom2awwtkoikanr.webp",
                     "author": author_objects[1],
-                    "category": c2
+                    "category": c2,
+                    "digital_pricing": {"access_type": "read_once", "price": 20000, "duration_day": 30},
+                    "discount": {"discount_type": "fixed", "value": 10000, "start_date": datetime.now(),
+                                 "end_date": datetime.now() + timedelta(days=30), "is_active": True}
                 },
                 {
                     "name": "Bầu trời năm ấy",
@@ -219,7 +225,9 @@ if __name__ == '__main__':
                     "price_physical": 37000,
                     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428224/mljvnwhxmo46ci3ysal2.jpg",
                     "author": author_objects[2],
-                    "category": c3
+                    "category": c3,
+                    "digital_pricing": {"access_type": "read_once", "price": 15000, "duration_day": 30},
+                    "discount": None
                 },
                 {
                     "name": "Đại cương về Nhà nước và Pháp luật",
@@ -227,7 +235,9 @@ if __name__ == '__main__':
                     "price_physical": 45000,
                     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/jgwsfsambzvlos5cgk2g.jpg",
                     "author": author_objects[3],
-                    "category": c1
+                    "category": c1,
+                    "digital_pricing": {"access_type": "read_once", "price": 0, "duration_day": 30},
+                    "discount": None
                 },
                 {
                     "name": "Mình nói gì hạnh phúc",
@@ -235,7 +245,10 @@ if __name__ == '__main__':
                     "price_physical": 90000,
                     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/y0bg0xxfphgihzt6xflk.jpg",
                     "author": author_objects[0],
-                    "category": c2
+                    "category": c2,
+                    "digital_pricing": {"access_type": "read_once", "price": 40000, "duration_day": 30},
+                    "discount": {"discount_type": "percentage", "value": 20, "start_date": datetime.now(),
+                                 "end_date": datetime.now() + timedelta(days=30), "is_active": True}
                 },
                 {
                     "name": "Người đàn bà miền núi",
@@ -243,9 +256,10 @@ if __name__ == '__main__':
                     "price_physical": 100000,
                     "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428221/tuizny2flckfxzjbxakp.jpg",
                     "author": author_objects[0],
-                    "category": c3
+                    "category": c3,
+                    "digital_pricing": None,
+                    "discount": None
                 }
-                # Bạn có thể tiếp tục thêm các sách khác theo cấu trúc này...
             ]
 
             for b in books_data:
@@ -256,10 +270,31 @@ if __name__ == '__main__':
                     image=b["image"],
                     author=b["author"],
                     category=b["category"],
-                    quantity=10,  # hoặc số nào đó phù hợp
-                    is_digital_avaible=True
+                    quantity=10,
+                    is_digital_avaible=b["digital_pricing"] is not None
                 )
                 db.session.add(book)
+                db.session.flush()
+
+                if b["digital_pricing"]:
+                    digital_pricing = DigitalPricing(
+                        book_id=book.id,
+                        access_type=b["digital_pricing"]["access_type"],
+                        price=b["digital_pricing"]["price"],
+                        duration_day=b["digital_pricing"]["duration_day"]
+                    )
+                    db.session.add(digital_pricing)
+
+                if b["discount"]:
+                    discount = Discount(
+                        book_id=book.id,
+                        discount_type=b["discount"]["discount_type"],
+                        value=b["discount"]["value"],
+                        start_date=b["discount"]["start_date"],
+                        end_date=b["discount"]["end_date"],
+                        is_active=b["discount"]["is_active"]
+                    )
+                    db.session.add(discount)
 
             db.session.commit()
 

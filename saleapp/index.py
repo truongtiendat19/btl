@@ -10,7 +10,7 @@ from saleapp import app, login, db
 from flask_login import login_user, logout_user, login_required, current_user
 from saleapp.dao import check_username_exists
 from saleapp.models import UserRole, Book, User, Category, Author, Order
-
+from saleapp.models import DigitalPricing
 # MoMo configuration
 MOMO_PARTNER_CODE = "YOUR_MOMO_PARTNER_CODE"  # Replace with your MoMo partner code
 MOMO_ACCESS_KEY = "YOUR_MOMO_ACCESS_KEY"      # Replace with your MoMo access key
@@ -74,8 +74,14 @@ def index():
 
 @app.route("/books/<book_id>")
 def details(book_id):
+    book = dao.get_book_by_id(book_id)
     comments = dao.load_comments(book_id)
-    return render_template('details.html', book=dao.get_book_by_id(book_id), comments=comments)
+    digital_pricing = DigitalPricing.query.filter_by(book_id=book_id).order_by(DigitalPricing.price.asc()).first()
+
+    return render_template('details.html',
+                           book=book,
+                           comments=comments,
+                           digital_pricing=digital_pricing)
 
 @app.route("/api/books/<book_id>/comments", methods=['post'])
 @login_required
@@ -140,14 +146,22 @@ def add_to_cart():
     session['cart'] = cart
     return jsonify(utils.cart_stats(cart))
 
-@app.route("/api/carts/<book_id>", methods=['put'])
-def update_cart(book_id):
-    quantity = request.json.get('quantity', 0)
-    cart = session.get('cart')
-    if cart and book_id in cart:
-        cart[book_id]["quantity"] = int(quantity)
-    session['cart'] = cart
-    return jsonify(utils.cart_stats(cart))
+@app.route('/api/update-cart', methods=['POST'])
+def update_cart():
+    data = request.get_json()
+    book_id = str(data.get('book_id'))
+    delta = int(data.get('delta', 0))
+
+    cart = session.get('cart', {})
+    if book_id in cart:
+        cart[book_id]['quantity'] += delta
+        if cart[book_id]['quantity'] <= 0:
+            del cart[book_id]
+        session['cart'] = cart
+        return jsonify({'success': True})
+
+    return jsonify({'success': False, 'message': 'Không tìm thấy sản phẩm trong giỏ hàng'})
+
 
 @app.route("/api/carts/<book_id>", methods=['delete'])
 def delete_cart(book_id):
