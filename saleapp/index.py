@@ -9,22 +9,21 @@ from saleapp import app, login, db, dao, utils
 from saleapp.dao import check_username_exists
 from saleapp.models import (
     UserRole, Book, ImportReceipt, ImportReceiptDetail,
-    DigitalPricing, Purchase, BookContent, Order
+    DigitalPricing, Purchase, BookContent, Order, CartItem
 )
 from xhtml2pdf import pisa
 from reportlab.pdfbase import pdfmetrics
 from gtts import gTTS
-
+from flask import Blueprint
 
 
 # MoMo configuration
-MOMO_PARTNER_CODE = "MOMODMJ120250721_TEST"  # Replace with your MoMo partner code
-MOMO_ACCESS_KEY = "Csil0yiSO0r7Ete4"      # Replace with your MoMo access key
-MOMO_SECRET_KEY = "YY3r7SE6ZjBEvf6DuZGfKQQwYFbP7W6t"      # Replace with your MoMo secret key
+MOMO_PARTNER_CODE = "MOMODMJ120250721_TEST"
+MOMO_ACCESS_KEY = "Csil0yiSO0r7Ete4"
+MOMO_SECRET_KEY = "YY3r7SE6ZjBEvf6DuZGfKQQwYFbP7W6t"
 MOMO_ENDPOINT = "https://test-payment.momo.vn/v2/gateway/api/create"
-MOMO_REDIRECT_URL = "http://localhost:5000/momo/callback"  # Thay bằng URL của bạn
-MOMO_IPN_URL = "http://127.0.0.1:5000/momo/ipn"           # Thay bằng URL của bạn
-
+MOMO_REDIRECT_URL = "http://localhost:5000/momo/callback"
+MOMO_IPN_URL = "http://127.0.0.1:5000/momo/ipn"
 def get_books():
     books = Book.query.all()
     book_list = [{
@@ -47,18 +46,33 @@ def login_process():
             u = dao.auth_user(username=username, password=password, role=UserRole.CUSTOMER)
             if u:
                 login_user(u)
+                # Xóa giỏ hàng trong session trước khi đăng nhập
+                session.pop('cart', None)
                 next = request.args.get('next')
                 return redirect('/' if next is None else next)
 
             u = dao.auth_user(username=username, password=password, role=UserRole.ADMIN)
             if u:
                 login_user(u)
+                # Xóa giỏ hàng trong session trước khi đăng nhập
+                session.pop('cart', None)
                 return redirect('/admin')
             err_msg = 'Mật khẩu không đúng.'
         else:
             err_msg = 'Tên đăng nhập không tồn tại.'
 
     return render_template('login.html', err_msg=err_msg)
+
+admin_bp = Blueprint('admin_bp', __name__, url_prefix='/admin')
+
+@admin_bp.route("/logout")
+def admin_logout_process():
+    session.pop('cart', None)
+    logout_user()
+    return redirect('/login')
+
+# Đăng ký Blueprint
+app.register_blueprint(admin_bp)
 
 @app.route("/")
 def index():
@@ -152,26 +166,35 @@ def register_process():
 
 
 @app.route("/api/carts", methods=['post'])
+@login_required
 def add_to_cart():
-    cart = session.get('cart')
-    if not cart:
-        cart = {}
+    data = request.json
+    book_id = str(data.get('id'))
+    name = data.get('name')
+    price = data.get('price')
 
-    id = str(request.json.get('id'))
-    name = request.json.get('name')
-    price = request.json.get('price')
-
-    if id in cart:
-        cart[id]['quantity'] = cart[id]['quantity'] + 1
+    # Kiểm tra xem sách đã có trong giỏ hàng của người dùng chưa
+    cart_item = CartItem.query.filter_by(user_id=current_user.id, book_id=book_id).first()
+    if cart_item:
+        cart_item.quantity += 1
     else:
-        cart[id] = {
-            "id": id,
-            "name": name,
-            "price": price,
-            "quantity": 1
-        }
+        cart_item = CartItem(
+            user_id=current_user.id,
+            book_id=book_id,
+            quantity=1
+        )
+        db.session.add(cart_item)
+    db.session.commit()
 
-    session['cart'] = cart
+    # Tính toán thống kê giỏ hàng từ cơ sở dữ liệu
+    cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+    cart = {str(item.book_id): {
+        "id": item.book_id,
+        "name": item.book.name,
+        "price": item.book.price_physical,
+        "quantity": item.quantity
+    } for item in cart_items}
+
     return jsonify(utils.cart_stats(cart))
 
 @app.route("/api/carts/<book_id>", methods=['put'])
@@ -350,6 +373,18 @@ def momo_ipn():
 
 @app.route('/cart')
 def cart_view():
+    if current_user.is_authenticated:
+        cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+        cart = {str(item.book_id): {
+            "id": item.book_id,
+            "name": item.book.name,
+            "price": item.book.price_physical,
+            "quantity": item.quantity
+        } for item in cart_items}
+        session['cart'] = cart  # Đồng bộ với session nếu cần
+    else:
+        cart = session.get('cart', {})
+
     return render_template('cart.html')
 
 @login.user_loader

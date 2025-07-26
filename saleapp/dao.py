@@ -34,9 +34,16 @@ def load_books(kw=None, category_id=None, author_id=None, price_filter=None, pag
     if kw:
         books = books.filter(Book.name.contains(kw))
     if category_id:
-        books = books.filter(Book.category_id == category_id)
+        try:
+            books = books.filter(Book.category_id == int(category_id))
+        except ValueError:
+            pass
     if author_id:
-        books = books.filter(Book.author_id == author_id)
+        try:
+            books = books.filter(Book.author_id == int(author_id))
+        except ValueError:
+            pass
+
     if price_filter == 'paid':
         books = books.filter(Book.price_physical > 0)
     elif price_filter == 'free':
@@ -46,6 +53,7 @@ def load_books(kw=None, category_id=None, author_id=None, price_filter=None, pag
     start = (page - 1) * page_size
     books = books.slice(start, start + page_size)
     return books.all()
+
 
 def count_books(kw=None, category_id=None, author_id=None, price_filter=None):
     query = Book.query
