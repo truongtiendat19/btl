@@ -1,194 +1,203 @@
 {% extends 'admin/master.html' %}
 {% block body %}
 <style>
-  body {
-    background: #efefef;
-    padding: 40px 0;
-  }
-  .content-wrapper {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.08);
-    padding: 30px;
-    max-width: 1200px;
-    margin: auto;
-  }
-  .custom-row {
-    display: flex;
-    gap: 40px;
-    flex-wrap: wrap;
-  }
-  .form-column {
-    flex: 2;
-    min-width: 300px;
-  }
-  .table-column {
-    flex: 1;
-    max-width: 350px;
-    max-height: 650px;
-    overflow-y: auto;
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    border: 1px solid #e0e0e0;
-    box-shadow: 0 0 10px rgba(0,0,0,0.05);
-  }
-  .form-section {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    border: 1px solid #e0e0e0;
-    box-shadow: 0 0 10px rgba(0,0,0,0.05);
-  }
-  .page-block {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-    margin-bottom: 15px;
-  }
-  textarea {
-    width: 100%;
-    min-height: 150px;
-    font-size: 14px;
-  }
-  table { width: 100%; font-size: 14px; }
-  table th {
-    background: #0d6efd;
-    color: #fff;
-    text-align: center;
-    vertical-align: middle;
-  }
-  .table th, .table td { padding: 8px; }
-  label { font-weight: 500; margin-bottom: 4px; }
-  .btn { min-width: 80px; }
-  .btn-sm { font-size: 13px; padding: 4px 10px; }
-  select, input, textarea { font-size: 14px; }
-  .search-select { margin-bottom: 10px; }
+    body {
+      background: #efefef;
+      padding: 40px 0;
+    }
+    .content-wrapper {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.08);
+      padding: 30px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .custom-row {
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+    .form-column {
+      flex: 2;
+      min-width: 300px;
+    }
+    .table-column {
+      flex: 1;
+      max-width: 350px;
+      max-height: 650px;
+      overflow-y: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    .form-section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    .page-block {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+      margin-bottom: 15px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      font-size: 14px;
+    }
+    table { width: 100%; font-size: 14px; }
+    table th {
+      background: #0d6efd;
+      color: #fff;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .table th, .table td { padding: 8px; }
+    label { font-weight: 500; margin-bottom: 4px; }
+    .btn { min-width: 80px; }
+    .btn-sm { font-size: 13px; padding: 4px 10px; }
+    select, input, textarea { font-size: 14px; }
+    .search-select { margin-bottom: 10px; }
 </style>
 
 <div class="container-fluid px-5 py-4">
-  <h3 class="text-center text-primary mb-4">Quản lý Nội dung sách online</h3>
-  <div class="custom-row content-wrapper">
-    <div class="form-column">
-      <div class="form-section">
-        <form method="POST">
-          <div class="mb-3">
-            <label>Tìm sách:</label>
-            <input type="text" id="bookSearch" class="form-control search-select" placeholder="Nhập tên sách...">
-            <label>Chọn sách:</label>
-            <select id="bookSelect" name="book_id" class="form-control" required>
-              <option value="">-- Chọn sách --</option>
-              {% for b in all_books %}
-                <option value="{{b.id}}" {% if selected_book and selected_book.id==b.id %}selected{% endif %}>{{b.name}}</option>
-              {% endfor %}
-            </select>
-          </div>
+    <h3 class="text-center text-primary mb-4">Quản lý Nội dung sách online</h3>
+    <div class="custom-row content-wrapper">
+        <div class="form-column">
+            <div class="form-section">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label>Tìm sách:</label>
+                        <input type="text" id="bookSearch" class="form-control search-select"
+                               placeholder="Nhập tên sách...">
+                        <label>Chọn sách:</label>
+                        <select id="bookSelect" name="book_id" class="form-control" required>
+                            <option value="">-- Chọn sách --</option>
+                            {% for b in all_books %}
+                            <option value="{{ b.id }}" {% if selected_book and selected_book.id== b.id %}selected{%
+                                    endif %}>
+                                {{ b.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
 
-          <div id="page-contents">
-            {% for c in contents %}
-              <div class="page-block">
-                <div class="mb-2">
-                  <label>Trang:</label>
-                  <input type="number" name="page_number[]" class="form-control" required value="{{c.page_number}}">
-                </div>
-                <div class="mb-2">
-                  <label>Nội dung:</label>
-                  <textarea name="content[]" class="form-control" required>{{c.content}}</textarea>
-                </div>
-                <button type="button" class="btn btn-sm btn-danger remove-page">Xóa</button>
-              </div>
-            {% endfor %}
-          </div>
+                    </div>
 
-          <button type="button" id="add-page-btn" class="btn btn-outline-primary btn-sm mb-3">+ Thêm trang</button><br><br>
-          <button type="submit" class="btn btn-primary">Lưu nội dung</button>
-          <button type="reset" class="btn btn-secondary">Làm lại</button>
-        </form>
-      </div>
+                    <div id="page-contents">
+                        {% for c in contents %}
+                        <div class="page-block">
+                            <div class="mb-2">
+                                <label>Trang:</label>
+                                <input type="number" name="page_number[]" class="form-control" required
+                                       value="{{c.page_number}}">
+                            </div>
+                            <div class="mb-2">
+                                <label>Nội dung:</label>
+                                <textarea name="content[]" class="form-control" required>{{c.content}}</textarea>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger remove-page">Xóa</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <button type="button" id="add-page-btn" class="btn btn-outline-primary btn-sm mb-3">+ Thêm trang
+                    </button>
+                    <br><br>
+                    <button type="submit" class="btn btn-primary">Lưu nội dung</button>
+                    <button type="reset" class="btn btn-secondary">Làm lại</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-column">
+            <h6 class="text-primary mb-3">Sách đã có nội dung</h6>
+            <table class="table table-bordered align-middle text-center">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Tên sách</th>
+                    <th>Bản đọc</th>
+                    <th>Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for b in books_with_content %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="text-start">{{ b.name }}</td>
+                    <td>{{ 'Có' if b.is_digital_avaible else 'Không' }}</td>
+                    <td>
+                        <a href="{{ url_for('add_book_content.add_book_content', book_id=b.id) }}"
+                           class="btn btn-primary btn-sm">Sửa</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4"><em>Không có sách nào có nội dung.</em></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-
-    <div class="table-column">
-      <h6 class="text-primary mb-3">Sách đã có nội dung</h6>
-      <table class="table table-bordered align-middle text-center">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Tên sách</th>
-            <th>Bản đọc</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for b in books_with_content %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td class="text-start">{{ b.name }}</td>
-            <td>{{ 'Có' if b.is_digital_avaible else 'Không' }}</td>
-            <td>
-              <a href="{{ url_for('add_book_content.add_book_content', book_id=b.id) }}" class="btn btn-primary btn-sm">Sửa</a>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="4"><em>Không có sách nào có nội dung.</em></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
 </div>
 
 <script>
-document.getElementById('bookSearch').addEventListener('input', function() {
-  const filter = this.value.toLowerCase();
-  const options = document.querySelectorAll('#bookSelect option');
-  options.forEach(opt => {
-    if (opt.value === "") {
-      opt.hidden = false; // Luôn giữ option trống
-    } else {
-      opt.hidden = !opt.textContent.toLowerCase().includes(filter);
+    document.getElementById('bookSearch').addEventListener('input', function() {
+      const filter = this.value.toLowerCase();
+      const options = document.querySelectorAll('#bookSelect option');
+      options.forEach(opt => {
+        if (opt.value === "") {
+          opt.hidden = false; // Luôn giữ option trống
+        } else {
+          opt.hidden = !opt.textContent.toLowerCase().includes(filter);
+        }
+      });
+    });
+
+    function updatePageNumbers() {
+      const blocks = document.querySelectorAll('#page-contents .page-block');
+      blocks.forEach((block, index) => {
+        const input = block.querySelector('input[name="page_number[]"]');
+        input.value = index + 1;
+      });
     }
-  });
-});
 
-function updatePageNumbers() {
-  const blocks = document.querySelectorAll('#page-contents .page-block');
-  blocks.forEach((block, index) => {
-    const input = block.querySelector('input[name="page_number[]"]');
-    input.value = index + 1;
-  });
-}
+    document.getElementById('add-page-btn').addEventListener('click', () => {
+      const container = document.getElementById('page-contents');
 
-document.getElementById('add-page-btn').addEventListener('click', () => {
-  const container = document.getElementById('page-contents');
+      const html = `
+        <div class="page-block">
+          <div class="mb-2">
+            <label>Trang:</label>
+            <input type="number" name="page_number[]" class="form-control" readonly required>
+          </div>
+          <div class="mb-2">
+            <label>Nội dung:</label>
+            <textarea name="content[]" class="form-control" rows="6" required></textarea>
+          </div>
+          <button type="button" class="btn btn-sm btn-danger remove-page">Xóa</button>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', html);
 
-  const html = `
-    <div class="page-block">
-      <div class="mb-2">
-        <label>Trang:</label>
-        <input type="number" name="page_number[]" class="form-control" readonly required>
-      </div>
-      <div class="mb-2">
-        <label>Nội dung:</label>
-        <textarea name="content[]" class="form-control" rows="6" required></textarea>
-      </div>
-      <button type="button" class="btn btn-sm btn-danger remove-page">Xóa</button>
-    </div>
-  `;
-  container.insertAdjacentHTML('beforeend', html);
+      updatePageNumbers();
+    });
 
-  updatePageNumbers();
-});
+    document.addEventListener('click', e => {
+      if (e.target.matches('.remove-page')) {
+        e.target.closest('.page-block').remove();
+        updatePageNumbers();
+      }
+    });
 
-document.addEventListener('click', e => {
-  if (e.target.matches('.remove-page')) {
-    e.target.closest('.page-block').remove();
     updatePageNumbers();
-  }
-});
-
-updatePageNumbers();
 </script>
 {% endblock %}

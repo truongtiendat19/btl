@@ -1,21 +1,16 @@
-import hashlib, hmac, io, os, uuid, math, requests, filetype, pdfkit
-from datetime import datetime, timedelta
+import hashlib, hmac, os, uuid, math, requests, filetype, pdfkit
 from flask import (
     render_template, request, redirect, session, jsonify,
-    send_file, current_app, make_response, url_for, abort, flash)
+    send_file, make_response, url_for, abort, flash)
 from flask_login import login_user, logout_user, login_required, current_user
-from sqlalchemy import func
 from saleapp import app, login, db, dao, utils
 from saleapp.dao import check_username_exists
 from saleapp.models import (
-    UserRole, Book, ImportReceipt, ImportReceiptDetail,
+    UserRole, Book, ImportReceipt,
     DigitalPricing, Purchase, BookContent, Order, CartItem
 )
-from xhtml2pdf import pisa
-from reportlab.pdfbase import pdfmetrics
 from gtts import gTTS
 from flask import Blueprint
-
 
 # MoMo configuration
 MOMO_PARTNER_CODE = "MOMODMJ120250721_TEST"
@@ -24,6 +19,8 @@ MOMO_SECRET_KEY = "YY3r7SE6ZjBEvf6DuZGfKQQwYFbP7W6t"
 MOMO_ENDPOINT = "https://test-payment.momo.vn/v2/gateway/api/create"
 MOMO_REDIRECT_URL = "http://localhost:5000/momo/callback"
 MOMO_IPN_URL = "http://127.0.0.1:5000/momo/ipn"
+
+
 def get_books():
     books = Book.query.all()
     book_list = [{
@@ -34,6 +31,7 @@ def get_books():
         "author": book.author.name
     } for book in books]
     return jsonify(book_list)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_process():
@@ -63,7 +61,9 @@ def login_process():
 
     return render_template('login.html', err_msg=err_msg)
 
+
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/admin')
+
 
 @admin_bp.route("/logout")
 def admin_logout_process():
@@ -71,8 +71,10 @@ def admin_logout_process():
     logout_user()
     return redirect('/login')
 
+
 # Đăng ký Blueprint
 app.register_blueprint(admin_bp)
+
 
 @app.route("/")
 def index():
@@ -89,14 +91,14 @@ def index():
                            books=books,
                            authors=dao.load_authors(),
                            categories=dao.load_categories(),
-                           pages=math.ceil(total/app.config["PAGE_SIZE"]),
+                           pages=math.ceil(total / app.config["PAGE_SIZE"]),
                            page=page)
+
 
 @app.route("/books/<book_id>")
 def details(book_id):
     comments = dao.load_comments(book_id)
     book = Book.query.get(book_id)
-    reading_packages = book.digital_pricings
     my_purchases = Purchase.query.filter_by(user_id=current_user.id,
                                             book_id=book_id).all() if current_user.is_authenticated else []
     purchases_dict = {}
@@ -105,7 +107,7 @@ def details(book_id):
         if p.time_end >= now:
             purchases_dict[p.digital_pricing_id] = p
 
-    ORDER = {'free':1 ,'prenium': 2}
+    ORDER = {'free': 1, 'prenium': 2}
     reading_packages = sorted(
         book.digital_pricings,
         key=lambda x: ORDER.get(x.access_type, 99)
@@ -113,7 +115,8 @@ def details(book_id):
 
     return render_template('details.html',
                            book=dao.get_book_by_id(book_id), comments=comments, reading_packages=reading_packages,
-                           purchases_dict=purchases_dict,now=now)
+                           purchases_dict=purchases_dict, now=now)
+
 
 @app.route("/api/books/<book_id>/comments", methods=['post'])
 @login_required
@@ -127,6 +130,7 @@ def add_comment(book_id):
             "avatar": c.user.avatar
         }
     })
+
 
 @app.route("/logout")
 def logout_process():
@@ -197,6 +201,7 @@ def add_to_cart():
 
     return jsonify(utils.cart_stats(cart))
 
+
 @app.route("/api/carts/<book_id>", methods=['put'])
 def update_cart(book_id):
     quantity = request.json.get('quantity', 0)
@@ -205,6 +210,7 @@ def update_cart(book_id):
         cart[book_id]["quantity"] = int(quantity)
     session['cart'] = cart
     return jsonify(utils.cart_stats(cart))
+
 
 @app.route("/api/carts/<book_id>", methods=['delete'])
 def delete_cart(book_id):
@@ -273,7 +279,8 @@ def pay():
             print("Calculated Signature:", signature)
 
             try:
-                response = requests.post(MOMO_ENDPOINT, json=payload, headers={"Content-Type": "application/json"}, timeout=10)
+                response = requests.post(MOMO_ENDPOINT, json=payload, headers={"Content-Type": "application/json"},
+                                         timeout=10)
                 response.raise_for_status()
                 response_data = response.json()
                 print("MoMo Response:", response_data)
@@ -291,6 +298,7 @@ def pay():
         session.pop('cart', None)
         return jsonify({"message": "Thanh toán COD thành công", "redirect_url": url_for('index')})
     return render_template('order_books.html', user=current_user)
+
 
 @app.route("/momo/callback", methods=['GET'])
 def momo_callback():
@@ -387,9 +395,11 @@ def cart_view():
 
     return render_template('cart.html')
 
+
 @login.user_loader
 def load_user(user_id):
     return dao.get_user_by_id(user_id)
+
 
 @app.context_processor
 def common_response_data():
@@ -427,6 +437,7 @@ def print_import_receipt(receipt_id):
 
 
 from datetime import datetime, timedelta
+
 
 @app.route('/api/buy_reading_package', methods=['POST'])
 @login_required
@@ -627,6 +638,5 @@ def pay_reading_package():
 
 
 if __name__ == '__main__':
-    from saleapp import admin
     with app.app_context():
         app.run(debug=True)

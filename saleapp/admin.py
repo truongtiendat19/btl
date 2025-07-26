@@ -1,15 +1,13 @@
-import cloudinary.uploader, io
+import cloudinary.uploader
 from sqlalchemy import extract, func
 from saleapp import db, app
 from flask_admin import Admin, AdminIndexView, BaseView, expose
-from flask_admin.contrib.sqla import ModelView
-from saleapp.models import (Category, Author, Book, User, UserRole, ImportReceipt,ImportReceiptDetail,
-                            Order,OrderDetail, Book, Author, Category, DigitalPricing, BookContent)
+from saleapp.models import (UserRole, ImportReceipt, ImportReceiptDetail,
+                            Order, OrderDetail, Book, Author, Category, DigitalPricing, BookContent)
 from flask_login import current_user, logout_user
-from datetime import  datetime
+from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from flask import request, redirect, url_for, flash, jsonify
-from PIL import Image
 
 
 # tùy chỉnh trang admin
@@ -251,7 +249,7 @@ class ImportBooksView(AdminView):
                 for book_name, quantity_str, price_str in zip(books, quantities, prices):
                     book = Book.query.filter_by(name=book_name).first()
                     if not book:
-                        errors.append(f"❌ Không tìm thấy sách '{book_name}'.")
+                        errors.append(f"Không tìm thấy sách '{book_name}'.")
                         continue
 
                     try:
@@ -261,7 +259,8 @@ class ImportBooksView(AdminView):
                         if quantity < 1 or price < 0:
                             raise ValueError
                     except ValueError:
-                        errors.append(f"❌ Dữ liệu không hợp lệ cho sách '{book_name}': SL={quantity_str}, ĐG={price_str}")
+                        errors.append(
+                            f"Dữ liệu không hợp lệ cho sách '{book_name}': SL={quantity_str}, ĐG={price_str}")
                         continue
 
                     # Cộng dồn tổng tiền
@@ -278,7 +277,7 @@ class ImportBooksView(AdminView):
                     )
                     db.session.add(detail)
 
-                    success.append(f"✅ Đã nhập {quantity} quyển '{book.name}' với đơn giá {price:,.0f}đ")
+                    success.append(f"Đã nhập {quantity} quyển '{book.name}' với đơn giá {price:,.0f}đ")
 
                 # Gán lại tổng tiền vào phiếu
                 receipt.total_amount = total_amount
@@ -291,7 +290,7 @@ class ImportBooksView(AdminView):
 
             except SQLAlchemyError as e:
                 db.session.rollback()
-                flash(f"❌ Lỗi hệ thống: {str(e)}", "danger")
+                flash(f"Lỗi hệ thống: {str(e)}", "danger")
 
             return redirect(url_for('importbooksview.import_books'))
 
@@ -347,7 +346,6 @@ class AddDigitalPricingView(AdminView):
             pricing.access_type = access_type
             pricing.price = float(price)
             pricing.duration_day = int(duration)
-
 
             if book_ids:
                 books_selected = Book.query.filter(Book.id.in_(book_ids)).all()
@@ -477,5 +475,5 @@ admin.add_view(ImportBooksView(name='Nhập sách', category='Quản lý kho'))
 admin.add_view(ImportReceiptHistoryView(name='Xuất phiếu nhập', category='Quản lý kho'))
 admin.add_view(AddDigitalPricingView(name='Gói đọc sách', category='Quản lý đọc sách'))
 admin.add_view(AddBookContentView(name='Nội dung sách', category='Quản lý đọc sách', endpoint='add_book_content'))
-admin.add_view(RevenueStatsView(name="Thống kê bán sách",category = 'Thống kê - Báo cáo', endpoint="revenue_stats"))
+admin.add_view(RevenueStatsView(name="Thống kê bán sách", category='Thống kê - Báo cáo', endpoint="revenue_stats"))
 admin.add_view(LogoutView(name='Đăng xuất'))

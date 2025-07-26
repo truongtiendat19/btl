@@ -7,133 +7,141 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 font-sans">
-    <div class="container mx-auto p-4 max-w-4xl">
-        <h1 class="text-3xl font-bold text-center mb-8">Thanh toán đơn hàng</h1>
+<div class="container mx-auto p-4 max-w-4xl">
+    <h1 class="text-3xl font-bold text-center mb-8">Thanh toán đơn hàng</h1>
 
-        {% if cart_stats.total_quantity > 0 %}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Customer Information -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-2xl font-semibold mb-4">Thông tin khách hàng</h2>
-                <form id="payment-form">
-                    <div class="mb-4">
-                        <label for="customer_name" class="block text-sm font-medium text-gray-700">Họ và tên</label>
-                        <input type="text" id="customer_name" name="customer_name" value="{{ current_user.name }}" class="mt-1 p-2 w-full border rounded-md" required readonly>
+    {% if cart_stats.total_quantity > 0 %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Customer Information -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-4">Thông tin khách hàng</h2>
+            <form id="payment-form">
+                <div class="mb-4">
+                    <label for="customer_name" class="block text-sm font-medium text-gray-700">Họ và tên</label>
+                    <input type="text" id="customer_name" name="customer_name" value="{{ current_user.name }}"
+                           class="mt-1 p-2 w-full border rounded-md" required readonly>
+                </div>
+                <div class="mb-4">
+                    <label for="customer_phone" class="block text-sm font-medium text-gray-700">Số điện thoại</label>
+                    <input type="tel" id="customer_phone" name="customer_phone"
+                           class="mt-1 p-2 w-full border rounded-md" required pattern="[0-9]{10}"
+                           placeholder="Nhập số điện thoại">
+                </div>
+                <div class="mb-4">
+                    <label for="customer_address" class="block text-sm font-medium text-gray-700">Địa chỉ giao hàng
+                    </label>
+                    <input type="text" id="customer_address" name="customer_address"
+                           class="mt-1 p-2 w-full border rounded-md" required placeholder="Nhập địa chỉ giao hàng">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Phương thức thanh toán</label>
+                    <div class="mt-2">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="payment_method" value="COD" class="form-radio" required>
+                            <span class="ml-2">Thanh toán khi nhận hàng (COD)</span>
+                        </label>
+                        <label class="inline-flex items-center ml-6">
+                            <input type="radio" name="payment_method" value="MoMo" class="form-radio">
+                            <span class="ml-2">Thanh toán qua MoMo</span>
+                        </label>
                     </div>
-                    <div class="mb-4">
-                        <label for="customer_phone" class="block text-sm font-medium text-gray-700">Số điện thoại</label>
-                        <input type="tel" id="customer_phone" name="customer_phone" class="mt-1 p-2 w-full border rounded-md" required pattern="[0-9]{10}" placeholder="Nhập số điện thoại">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Phương thức giao hàng</label>
+                    <div class="mt-2">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="delivery_method" value="Tiêu chuẩn" class="form-radio" required>
+                            <span class="ml-2">Giao hàng tiêu chuẩn</span>
+                        </label>
+                        <label class="inline-flex items-center ml-6">
+                            <input type="radio" name="delivery_method" value="Nhanh" class="form-radio">
+                            <span class="ml-2">Giao hàng nhanh</span>
+                        </label>
                     </div>
-                    <div class="mb-4">
-                        <label for="customer_address" class="block text-sm font-medium text-gray-700">Địa chỉ giao hàng</label>
-                        <input type="text" id="customer_address" name="customer_address" class="mt-1 p-2 w-full border rounded-md" required placeholder="Nhập địa chỉ giao hàng">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Phương thức thanh toán</label>
-                        <div class="mt-2">
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="payment_method" value="COD" class="form-radio" required>
-                                <span class="ml-2">Thanh toán khi nhận hàng (COD)</span>
-                            </label>
-                            <label class="inline-flex items-center ml-6">
-                                <input type="radio" name="payment_method" value="MoMo" class="form-radio">
-                                <span class="ml-2">Thanh toán qua MoMo</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Phương thức giao hàng</label>
-                        <div class="mt-2">
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="delivery_method" value="Tiêu chuẩn" class="form-radio" required>
-                                <span class="ml-2">Giao hàng tiêu chuẩn</span>
-                            </label>
-                            <label class="inline-flex items-center ml-6">
-                                <input type="radio" name="delivery_method" value="Nhanh" class="form-radio">
-                                <span class="ml-2">Giao hàng nhanh</span>
-                            </label>
-                        </div>
-                    </div>
-                    <button id="btn-order" type="button" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Thanh toán</button>
-                </form>
-            </div>
+                </div>
+                <button id="btn-order" type="button"
+                        class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Thanh toán
+                </button>
+            </form>
+        </div>
 
-            <!-- Order Summary -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-2xl font-semibold mb-4">Tóm tắt đơn hàng</h2>
-                <div class="space-y-4">
-                    {% for item in session['cart'].values() %}
-                    <div class="flex justify-between">
-                        <span>{{ item.name }} (x{{ item.quantity }})</span>
-                        <span>{{ "{:,.0f}".format(item.price * item.quantity) }} VNĐ</span>
-                    </div>
-                    {% endfor %}
-                    <hr>
-                    <div class="flex justify-between font-semibold">
-                        <span>Tổng số lượng</span>
-                        <span>{{ cart_stats.total_quantity }}</span>
-                    </div>
-                    <div class="flex justify-between font-semibold">
-                        <span>Tổng tiền</span>
-                        <span>{{ "{:,.0f}".format(cart_stats.total_amount) }} VNĐ</span>
-                    </div>
+        <!-- Order Summary -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-4">Tóm tắt đơn hàng</h2>
+            <div class="space-y-4">
+                {% for item in session['cart'].values() %}
+                <div class="flex justify-between">
+                    <span>{{ item.name }} (x{{ item.quantity }})</span>
+                    <span>{{ "{:,.0f}".format(item.price * item.quantity) }} VNĐ</span>
+                </div>
+                {% endfor %}
+                <hr>
+                <div class="flex justify-between font-semibold">
+                    <span>Tổng số lượng</span>
+                    <span>{{ cart_stats.total_quantity }}</span>
+                </div>
+                <div class="flex justify-between font-semibold">
+                    <span>Tổng tiền</span>
+                    <span>{{ "{:,.0f}".format(cart_stats.total_amount) }} VNĐ</span>
                 </div>
             </div>
         </div>
-        {% else %}
-        <div class="text-center">
-            <p class="text-lg text-gray-600 mb-4">Giỏ hàng trống</p>
-            <a href="{{ url_for('index') }}" class="inline-block bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Quay lại mua sắm</a>
-        </div>
-        {% endif %}
     </div>
+    {% else %}
+    <div class="text-center">
+        <p class="text-lg text-gray-600 mb-4">Giỏ hàng trống</p>
+        <a href="{{ url_for('index') }}" class="inline-block bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">
+            Quay lại mua sắm</a>
+    </div>
+    {% endif %}
+</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const btnOrder = document.getElementById('btn-order');
-            let isOrdering = false;
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnOrder = document.getElementById('btn-order');
+        let isOrdering = false;
 
-            btnOrder.addEventListener('click', function() {
-                if (isOrdering) return;
+        btnOrder.addEventListener('click', function() {
+            if (isOrdering) return;
 
-                isOrdering = true;
-                btnOrder.disabled = true;
+            isOrdering = true;
+            btnOrder.disabled = true;
 
-                const paymentMethod = document.querySelector('input[name="payment_method"]:checked')?.value || 'COD';
-                const customerPhone = document.getElementById('customer_phone').value;
-                const customerAddress = document.getElementById('customer_address').value;
-                const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked')?.value || 'Tiêu chuẩn';
+            const paymentMethod = document.querySelector('input[name="payment_method"]:checked')?.value || 'COD';
+            const customerPhone = document.getElementById('customer_phone').value;
+            const customerAddress = document.getElementById('customer_address').value;
+            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked')?.value || 'Tiêu chuẩn';
 
-                fetch('/api/pay', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        customer_phone: customerPhone,
-                        customer_address: customerAddress,
-                        payment_method: paymentMethod,
-                        delivery_method: deliveryMethod
-                    })
+            fetch('/api/pay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer_phone: customerPhone,
+                    customer_address: customerAddress,
+                    payment_method: paymentMethod,
+                    delivery_method: deliveryMethod
                 })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.payUrl) {
-                        window.location.href = data.payUrl;  // Chuyển đến trang thanh toán MoMo
-                    } else if (data.redirect_url) {
-                        window.location.href = data.redirect_url;  // Quay lại trang chính cho COD
-                    } else {
-                        alert(data.error || data.message);
-                        btnOrder.disabled = false;
-                        isOrdering = false;
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert("Có lỗi xảy ra!");
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.payUrl) {
+                    window.location.href = data.payUrl;  // Chuyển đến trang thanh toán MoMo
+                } else if (data.redirect_url) {
+                    window.location.href = data.redirect_url;  // Quay lại trang chính cho COD
+                } else {
+                    alert(data.error || data.message);
                     btnOrder.disabled = false;
                     isOrdering = false;
-                });
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Có lỗi xảy ra!");
+                btnOrder.disabled = false;
+                isOrdering = false;
             });
         });
-    </script>
+    });
+</script>
 </body>
 </html>

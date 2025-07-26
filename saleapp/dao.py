@@ -1,5 +1,4 @@
 import json
-import uuid
 from datetime import datetime
 from flask import session
 from saleapp.models import Category, Book, User, Author, Review, OrderDetail, Order
@@ -8,10 +7,10 @@ import hashlib
 import cloudinary.uploader
 from sqlalchemy import func
 from flask_login import current_user
-from operator import or_
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_v1_5
 from base64 import b64encode
+
 
 def encrypt_payload(data):
     with open('mykey.pem', 'r') as f:
@@ -19,14 +18,19 @@ def encrypt_payload(data):
     cipher = PKCS1_v1_5.new(key)
     cipher_text = cipher.encrypt(json.dumps(data).encode())
     return b64encode(cipher_text).decode()
+
+
 def load_comments(book_id):
     return Review.query.filter_by(book_id=book_id).order_by(Review.created_date.desc()).all()
+
 
 def load_categories():
     return Category.query.order_by('id').all()
 
+
 def load_authors():
     return Author.query.order_by('id').all()
+
 
 def load_books(kw=None, category_id=None, author_id=None, price_filter=None, page=1):
     books = Book.query
@@ -71,6 +75,7 @@ def count_books(kw=None, category_id=None, author_id=None, price_filter=None):
 
     return query.count()
 
+
 def auth_user(username, password, role):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
     u = User.query.filter(User.username.__eq__(username.strip()),
@@ -78,6 +83,7 @@ def auth_user(username, password, role):
     if role:
         u = u.filter(User.user_role.__eq__(role))
     return u.first()
+
 
 def add_user(name, username, password, avatar=None, user_role=None):
     avatar_url = 'https://res.cloudinary.com/dapckqqhj/image/upload/v1734438576/rlpkm5rn7kqct2k5jcir.jpg'
@@ -89,18 +95,22 @@ def add_user(name, username, password, avatar=None, user_role=None):
     db.session.add(u)
     db.session.commit()
 
+
 def check_username_exists(username):
     user = User.query.filter_by(username=username).first()
     return user is not None
 
+
 def get_user_by_id(id):
     return User.query.get(id)
+
 
 def get_book_by_id(id):
     return Book.query.get(id)
 
+
 def stats_books():
-    return db.session.query(Category.id, Category.name, func.count(Book.id))\
+    return db.session.query(Category.id, Category.name, func.count(Book.id)) \
         .join(Book, Book.category_id.__eq__(Category.id), isouter=True).group_by(Category.id).all()
 
 
@@ -142,7 +152,6 @@ def add_receipt(cart, customer_phone, customer_address, payment_method, delivery
         session.pop('cart', None)
 
     return order
-
 
 
 if __name__ == '__main__':

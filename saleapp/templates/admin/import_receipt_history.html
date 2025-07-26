@@ -2,75 +2,76 @@
 
 {% block body %}
 <style>
-  body {
-    background: #efefef;
-    padding: 40px 0;
-  }
+    body {
+      background: #efefef;
+      padding: 40px 0;
+    }
 
-  .content-wrapper {
-    background: #fff;
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    border: 1px solid #e0e0e0;
-  }
+    .content-wrapper {
+      background: #fff;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      border: 1px solid #e0e0e0;
+    }
 
-  .table {
-    background: #fff;
-    margin: 0;
-  }
+    .table {
+      background: #fff;
+      margin: 0;
+    }
 
-  thead {
-    background-color: #0d6efd;
-    color: #fff;
-    text-align: center;
-  }
+    thead {
+      background-color: #0d6efd;
+      color: #fff;
+      text-align: center;
+    }
 
-  .table th,
-  .table td {
-    vertical-align: middle !important;
-    text-align: center;
-  }
+    .table th,
+    .table td {
+      vertical-align: middle !important;
+      text-align: center;
+    }
 
-  .btn-sm {
-    font-size: 13px;
-    padding: 4px 10px;
-  }
+    .btn-sm {
+      font-size: 13px;
+      padding: 4px 10px;
+    }
 </style>
 
 <div class="container">
     <h3 class="text-center mb-4 text-primary">Lịch sử Phiếu Nhập Sách</h3>
-  <div class="content-wrapper">
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>STT</th>
-          <th>Mã Phiếu</th>
-          <th>Người Nhập</th>
-          <th>Ngày Nhập</th>
-          <th>Tổng Tiền</th>
-          <th>Ghi chú</th>
-          <th>In PDF</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in receipts %}
-        <tr>
-          <td>{{ loop.index }}</td>
-          <td>#{{ r.id }}</td>
-          <td>{{ r.user.name }}</td>
-          <td>{{ r.import_date.strftime('%d/%m/%Y %H:%M:%S') }}</td>
-          <td>{{ "{:,.0f}".format(r.total_amount) }} đ</td>
-          <td>{{ r.note or '-' }}</td>
-          <td>
-            <a href="{{ url_for('print_import_receipt', receipt_id=r.id) }}" target="_blank" class="btn btn-primary btn-sm">
-              In
-            </a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    <div class="content-wrapper">
+        <table class="table table-bordered">
+            <thead>
+            <tr>
+                <th>STT</th>
+                <th>Mã Phiếu</th>
+                <th>Người Nhập</th>
+                <th>Ngày Nhập</th>
+                <th>Tổng Tiền</th>
+                <th>Ghi chú</th>
+                <th>In PDF</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for r in receipts %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>#{{ r.id }}</td>
+                <td>{{ r.user.name }}</td>
+                <td>{{ r.import_date.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                <td>{{ "{:,.0f}".format(r.total_amount) }} đ</td>
+                <td>{{ r.note or '-' }}</td>
+                <td>
+                    <a href="{{ url_for('print_import_receipt', receipt_id=r.id) }}" target="_blank"
+                       class="btn btn-primary btn-sm">
+                        In
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}
