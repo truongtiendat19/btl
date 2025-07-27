@@ -59,7 +59,7 @@ digitalpricing_books = (
 class Book(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False, unique=True)
-    author_id = Column(Integer, ForeignKey(Author.id), nullable=False)
+    author_id = Column(Integer, ForeignKey(Author.id), nullable=True)
     category_id = Column(Integer, ForeignKey(Category.id), nullable=False)
 
     author = relationship('Author', backref='books', lazy=True)

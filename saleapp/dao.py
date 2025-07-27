@@ -48,11 +48,18 @@ def load_books(kw=None, category_id=None, author_id=None, price_filter=None, pag
         except ValueError:
             pass
 
-    if price_filter == 'paid':
-        books = books.filter(Book.price_physical > 0)
-    elif price_filter == 'free':
-        books = books.filter(Book.price_physical == 0)
+    if price_filter:
+        try:
+            if '+' in price_filter:
+                min_price = int(price_filter.replace('+', ''))
+                books = books.filter(Book.price_physical >= min_price)
+            else:
+                min_price, max_price = map(int, price_filter.split('-'))
+                books = books.filter(Book.price_physical >= min_price, Book.price_physical <= max_price)
+        except Exception as e:
+            print("Lỗi khi xử lý:", e)
 
+    # phân trang
     page_size = app.config["PAGE_SIZE"]
     start = (page - 1) * page_size
     books = books.slice(start, start + page_size)
