@@ -1,74 +1,9 @@
-{% extends 'admin/master.html' %}
-{% block body %}
-<style>
-    body {
-      background: #efefef;
-      padding: 40px 0;
-    }
-    .content-wrapper {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.08);
-      padding: 30px;
-      max-width: 1200px;
-      margin: auto;
-    }
-    .custom-row {
-      display: flex;
-      gap: 40px;
-      flex-wrap: wrap;
-    }
-    .form-column {
-      flex: 2;
-      min-width: 300px;
-    }
-    .table-column {
-      flex: 1;
-      max-width: 350px;
-      max-height: 650px;
-      overflow-y: auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid #e0e0e0;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    }
-    .form-section {
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid #e0e0e0;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    }
-    .page-block {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px;
-      border: 1px solid #dee2e6;
-      margin-bottom: 15px;
-    }
-    textarea {
-      width: 100%;
-      min-height: 150px;
-      font-size: 14px;
-    }
-    table { width: 100%; font-size: 14px; }
-    table th {
-      background: #0d6efd;
-      color: #fff;
-      text-align: center;
-      vertical-align: middle;
-    }
-    .table th, .table td { padding: 8px; }
-    label { font-weight: 500; margin-bottom: 4px; }
-    .btn { min-width: 80px; }
-    .btn-sm { font-size: 13px; padding: 4px 10px; }
-    select, input, textarea { font-size: 14px; }
-    .search-select { margin-bottom: 10px; }
-</style>
+{% extends 'admin/base_admin.html' %}
 
+{% block page_title %}Nội dung sách online{% endblock %}
+
+{% block content %}
 <div class="container-fluid px-5 py-4">
-    <h3 class="text-center text-primary mb-4">Quản lý Nội dung sách online</h3>
     <div class="custom-row content-wrapper">
         <div class="form-column">
             <div class="form-section">

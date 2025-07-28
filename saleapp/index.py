@@ -101,11 +101,15 @@ def details(book_id):
     book = Book.query.get(book_id)
     my_purchases = Purchase.query.filter_by(user_id=current_user.id,
                                             book_id=book_id).all() if current_user.is_authenticated else []
-    purchases_dict = {}
+    valid_purchases_dict = {}
+    expired_purchase_ids = set()
     now = datetime.now()
+
     for p in my_purchases:
-        if p.time_end >= now:
-            purchases_dict[p.digital_pricing_id] = p
+        if p.time_end and p.time_end >= now:
+            valid_purchases_dict[p.digital_pricing_id] = p
+        else:
+            expired_purchase_ids.add(p.digital_pricing_id)
 
     ORDER = {'free': 1, 'prenium': 2}
     reading_packages = sorted(
@@ -113,9 +117,16 @@ def details(book_id):
         key=lambda x: ORDER.get(x.access_type, 99)
     )
 
-    return render_template('details.html',
-                           book=dao.get_book_by_id(book_id), comments=comments, reading_packages=reading_packages,
-                           purchases_dict=purchases_dict, now=now)
+    return render_template(
+        'details.html',
+        book=dao.get_book_by_id(book_id),
+        comments=comments,
+        reading_packages=reading_packages,
+        my_purchases=my_purchases,
+        purchases_dict=valid_purchases_dict,
+        expired_purchase_ids=expired_purchase_ids,
+        now=now
+    )
 
 
 @app.route("/api/books/<book_id>/comments", methods=['post'])
@@ -638,5 +649,7 @@ def pay_reading_package():
 
 
 if __name__ == '__main__':
+    from saleapp import admin
+
     with app.app_context():
         app.run(debug=True)

@@ -1,68 +1,9 @@
-{% extends 'admin/master.html' %}
+{% extends 'admin/base_admin.html' %}
 
-{% block body %}
-<style>
-    body {
-      background: #efefef;
-      padding: 40px 0;
-    }
+{% block page_title %}Thông tin Tác giả{% endblock %}
 
-    .content-wrapper {
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      padding: 30px;
-    }
-
-    .custom-row {
-      display: flex;
-      gap: 40px;
-      align-items: flex-start;
-    }
-
-    .form-column {
-      flex: 1;
-      position: sticky;
-      top: 40px;
-      align-self: flex-start;
-      z-index: 10;
-    }
-
-    .form-section {
-      background: #fff;
-      border-radius: 10px;
-      padding: 30px;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
-    }
-
-    .table-column {
-      flex: 2;
-      overflow-x: auto;
-    }
-
-    .table thead th{
-      background: #0d6efd;
-      color: white;
-      text-align:center;
-    }
-
-    .table th:nth-child(3),
-    .table td:nth-child(3) {
-      width: 120px;
-      white-space: nowrap;
-    }
-
-    .table thead th:nth-child(1),
-    .table thead th:nth-child(3),
-    .table tbody td:nth-child(1),
-    .table tbody td:nth-child(3) {
-      text-align: center;
-    }
-</style>
-
+{% block content %}
 <div class="container-fluid px-5 py-4">
-    <h3 class="text-center text-primary mb-4">Quản lý Tác giả</h3>
-
     <div class="content-wrapper">
         <div class="custom-row">
             <div class="form-column">
@@ -76,7 +17,7 @@
                         </div>
 
                         <button type="submit" class="btn btn-primary">Thêm / Sửa</button>
-                        <button type="reset" class="btn btn-secondary">Reset</button>
+                        <button type="reset" class="btn btn-secondary">Làm lại</button>
                     </form>
                 </div>
             </div>

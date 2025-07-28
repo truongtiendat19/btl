@@ -1,88 +1,9 @@
-{% extends 'admin/master.html' %}
-{% block body %}
+{% extends 'admin/base_admin.html' %}
 
-<style>
-    body {
-      background: #efefef;
-      padding: 40px 0;
-    }
+{% block page_title %}Thông tin Sách{% endblock %}
 
-    .content-wrapper {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.08);
-      padding: 30px;
-    }
-
-    .custom-row {
-      display: flex;
-      gap: 2%;
-    }
-
-    .form-column {
-      width: 35%;
-      position: sticky;
-      top: 20px;
-      height: fit-content;
-      z-index: 100;
-    }
-
-    input[type="checkbox"] {
-      display: inline-block !important;
-      margin: 6px;
-    }
-
-    label[for="is_digital_avaible"] {
-      display: inline-block !important;
-    }
-
-    .form-section {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.05);
-      border: 1px solid #e0e0e0;
-    }
-
-    .table {
-      background: #fff;
-    }
-
-    .table-column {
-      width: 63%;
-      overflow-x: auto;
-    }
-
-    .table thead th{
-      background: #0d6efd;
-      color: #fff;
-      text-align: center;
-      vertical-align: middle;
-    }
-
-    .table thead th:nth-child(1),
-    .table thead th:nth-child(7),
-    .table tbody td:nth-child(1),
-    .table tbody td:nth-child(7) {
-      text-align: center;
-    }
-
-    img {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 4px;
-    }
-
-    .btn-sm {
-      font-size: 13px;
-      padding: 4px 10px;
-    }
-
-</style>
-
+{% block content %}
 <div class="container-fluid px-5 py-4">
-    <h3 class="text-center text-primary mb-4">Quản lý Sách</h3>
     <div class="custom-row content-wrapper">
         <div class="form-column">
             <div class="form-section">
@@ -134,7 +55,7 @@
                     </div>
 
                     <button type="submit" class="btn btn-primary">Thêm/Sửa</button>
-                    <button type="reset" class="btn btn-secondary">Reset</button>
+                    <button type="reset" class="btn btn-secondary">Làm lại</button>
                 </form>
             </div>
         </div>

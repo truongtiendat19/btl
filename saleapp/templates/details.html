@@ -88,17 +88,16 @@
                             <div class="row g-3">
                                 {% for pkg in reading_packages %}
                                 {% set my_purchase = purchases_dict.get(pkg.id) %}
+                                {% set expired = pkg.id in expired_purchase_ids %}
 
                                 {% if pkg.access_type == 'free' %}
                                 {% if my_purchase %}
-                                {% if my_purchase.time_end > now %}
-                                <!-- FREE: Đã đọc, còn hạn -->
+                                <!-- FREE: Đã dùng, còn hạn -->
                                 <div class="col-md-4">
                                     <div class="card h-100 shadow-sm border">
                                         <div class="card-body d-flex flex-column">
                                             <h5 class="card-title text-primary">Miễn phí</h5>
                                             <p class="mb-1"><strong>Thời gian:</strong> {{ pkg.duration_day }} ngày</p>
-
                                             {% set delta = my_purchase.time_end - now %}
                                             <p class="text-success mb-1">
                                                 Bạn đã dùng gói miễn phí.<br>⏳ Thời gian còn:
@@ -108,33 +107,26 @@
                                                 {{ "%.1f"|format(delta.seconds / 3600) }} giờ
                                                 {% endif %}
                                             </p>
-
                                             <p class="small text-muted">{{ pkg.description }}</p>
-
                                             <div class="mt-auto">
                                                 <button class="btn btn-primary"
-                                                        onclick="buyReadingPackage({{ pkg.id }}, 'free')">Đọc ngay
-                                                </button>
+                                                        onclick="buyReadingPackage({{ pkg.id }}, 'free')">Đọc ngay</button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                {% endif %}
-                                {% else %}
-                                <!-- FREE: Chưa đọc -->
+                                {% elif not expired %}
+                                <!-- FREE: Chưa dùng bao giờ -->
                                 <div class="col-md-4">
                                     <div class="card h-100 shadow-sm border">
                                         <div class="card-body d-flex flex-column">
                                             <h5 class="card-title text-primary">Miễn phí</h5>
                                             <p class="mb-1"><strong>Thời gian:</strong> {{ pkg.duration_day }} ngày</p>
                                             <p class="mb-1"><span class="text-danger">*Chỉ đọc miễn phí 1 lần</span></p>
-
                                             <p class="small text-muted">{{ pkg.description }}</p>
-
                                             <div class="mt-auto">
                                                 <button class="btn btn-primary"
-                                                        onclick="buyReadingPackage({{ pkg.id }}, 'free')">Đọc ngay
-                                                </button>
+                                                        onclick="buyReadingPackage({{ pkg.id }}, 'free')">Đọc ngay</button>
                                             </div>
                                         </div>
                                     </div>

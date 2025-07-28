@@ -1,94 +1,9 @@
-{% extends 'admin/master.html' %}
+{% extends 'admin/base_admin.html' %}
 
-{% block body %}
+{% block page_title %}Gói đọc sách online{% endblock %}
 
-<style>
-  body {
-    background: #efefef;
-    padding: 40px 0;
-  }
-
-  .content-wrapper {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.08);
-    padding: 30px;
-    max-width: 1200px;
-    margin: auto;
-  }
-
-  .custom-row {
-    display: flex;
-    gap: 40px;
-    flex-wrap: wrap;
-  }
-
-  .form-column {
-    flex: 1;
-    min-width: 300px;
-    max-width: 400px;
-    position: sticky;
-    top: 20px;
-    align-self: flex-start;
-  }
-
-  .form-section {
-    background: #fff;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 0 8px rgba(0,0,0,0.05);
-    border: 1px solid #e0e0e0;
-  }
-
-  .table-column {
-    flex: 2;
-    overflow-x: auto;
-    min-width: 500px;
-  }
-
-  .table {
-    background: #fff;
-  }
-
-  .table thead th {
-    background: #0d6efd;
-    color: #fff;
-    text-align: center;
-    vertical-align: middle;
-  }
-
-  .form-check {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  .btn {
-    min-width: 100px;
-  }
-
-  .btn-sm {
-    font-size: 13px;
-    padding: 4px 10px;
-  }
-
-  input, select {
-    font-size: 14px;
-  }
-
-  label {
-    font-weight: 500;
-    margin-bottom: 4px;
-  }
-
-  select[multiple] {
-    height: 120px;
-  }
-</style>
-
+{% block content %}
 <div class="container-fluid px-5 py-4">
-    <h3 class="text-center text-primary mb-4">Quản lý Gói đọc sách</h3>
     <div class="custom-row content-wrapper">
         <div class="form-column">
             <div class="form-section">
@@ -133,7 +48,7 @@
                     </div>
 
                     <button type="submit" class="btn btn-primary mt-3">Thêm/Sửa</button>
-                    <button type="reset" class="btn btn-secondary mt-3" onclick="resetForm()">Reset</button>
+                    <button type="reset" class="btn btn-secondary mt-3" onclick="resetForm()">Làm lại</button>
                 </form>
             </div>
         </div>
@@ -195,7 +110,7 @@
     });
 
     function selectPricing(pricingId) {
-      fetch(`/admin/adddigitalpricingview/${pricingId}`)
+      fetch(`/admin/add_digital_pricing/${pricingId}`)
         .then(res => {
           if (!res.ok) throw new Error('Không tìm thấy gói đọc');
           return res.json();

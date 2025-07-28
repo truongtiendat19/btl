@@ -1,124 +1,90 @@
-{% extends 'admin/master.html' %}
+{% extends 'admin/base_admin.html' %}
 
-{% block body %}
-<style>
-    body {
-      background: #efefef;
-      padding: 40px 0;
-    }
+{% block page_title %}Thông tin Thể loại{% endblock %}
 
-    .content-wrapper {
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      padding: 30px;
-    }
-
-    .custom-row {
-      display: flex;
-      gap: 40px;
-      align-items: flex-start;
-    }
-
-    .form-column {
-      flex: 1;
-      position: sticky;
-      top: 40px;
-      align-self: flex-start;
-      z-index: 10;
-    }
-
-    .form-section {
-      background: #fff;
-      border-radius: 10px;
-      padding: 30px;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
-    }
-
-    .table-column {
-      flex: 2;
-      overflow-x: auto;
-    }
-
-    .table thead th{
-      background: #0d6efd;
-      color: white;
-      text-align:center;
-    }
-
-    .table th:nth-child(3),
-    .table td:nth-child(3) {
-      width: 120px;
-      white-space: nowrap;
-    }
-
-    .table thead th:nth-child(1),
-    .table thead th:nth-child(3),
-    .table tbody td:nth-child(1),
-    .table tbody td:nth-child(3) {
-      text-align: center;
-    }
-</style>
-
+{% block content %}
 <div class="container-fluid px-5 py-4">
-    <h3 class="text-center text-primary mb-4">Quản lý Thể loại</h3>
+    <div class="content-wrapper custom-row">
+        <!-- Form bên trái -->
+        <div class="form-column">
+            <div class="form-section">
+                <form method="POST">
+                    <input type="hidden" name="category_id" id="category_id">
 
-    <div class="content-wrapper p-4">
-        <div class="custom-row">
-            <!-- Form bên trái -->
-            <div class="form-column">
-                <div class="form-section">
-                    <form method="POST">
-                        <input type="hidden" name="category_id" id="category_id">
+                    <div class="mb-3">
+                        <label for="category_name">Tên thể loại</label>
+                        <input type="text" class="form-control" id="category_name" name="name" required>
+                    </div>
 
-                        <div class="mb-3">
-                            <label for="category_name">Tên thể loại</label>
-                            <input type="text" class="form-control" id="category_name" name="name" required>
-                        </div>
+                    <button type="submit" class="btn btn-primary">Thêm / Sửa</button>
+                    <button type="reset" class="btn btn-secondary">Làm lại</button>
+                </form>
+            </div>
+        </div>
 
-                        <button type="submit" class="btn btn-primary">Thêm / Sửa</button>
-                        <button type="reset" class="btn btn-secondary">Reset</button>
-                    </form>
+        <!-- Bảng bên phải -->
+        <div class="table-column">
+            <!-- Form tìm kiếm -->
+            <div class="mb-3">
+                <div class="input-group">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm tên thể loại...">
+                    <button class="btn btn-outline-secondary" type="button" id="clearButton">❌</button>
                 </div>
             </div>
 
-            <!-- Bảng bên phải -->
-            <div class="table-column">
-                <!-- Form tìm kiếm -->
-                <div class="mb-3">
-                    <div class="input-group">
-                        <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm tên thể loại...">
-                        <button class="btn btn-outline-secondary" type="button" id="clearButton">❌</button>
+            <!-- Bảng dữ liệu -->
+            <table class="table table-bordered text-center">
+                <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Tên thể loại</th>
+                    <th>Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for c in categories %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ c.name }}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="selectCategory({{ c.id }})">Sửa</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteCategory({{ c.id }})">Xoá</button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3">Không tìm thấy kết quả.</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Modal -->
+            <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title" id="successModalLabel">Thành công</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        </div>
+                        <div class="modal-body">
+                            Dữ liệu đã được lưu thành công!
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Bảng dữ liệu -->
-                <table class="table table-bordered text-center">
-                    <thead>
-                    <tr>
-                        <th>STT</th>
-                        <th>Tên thể loại</th>
-                        <th>Thao tác</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for c in categories %}
-                    <tr>
-                        <td>{{ loop.index }}</td>
-                        <td>{{ c.name }}</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm" onclick="selectCategory({{ c.id }})">Sửa</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteCategory({{ c.id }})">Xoá</button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="3">Không tìm thấy kết quả.</td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
             </div>
+            {% if show_modal %}
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                  var myModal = new bootstrap.Modal(document.getElementById('successModal'));
+                  myModal.show();
+                });
+            </script>
+            {% endif %}
+
         </div>
     </div>
 </div>

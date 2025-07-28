@@ -4,7 +4,7 @@ from saleapp import db, app
 from flask_admin import Admin, AdminIndexView, BaseView, expose
 from saleapp.models import (UserRole, ImportReceipt, ImportReceiptDetail,
                             Order, OrderDetail, Book, Author, Category, DigitalPricing, BookContent)
-from flask_login import current_user, logout_user
+from flask_login import current_user
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from flask import request, redirect, url_for, flash, jsonify
@@ -28,14 +28,6 @@ class AdminView(BaseView):
         return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
 
 
-# đăng xuất
-class LogoutView(BaseView):
-    @expose("/")
-    def index(self):
-        logout_user()
-        return redirect('/login')
-
-
 class BookAdminView(AdminView):
     @expose('/', methods=['GET', 'POST'])
     def index(self):
@@ -48,7 +40,6 @@ class BookAdminView(AdminView):
 
             if book_id:
                 book = Book.query.get(book_id)
-                msg = "Cập nhật sách thành công!"
             else:
                 existing_book = Book.query.filter_by(name=request.form['name']).first()
                 if existing_book:
@@ -57,7 +48,6 @@ class BookAdminView(AdminView):
 
                 book = Book()
                 db.session.add(book)
-                msg = "Thêm sách mới thành công!"
 
             book.name = request.form['name']
             book.author_id = request.form['author_id']
@@ -81,7 +71,6 @@ class BookAdminView(AdminView):
                 book.image = result['secure_url']
 
             db.session.commit()
-            flash(msg, 'success')
             return redirect(url_for('.index'))
 
         return self.render('admin/book_custom_view.html', books=books, authors=authors, categories=categories)
@@ -118,27 +107,23 @@ class CategoryAdminView(AdminView):
                     Category.id != int(category_id)
                 ).first()
                 if duplicate:
-                    flash('Tên thể loại đã tồn tại.', 'danger')
                     return redirect(url_for('.index'))
 
                 category = Category.query.get(category_id)
                 category.name = name
-                msg = 'Cập nhật thể loại thành công.'
+                return redirect(url_for('.index'))
             else:
                 # Thêm mới: kiểm tra trùng bình thường
                 if Category.query.filter_by(name=name).first():
-                    flash('Thể loại đã tồn tại.', 'danger')
                     return redirect(url_for('.index'))
 
                 category = Category(name=name)
                 db.session.add(category)
-                msg = 'Thêm thể loại mới thành công.'
 
             db.session.commit()
-            flash(msg, 'success')
             return redirect(url_for('.index'))
 
-        return self.render('admin/category_custom_view.html', categories=categories)
+        return self.render('admin/category_custom_view.html', categories=categories, show_modal=True)
 
     @expose('/<int:category_id>')
     def get_category(self, category_id):
@@ -183,18 +168,14 @@ class AuthorAdminView(AdminView):
 
                 author = Author.query.get(author_id)
                 author.name = name
-                msg = "Cập nhật tác giả thành công."
             else:
                 if Author.query.filter_by(name=name).first():
-                    flash('Tác giả đã tồn tại.', 'danger')
                     return redirect(url_for('.index'))
 
                 author = Author(name=name)
                 db.session.add(author)
-                msg = "Thêm tác giả thành công."
 
             db.session.commit()
-            flash(msg, 'success')
             return redirect(url_for('.index'))
 
         return self.render('admin/author_custom_view.html', authors=authors)
@@ -228,7 +209,6 @@ class ImportBooksView(AdminView):
         current_datetime = datetime.now()
 
         if request.method == 'POST':
-            date_import = request.form.get('date_import', current_datetime.strftime('%Y-%m-%d'))
             books = request.form.getlist('book')
             quantities = request.form.getlist('quantity')
             prices = request.form.getlist('unit_price')
@@ -239,7 +219,7 @@ class ImportBooksView(AdminView):
 
             try:
                 receipt = ImportReceipt(
-                    import_date=date_import,
+                    import_date=current_datetime,
                     user_id=current_user.id,
                     total_amount=0,
                     note=note
@@ -292,7 +272,7 @@ class ImportBooksView(AdminView):
                 db.session.rollback()
                 flash(f"Lỗi hệ thống: {str(e)}", "danger")
 
-            return redirect(url_for('importbooksview.import_books'))
+            return redirect(url_for('import_books.import_books'))
 
         # Load danh sách sách để fill form
         books = Book.query.all()
@@ -304,8 +284,7 @@ class ImportBooksView(AdminView):
 
         return self.render('admin/import_books.html',
                            books=books,
-                           books_data=books_data,
-                           current_datetime=current_datetime)
+                           books_data=books_data)
 
 
 class ImportReceiptHistoryView(AdminView):
@@ -335,13 +314,10 @@ class AddDigitalPricingView(AdminView):
             if pricing_id:
                 pricing = DigitalPricing.query.get(pricing_id)
                 if not pricing:
-                    flash("Gói đọc không tồn tại.", "danger")
                     return redirect(url_for('.index'))
-                msg = "Cập nhật gói đọc thành công!"
             else:
                 pricing = DigitalPricing()
                 db.session.add(pricing)
-                msg = "Thêm gói đọc mới thành công!"
 
             pricing.access_type = access_type
             pricing.price = float(price)
@@ -354,7 +330,6 @@ class AddDigitalPricingView(AdminView):
                 pricing.books = []
 
             db.session.commit()
-            flash(msg, "success")
             return redirect(url_for('.add_digital_pricing'))
 
         return self.render('admin/add_digital_pricing.html',
@@ -468,12 +443,11 @@ class RevenueStatsView(AdminView):
                            now=now)
 
 
-admin.add_view(CategoryAdminView(name='Thể loại', category='Quản lý sách', endpoint='categories'))
-admin.add_view(AuthorAdminView(name='Tác giả', category='Quản lý sách', endpoint='authors'))
-admin.add_view(BookAdminView(name='Sách', category='Quản lý sách', endpoint='books'))
-admin.add_view(ImportBooksView(name='Nhập sách', category='Quản lý kho'))
-admin.add_view(ImportReceiptHistoryView(name='Xuất phiếu nhập', category='Quản lý kho'))
-admin.add_view(AddDigitalPricingView(name='Gói đọc sách', category='Quản lý đọc sách'))
-admin.add_view(AddBookContentView(name='Nội dung sách', category='Quản lý đọc sách', endpoint='add_book_content'))
-admin.add_view(RevenueStatsView(name="Thống kê bán sách", category='Thống kê - Báo cáo', endpoint="revenue_stats"))
-admin.add_view(LogoutView(name='Đăng xuất'))
+admin.add_view(CategoryAdminView(endpoint='categories'))
+admin.add_view(AuthorAdminView(endpoint='authors'))
+admin.add_view(BookAdminView(endpoint='books'))
+admin.add_view(ImportBooksView(endpoint='import_books'))
+admin.add_view(ImportReceiptHistoryView(endpoint='import_receipts_history'))
+admin.add_view(AddDigitalPricingView(endpoint='add_digital_pricing'))
+admin.add_view(AddBookContentView(endpoint='add_book_content'))
+admin.add_view(RevenueStatsView(endpoint="revenue_stats"))

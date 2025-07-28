@@ -1,63 +1,15 @@
-{% extends 'admin/master.html' %}
+{% extends 'admin/base_admin.html' %}
 
-{% block body %}
-<style>
-    body {
-      background: #efefef;
-      padding: 40px 0;
-    }
+{% block page_title %}Nhập sách{% endblock %}
 
-    .content-wrapper {
-      background: #fff;
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    thead.table-light th {
-      background-color: #0d6efd !important;
-      color: white !important;
-      text-align: center;
-    }
-
-    .table {
-      table-layout: fixed;
-      width: 100%;
-    }
-
-    .table th:nth-child(1) { width: 5%; }
-    .table th:nth-child(2) { width: 30%; }
-    .table th:nth-child(3) { width: 15%; }
-    .table th:nth-child(4) { width: 15%; }
-    .table th:nth-child(5) { width: 10%; }
-    .table th:nth-child(6) { width: 20%; }
-    .table th:nth-child(7) { width: 5%; }
-
-    .table td input {
-      width: 100%;
-    }
-
-    .btn-primary {
-      background-color: #0d6efd;
-      border-color: #0d6efd;
-    }
-
-    .btn-primary:hover {
-      background-color: #0b5ed7;
-      border-color: #0a58ca;
-    }
-</style>
-
+{% block content %}
 <div class="container-fluid">
-    <h3 class="text-center text-primary mb-4">Phiếu Nhập Sách</h3>
-
     <div class="content-wrapper">
         <form method="POST" onsubmit="return validateFormBeforeSubmit()">
-            <label for="user_name" class="col-form-label fw-bold">Người nhập:</label>
-            <input type="text" id="user_name" class="form-control" value="{{ current_user.name }}" readonly>
-            <label for="date_import" class="col-form-label fw-bold">Ngày nhập:</label>
-            <input type="datetime-local" id="date_import" name="date_import" class="form-control"
-                   value="{{ current_datetime.strftime('%Y-%m-%dT%H:%M') }}" required readonly>
+            <div class="d-flex align-items-center mb-2">
+                <label for="user_name" class="me-2 fw-bold">Người nhập</label>
+                <input type="text" id="user_name" class="form-control form-control-sm w-25" value="{{ current_user.name }}" readonly>
+            </div>
 
             <!-- Bảng -->
             <table class="table">
