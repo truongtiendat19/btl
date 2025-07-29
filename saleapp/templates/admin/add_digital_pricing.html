@@ -29,6 +29,11 @@
                         <input type="number" name="price" id="price" class="form-control" step="0.01" min="0" required>
                     </div>
 
+                    <div class="mb-2 d-flex align-items-center">
+                        <input type="checkbox" name="is_active" id="is_active" class="me-2">
+                        <label for="is_active" class="mb-0">Hoạt động</label>
+                    </div>
+
                     <label>Tìm kiếm sách:</label>
                     <input type="text" id="bookSearchInput" class="form-control mb-2" placeholder="Nhập tên sách...">
 
@@ -62,6 +67,7 @@
                     <th>Loại truy cập</th>
                     <th>Thời gian (ngày)</th>
                     <th>Giá (VNĐ)</th>
+                    <th>Hoạt động</th>
                     <th>Thao tác</th>
                 </tr>
                 </thead>
@@ -81,6 +87,11 @@
                     <td>{{ p.access_type }}</td>
                     <td>{{ p.duration_day }}</td>
                     <td>{{ "{:,.0f}".format(p.price) }}</td>
+                    {% if p.is_active == True %}
+                    <td><i class="bi bi-check-square-fill"></i></td>
+                    {% else %}
+                    <td><i class="bi bi-app"></i></td>
+                    {% endif %}
                     <td>
                         <button class="btn btn-primary btn-sm" onclick="selectPricing({{ p.id }})">Sửa</button>
                     </td>
@@ -125,6 +136,7 @@
           document.getElementById('access_type').value = data.access_type;
           document.getElementById('price').value = data.price;
           document.getElementById('duration').value = data.duration_day;
+          document.getElementById('is_active').checked = data.is_active;
         })
         .catch(err => {
           alert('Lỗi: ' + err.message);
@@ -152,6 +164,7 @@
       document.querySelectorAll('input[name="book_ids"]').forEach(cb => cb.checked = false);
       document.getElementById('access_type').value = '';
       document.getElementById('price').value = '';
+      document.getElementById('is_active').value = '';
       document.getElementById('duration').value = '';
     }
 </script>

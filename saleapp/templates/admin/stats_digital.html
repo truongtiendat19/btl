@@ -1,12 +1,11 @@
 {% extends 'admin/base_admin.html' %}
 
-{% block page_title %}Báo cáo Bán sách{% endblock %}
+{% block page_title %}Báo cáo Đọc sách Online{% endblock %}
 
 {% block content %}
 <div class="content-wrapper">
     <form method="get" class="container mb-4">
         <div class="row justify-content-center align-items-center g-3 p-3 bg-light rounded shadow-sm">
-            <!-- Tháng -->
             <div class="col-auto">
                 <label for="month" class="col-form-label fw-semibold">Tháng:</label>
             </div>
@@ -17,8 +16,6 @@
                     {% endfor %}
                 </select>
             </div>
-
-            <!-- Năm -->
             <div class="col-auto">
                 <label for="year" class="col-form-label fw-semibold">Năm:</label>
             </div>
@@ -29,15 +26,14 @@
                     {% endfor %}
                 </select>
             </div>
-
-            <!-- Nút -->
             <div class="col-auto">
                 <button type="submit" class="btn btn-primary fw-semibold px-4">Xem</button>
             </div>
         </div>
     </form>
 
-    <h2 class="text-center text-primary">Báo Cáo Doanh Thu Tháng {{ month }}/{{ year }}</h2>
+    <h2 class="text-center text-primary">Báo Cáo Đọc Sách Online Tháng {{ month }}/{{ year }}</h2>
+
     <div class="d-flex mb-3">
         <label class="me-2 fw-semibold">Chế độ hiển thị:</label>
         <div class="form-check form-switch">
@@ -47,17 +43,17 @@
     </div>
 
     <div class="summary mb-4">
-        <p><strong>Tổng đơn hàng:</strong> {{ total_orders }}</p>
+        <p><strong>Tổng lượt mua:</strong> {{ total_orders }}</p>
         <p><strong>Tổng doanh thu:</strong> {{ "{:,.0f}".format(total_revenue) }} VNĐ</p>
     </div>
 
     <div id="table-view">
-        <h5 class="text-center mt-3 mb-3">Bảng Doanh Thu theo Thể loại</h5>
+        <h5 class="text-center mt-3 mb-3">Bảng Doanh Thu theo Sách</h5>
         <table class="table table-bordered">
             <thead>
             <tr>
                 <th>STT</th>
-                <th>Thể loại</th>
+                <th>Tên sách</th>
                 <th>Doanh thu</th>
             </tr>
             </thead>
@@ -70,7 +66,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="2"><em>Không có dữ liệu.</em></td>
+                <td colspan="3"><em>Không có dữ liệu.</em></td>
             </tr>
             {% endfor %}
             </tbody>
@@ -78,12 +74,11 @@
     </div>
 
     <div id="chart-view" style="display:none;">
-        <h5 class="text-center mt-3">Biểu đồ Doanh Thu theo Thể loại</h5>
+        <h5 class="text-center mt-3">Biểu đồ Doanh Thu theo Sách</h5>
         <div style="max-width: 500px; margin-left: 20%;">
             <canvas id="revenuePieChart" height="200"></canvas>
         </div>
     </div>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

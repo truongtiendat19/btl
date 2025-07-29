@@ -1,14 +1,11 @@
-import hashlib, hmac, os, uuid, math, requests, filetype, pdfkit
+import hmac, os, uuid, math, requests, filetype, pdfkit
 from flask import (
-    render_template, request, redirect, session, jsonify,
+    render_template, request, redirect, jsonify,
     send_file, make_response, url_for, abort, flash)
-from flask_login import login_user, logout_user, login_required, current_user
-from saleapp import app, login, db, dao, utils
-from saleapp.dao import check_username_exists
-from saleapp.models import (
-    UserRole, Book, ImportReceipt,
-    DigitalPricing, Purchase, BookContent, Order, CartItem
-)
+from flask_login import login_user, logout_user, login_required
+from saleapp import login, dao, utils
+from saleapp.dao import *
+from saleapp.models import *
 from gtts import gTTS
 from flask import Blueprint
 
@@ -41,21 +38,21 @@ def login_process():
         password = request.form.get('password')
 
         if check_username_exists(username):
-            u = dao.auth_user(username=username, password=password, role=UserRole.CUSTOMER)
+            u = dao.auth_user(username=username, password=password)
             if u:
-                login_user(u)
-                # Xóa giỏ hàng trong session trước khi đăng nhập
-                session.pop('cart', None)
-                next = request.args.get('next')
-                return redirect('/' if next is None else next)
+                if u.is_active == True:
+                    login_user(u)
+                    session.pop('cart', None)
 
-            u = dao.auth_user(username=username, password=password, role=UserRole.ADMIN)
-            if u:
-                login_user(u)
-                # Xóa giỏ hàng trong session trước khi đăng nhập
-                session.pop('cart', None)
-                return redirect('/admin')
-            err_msg = 'Mật khẩu không đúng.'
+                    if u.user_role == UserRole.CUSTOMER:
+                        next_url = request.args.get('next')
+                        return redirect(next_url if next_url else '/')
+                    elif u.user_role in [UserRole.ADMIN, UserRole.STAFF]:
+                        return redirect('/admin')
+                else:
+                    err_msg = 'Tài khoản không có quyền truy cập.'
+            else:
+                err_msg = 'Mật khẩu không đúng.'
         else:
             err_msg = 'Tên đăng nhập không tồn tại.'
 
@@ -627,11 +624,12 @@ def pay_reading_package():
         response.raise_for_status()
         response_data = response.json()
         if response_data.get("resultCode") == 0:
-            # Lưu tạm thông tin đơn hàng gói đọc
+            # Lưu tạm
             purchase = Purchase(
                 user_id=current_user.id,
                 book_id=book.id,
                 digital_pricing_id=pricing.id,
+                unit_price=pricing.price,
                 time_start=datetime.now(),
                 time_end=datetime.now(),
                 create_date=datetime.now(),
@@ -650,6 +648,7 @@ def pay_reading_package():
 
 if __name__ == '__main__':
     from saleapp import admin
+
 
     with app.app_context():
         app.run(debug=True)

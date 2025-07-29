@@ -45,12 +45,14 @@
 
                 <!-- Hành động -->
                 <div class="d-grid gap-2 mt-3">
-
+                    {% if book.is_active == False or book.quantity < 1 %}
+                    <i>Đã hết hàng</i>
+                    {% else %}
                     <button class="btn btn-outline-primary"
-                            onclick="addToCart({{ book.id }}, '{{ book.name }}', {{ book.price_physical }})">Thêm vào
-                        giỏ
+                            onclick="addToCart({{ book.id }}, '{{ book.name }}', {{ book.price_physical }})">
+                        Thêm vào giỏ
                     </button>
-
+                    {% endif %}
                 </div>
             </div>
 
@@ -89,7 +91,7 @@
                                 {% for pkg in reading_packages %}
                                 {% set my_purchase = purchases_dict.get(pkg.id) %}
                                 {% set expired = pkg.id in expired_purchase_ids %}
-
+                                {% if pkg.is_active == True %}
                                 {% if pkg.access_type == 'free' %}
                                 {% if my_purchase %}
                                 <!-- FREE: Đã dùng, còn hạn -->
@@ -170,7 +172,7 @@
                                     </div>
                                 </div>
                                 {% endif %}
-
+                                {% endif %}
                                 {% endfor %}
                             </div>
 

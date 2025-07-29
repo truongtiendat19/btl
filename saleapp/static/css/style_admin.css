@@ -3,7 +3,6 @@
     --sidebar-text: #ffffff;
     --sidebar-hover: #495057;
     --sidebar-active: #6c757d;
-
     --content-bg: #f8f9fa;
     --header-bg: #ffffff;
     --text-color: #212529;
@@ -12,9 +11,9 @@
 html, body {
     height: 100%;
     margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: var(--text-color);
     background-color: var(--content-bg);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow: hidden;
 }
 
@@ -33,7 +32,7 @@ html, body {
     letter-spacing: 1px;
 }
 
-
+/* Sidebar */
 .admin-sidebar {
     width: 260px;
     height: 100vh;
@@ -44,9 +43,7 @@ html, body {
     background-color: var(--sidebar-bg);
     color: var(--sidebar-text);
     padding: 1rem;
-    scroll-behavior: smooth;
     scrollbar-width: none;
-
 }
 
 .admin-sidebar h4 {
@@ -74,6 +71,7 @@ html, body {
     font-weight: bold;
 }
 
+/* Content */
 .admin-content {
     margin-left: 260px;
     padding: 1.5rem;
@@ -88,122 +86,102 @@ html, body {
     position: sticky;
     top: 0;
     z-index: 100;
-    background-color: var(--header-bg);
-    border-bottom: 1px solid #dee2e6;
     padding: 1rem;
+    background: linear-gradient(to right, #a18cd1, #fbc2eb);
+    color: white;
+    border-bottom: 1px solid #dee2e6;
 }
 
-.admin-header {
-  background: linear-gradient(to right, #a18cd1, #fbc2eb);
-  color: white;
-}
-
-
+/* Clock */
 #clock-container {
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: #212529;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #212529;
 }
 
 #clock-container i {
-  font-size: 1.1rem;
-  color: #0d6efd;
+    color: #0d6efd;
 }
 
-
+/* Form layout */
 .custom-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
 }
 
-/* Form nhập liệu bên trái */
 .form-column {
-  flex: 1;
-  min-width: 300px;
-  max-width: 380px;
-  position: sticky;
-  top: 60px;
-  height: fit-content;
+    flex: 1;
+    min-width: 300px;
+    max-width: 380px;
+    position: sticky;
+    top: 60px;
+    height: fit-content;
 }
 
-/* Khung form */
 .form-section {
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
-/* Bảng bên phải */
 .table-column {
-  flex: 2;
-  min-width: 600px;
+    flex: 2;
+    min-width: 600px;
 }
 
-/* Responsive bảng sách */
+/* Table */
 .table img {
-  max-width: 60px;
-  height: auto;
-  border-radius: 8px;
+    max-width: 60px;
+    height: auto;
+    border-radius: 8px;
+}
+
+.table th, .table td {
+    vertical-align: middle;
+    text-align: center;
 }
 
 .table thead th {
-    text-align: center;
-    vertical-align: middle;
-    background-color: #007BFF; /* Màu xanh dương */
+    background-color: #007BFF;
     color: #fff;
     font-weight: bold;
 }
 
-/* Nút hành động */
+/* Button styles */
 .btn-primary {
-  background-color: #007bff;
-  border-color: #007bff;
+    background-color: #007bff;
+    border-color: #007bff;
 }
 
 .btn-primary:hover {
-  background-color: #0056b3;
+    background-color: #0056b3;
 }
 
 .btn-secondary {
-  background-color: #6c757d;
-  border-color: #6c757d;
+    background-color: #6c757d;
+    border-color: #6c757d;
 }
 
 .btn-secondary:hover {
-  background-color: #565e64;
+    background-color: #565e64;
 }
 
-/* Tìm kiếm */
-#searchInput {
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
-}
-
+/* Input group (search) */
 .input-group #searchInput {
     max-width: 300px;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
 }
 
 #clearButton {
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-  background-color: #f8f9fa;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    background-color: #f8f9fa;
 }
 
-/* Responsive fix */
-@media (max-width: 992px) {
-  .custom-row {
-    flex-direction: column;
-  }
-
-  .form-column, .table-column {
-    width: 100%;
-    position: static;
-  }
-}
-
-/* Form chính */
+/* Content wrapper */
 .content-wrapper {
     background-color: var(--bs-body-bg);
     padding: 2rem;
@@ -211,50 +189,44 @@ html, body {
     box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
 }
 
-/* Label in đậm */
+/* Label và form */
 label, .form-label, .col-form-label {
     font-weight: 600;
 }
 
-/* Bảng nhập */
-.table th,
-.table td {
-    vertical-align: middle;
-    text-align: center;
-}
-
-.table thead th {
-    background-color: #007BFF; /* Nền xanh dương */
-    color: #fff;
-    font-weight: bold;
-}
-
-/* Input trong bảng */
 .table input {
     height: 38px;
     padding: 5px 10px;
     font-size: 14px;
 }
 
-/* Nút thêm và xóa dòng */
 .btn-sm {
     padding: 4px 10px;
     font-size: 13px;
 }
 
-/* Ghi chú và tổng tiền */
 #note {
     resize: vertical;
 }
 
-/* Tổng tiền */
 #totalAmount {
     font-size: 18px;
     font-weight: bold;
     color: #28a745;
 }
 
-/* Responsive (nếu cần) */
+/* Responsive */
+@media (max-width: 992px) {
+    .custom-row {
+        flex-direction: column;
+    }
+
+    .form-column, .table-column {
+        width: 100%;
+        position: static;
+    }
+}
+
 @media (max-width: 768px) {
     .table input {
         font-size: 12px;
@@ -264,7 +236,3 @@ label, .form-label, .col-form-label {
         font-size: 16px;
     }
 }
-input .form-control {
-    maw-width: 50px;
-}
-

@@ -83,12 +83,11 @@ def count_books(kw=None, category_id=None, author_id=None, price_filter=None):
     return query.count()
 
 
-def auth_user(username, password, role):
+def auth_user(username, password):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
     u = User.query.filter(User.username.__eq__(username.strip()),
                           User.password.__eq__(password))
-    if role:
-        u = u.filter(User.user_role.__eq__(role))
+
     return u.first()
 
 

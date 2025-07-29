@@ -1,80 +1,75 @@
 {% extends 'admin/base_admin.html' %}
 
 {% block content %}
-
-{% if current_user.is_authenticated and current_user.user_role.name == 'ADMIN' %}
-<style>
-    .admin-wrapper {
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      padding: 30px;
-    }
-
-    .admin-table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-    }
-
-    .admin-table thead th {
-      background-color: #0d6efd;
-      color: #fff;
-      text-align: center;
-    }
-
-    .admin-table th, .admin-table td {
-      border: 1px solid #dee2e6;
-      padding: 12px;
-      font-size: 14px;
-    }
-
-    .admin-table tbody td {
-      text-align: center;
-    }
-
-    .admin-table tbody td:first-child {
-      width: 60px;
-    }
-
-    .admin-table tbody td:nth-child(2) {
-      text-align: left;
-    }
-
-    .card {
-      border: none;
-      border-radius: 10px;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
-    }
-
-</style>
-<div>
+<div class="container mt-4">
     <div class="admin-wrapper">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <input type="text" class="form-control w-50" id="searchInput" placeholder="Tìm sách theo tên...">
+        </div>
 
-        <div class="card">
+        <div class="card shadow-sm">
             <div class="card-body p-0">
-                <table class="admin-table">
-                    <thead>
-                    <tr>
-                        <th>STT</th>
-                        <th>Tên sách</th>
-                        <th>Số lượng tồn</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for b in books %}
-                    <tr>
-                        <td>{{ loop.index }}</td>
-                        <td>{{ b[1] }}</td>
-                        <td>{{ b[2] }}</td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered mb-0 admin-table" id="bookTable">
+                        <thead class="table-dark text-center">
+                        <tr>
+                            <th scope="col">STT</th>
+                            <th scope="col" class="sortable" onclick="sortTable(1)">Tên sách ⬍</th>
+                            <th scope="col" class="sortable" onclick="sortTable(2)">Số lượng tồn ⬍</th>
+                        </tr>
+                        </thead>
+                        <tbody id="bookTableBody">
+                        {% for b in books %}
+                        <tr class="text-center align-middle">
+                            <td>{{ loop.index }}</td>
+                            <td class="text-start">{{ b[1] }}</td>
+                            <td>{{ b[2] }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
-{% endif %}
 
+<script>
+    // Tìm kiếm
+    document.getElementById("searchInput").addEventListener("keyup", function () {
+        const searchValue = this.value.toLowerCase();
+        const rows = document.querySelectorAll("#bookTable tbody tr");
+        rows.forEach(row => {
+            const bookName = row.cells[1].innerText.toLowerCase();
+            row.style.display = bookName.includes(searchValue) ? "" : "none";
+        });
+    });
+
+    // Sắp xếp
+    let sortDirection = true;
+    function sortTable(colIndex) {
+        const table = document.getElementById("bookTable");
+        const rows = Array.from(table.rows).slice(1); // bỏ phần thead
+        sortDirection = !sortDirection;
+
+        rows.sort((a, b) => {
+            const valA = a.cells[colIndex].innerText;
+            const valB = b.cells[colIndex].innerText;
+
+            const numA = parseFloat(valA);
+            const numB = parseFloat(valB);
+
+            if (!isNaN(numA) && !isNaN(numB)) {
+                return sortDirection ? numA - numB : numB - numA;
+            } else {
+                return sortDirection
+                    ? valA.localeCompare(valB)
+                    : valB.localeCompare(valA);
+            }
+        });
+
+        const tbody = table.tBodies[0];
+        rows.forEach(row => tbody.appendChild(row));
+    }
+</script>
 {% endblock %}

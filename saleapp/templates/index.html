@@ -138,6 +138,9 @@
                                 {{ "{:,.0f}".format(book.price_physical) }} ₫
                                 {% endif %}
                             </p>
+                            {%if book.is_active == False or book.quantity < 1%}
+                            <i>Đã hết hàng</i>
+                            {% endif %}
                             <a href="{{ url_for('details', book_id=book.id) }}" class="stretched-link"></a>
                         </div>
                     </div>

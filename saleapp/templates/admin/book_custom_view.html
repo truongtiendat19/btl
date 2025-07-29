@@ -49,6 +49,11 @@
                         <label for="is_digital_avaible" class="mb-0">Bản điện tử</label>
                     </div>
 
+                    <div class="mb-2 d-flex align-items-center">
+                        <input type="checkbox" name="is_active" id="is_active" class="me-2">
+                        <label for="is_active" class="mb-0">Hoạt động</label>
+                    </div>
+
                     <div class="mb-3">
                         <label>Mô tả</label>
                         <textarea name="description" id="description" class="form-control"></textarea>
@@ -77,6 +82,7 @@
                     <th>Ảnh</th>
                     <th>Tác giả</th>
                     <th>Thể loại</th>
+                    <th>Hoạt động</th>
                     <th>Giá</th>
                     <th>Thao tác</th>
                 </tr>
@@ -89,6 +95,11 @@
                     <td>{% if b.image %}<img src="{{ b.image }}">{% else %}Không có ảnh{% endif %}</td>
                     <td>{{ b.author.name }}</td>
                     <td>{{ b.category.name }}</td>
+                    {% if b.is_active == True %}
+                    <td><i class="bi bi-check-square-fill"></i></td>
+                    {% else %}
+                    <td><i class="bi bi-app"></i></td>
+                    {% endif %}
                     <td>{{ "{:,.0f}".format(b.price_physical) }}₫</td>
                     <td>
                         <button class="btn btn-primary btn-sm" onclick="selectBook({{ b.id }})">Sửa</button>
@@ -115,7 +126,7 @@
           document.getElementById('price_physical').value = data.price_physical ?? '';
           document.getElementById('description').value = data.description ?? '';
           document.getElementById('is_digital_avaible').checked = data.is_digital_avaible;
-
+          document.getElementById('is_active').checked = data.is_active;
           document.getElementById('author_id').value = data.author_id;
           document.getElementById('category_id').value = data.category_id;
         });
