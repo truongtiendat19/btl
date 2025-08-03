@@ -1,311 +1,258 @@
 {% extends 'layout/base.html' %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <!-- Hình ảnh sách -->
-        <div class="col-md-4 col-12 mb-4">
-            <img src="{{ book.image or 'https://via.placeholder.com/400x600?text=No+Image' }}"
-                 class="img-fluid rounded border shadow-sm w-100" alt="{{ book.name }}">
-        </div>
-
-        <!-- Box bên phải (giống Tiki) -->
-        <div class="col-md-8 col-12">
-            <div class="card shadow-sm p-4">
-                <!-- Nhà bán -->
-                <div class="d-flex align-items-center mb-3">
-                    <img src="{{ book.seller.logo if book.seller and book.seller.logo else 'https://via.placeholder.com/40' }}"
-                         alt="Seller Logo" width="40" height="40" class="me-2">
-                    <div>
-                        <strong>{{ book.seller.name if book.seller else 'Nhà bán không xác định' }}</strong><br>
-                        <span class="text-warning">★ {{ book.seller.rating if book.seller and book.seller.rating else '4.8' }}</span>
-                        <span class="text-muted">({{ book.seller.review_count if book.seller and book.seller.review_count else '3.6k+' }} đánh giá)</span>
-                    </div>
-                </div>
-
-                <!-- Chọn số lượng -->
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Số lượng</label>
-                    <div class="input-group" style="width: 130px;">
-                        <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(-1)">-</button>
-                        <input type="text" id="quantity" class="form-control text-center" value="1">
-                        <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(1)">+</button>
-                    </div>
-                    <small class="text-muted d-block mt-1">📦 Còn lại: {{ book.quantity }} quyển</small>
-                </div>
-
-                <!-- Giá -->
-                <h4 class="text-danger fw-bold">
-                    {% if book.price_physical > 0 %}
-                    {{ "{:,.0f}".format(book.price_physical) }}₫
-                    {% else %}
-                    Miễn phí
-                    {% endif %}
-                </h4>
-
-                <!-- Hành động -->
-                <div class="d-grid gap-2 mt-3">
-                    {% if book.is_active == False or book.quantity < 1 %}
-                    <i>Đã hết hàng</i>
-                    {% else %}
-                    <button class="btn btn-outline-primary"
-                            onclick="addToCart({{ book.id }}, '{{ book.name }}', {{ book.price_physical }})">
-                        Thêm vào giỏ
-                    </button>
-                    {% endif %}
-                </div>
-            </div>
-
-
-            <div class="mt-4">
-                <button class="btn btn-outline-secondary" onclick="toggleDescription()">📘 Xem mô tả sách</button>
-                <div id="book-description" class="mt-3" style="display: none;">
-                    <div class="card card-body">
-                        {{ book.description | safe if book.description else 'Không có mô tả cho sách này.' }}
-                    </div>
-                </div>
-            </div>
-
-            {% if book.is_digital_avaible %}
-            <div class="mt-3">
-                {% if current_user.is_authenticated %}
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#readModal">Đọc sách</button>
-                {% else %}
-                <a href="/login?next=/books/{{ book.id }}" class="btn btn-primary">Đăng nhập để đọc</a>
-                {% endif %}
-            </div>
-            {% endif %}
-
-            <!-- Modal Gói đọc sách -->
-            <div class="modal fade" id="readModal" tabindex="-1" aria-labelledby="readModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-xl">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="readModalLabel">Các gói đọc sách</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-                        </div>
-
-                        <div class="modal-body">
-                            {% if reading_packages %}
-                            <div class="row g-3">
-                                {% for pkg in reading_packages %}
-                                {% set my_purchase = purchases_dict.get(pkg.id) %}
-                                {% set expired = pkg.id in expired_purchase_ids %}
-                                {% if pkg.is_active == True %}
-                                {% if pkg.access_type == 'free' %}
-                                {% if my_purchase %}
-                                <!-- FREE: Đã dùng, còn hạn -->
-                                <div class="col-md-4">
-                                    <div class="card h-100 shadow-sm border">
-                                        <div class="card-body d-flex flex-column">
-                                            <h5 class="card-title text-primary">Miễn phí</h5>
-                                            <p class="mb-1"><strong>Thời gian:</strong> {{ pkg.duration_day }} ngày</p>
-                                            {% set delta = my_purchase.time_end - now %}
-                                            <p class="text-success mb-1">
-                                                Bạn đã dùng gói miễn phí.<br>⏳ Thời gian còn:
-                                                {% if delta.days >= 1 %}
-                                                {{ delta.days }} ngày
-                                                {% else %}
-                                                {{ "%.1f"|format(delta.seconds / 3600) }} giờ
-                                                {% endif %}
-                                            </p>
-                                            <p class="small text-muted">{{ pkg.description }}</p>
-                                            <div class="mt-auto">
-                                                <button class="btn btn-primary"
-                                                        onclick="buyReadingPackage({{ pkg.id }}, 'free')">Đọc ngay</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% elif not expired %}
-                                <!-- FREE: Chưa dùng bao giờ -->
-                                <div class="col-md-4">
-                                    <div class="card h-100 shadow-sm border">
-                                        <div class="card-body d-flex flex-column">
-                                            <h5 class="card-title text-primary">Miễn phí</h5>
-                                            <p class="mb-1"><strong>Thời gian:</strong> {{ pkg.duration_day }} ngày</p>
-                                            <p class="mb-1"><span class="text-danger">*Chỉ đọc miễn phí 1 lần</span></p>
-                                            <p class="small text-muted">{{ pkg.description }}</p>
-                                            <div class="mt-auto">
-                                                <button class="btn btn-primary"
-                                                        onclick="buyReadingPackage({{ pkg.id }}, 'free')">Đọc ngay</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
-                                {% elif pkg.access_type == 'prenium' %}
-                                <div class="col-md-4">
-                                    <div class="card h-100 shadow-sm border">
-                                        <div class="card-body d-flex flex-column">
-                                            <h5 class="card-title text-primary">Prenium</h5>
-                                            <p class="mb-1"><strong>Thời gian:</strong> {{ pkg.duration_day }} ngày</p>
-
-                                            {% if my_purchase and my_purchase.time_end > now %}
-                                            {% set delta = my_purchase.time_end - now %}
-                                            <p class="text-success mb-1">Bạn đã mua gói này.<br>⏳ Thời gian còn:
-                                                {% if delta.days >= 1 %}
-                                                {{ delta.days }} ngày
-                                                {% else %}
-                                                {{ "%.1f"|format(delta.seconds / 3600) }} giờ
-                                                {% endif %}
-                                            </p>
-                                            {% else %}
-                                            <p class="mb-1"><strong>Giá:</strong> <span class="text-danger">{{ "{:,.0f}".format(pkg.price) }}₫</span>
-                                            </p>
-                                            {% endif %}
-
-                                            <p class="small text-muted">{{ pkg.description }}</p>
-
-                                            <div class="mt-auto">
-                                                {% if my_purchase and my_purchase.time_end > now %}
-                                                <button class="btn btn-primary"
-                                                        onclick="buyReadingPackage({{ pkg.id }}, 'prenium')">Đọc ngay
-                                                </button>
-                                                {% else %}
-                                                <button class="btn btn-primary"
-                                                        onclick="buyReadingPackage({{ pkg.id }}, 'prenium')">Mua gói
-                                                </button>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
-                                {% endif %}
-                                {% endfor %}
-                            </div>
-
-                            {% else %}
-                            <p>Hiện chưa có gói đọc nào khả dụng.</p>
-                            {% endif %}
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- Bình luận -->
-            <div class="mt-5">
-                <h4>💬 Bình luận</h4>
-
-                {% if current_user.is_authenticated %}
-                <div class="mb-3">
-                    <textarea class="form-control" id="comment" rows="4" placeholder="Viết bình luận..."></textarea>
-                    <button class="btn btn-info mt-2" onclick="addComment({{ book.id }})">📩 Gửi bình luận</button>
-                </div>
-                {% else %}
-                <p class="text-muted">Vui lòng <a href="/login?next=/books/{{ book.id }}">đăng nhập</a> để bình luận.
-                </p>
-                {% endif %}
-
-                <ul class="list-group mt-3" id="comments">
-                    {% for c in comments %}
-                    <li class="list-group-item">
-                        <div class="d-flex align-items-start">
-                            <img src="{{ c.user.avatar or 'https://via.placeholder.com/50' }}"
-                                 class="rounded-circle me-3" width="50" height="50" alt="avatar">
-                            <div>
-                                <p class="mb-1">{{ c.content }}</p>
-                                <small class="text-muted date">{{ c.created_date }}</small>
-                            </div>
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
+<div class="container px-3 px-md-5 mt-4">
+  <div class="row g-4">
+    <!-- Cột trái: Thể loại phổ biến (sticky) -->
+    <div class="col-md-2 col-ad">
+      <div class="ad-banner sticky-top" style="top: 20px;">
+        <h5 class="text-center mb-3">ỊThể loại phổ biến</h5>
+        <ul class="list-group">
+          {% for category in categories %}
+            <a href="{{ url_for('index', category_id=category.id) }}" class="list-group-item list-group-item-action">
+              {{ category.name }}
+            </a>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
+
+    <!-- Cột chính -->
+    <div class="col-md-8">
+      <!-- Hàng chứa hình ảnh và thông tin -->
+      <div class="row g-4">
+        <div class="col-md-4">
+          <img src="{{ book.image or 'https://via.placeholder.com/400x600?text=No+Image' }}" class="img-fluid rounded border w-100 book-image">
+        </div>
+
+        <div class="col-md-8">
+          <div class="card p-4 shadow-sm">
+            <div class="d-flex align-items-center mb-3">
+              <img src="{{ book.seller.logo if book.seller and book.seller.logo else 'https://via.placeholder.com/40' }}" alt="Seller Logo" class="me-2 rounded" width="40" height="40">
+              <div>
+                <strong>{{ book.seller.name if book.seller else 'Nhà bán không xác định' }}</strong><br>
+                <span class="text-warning">★ {{ book.seller.rating if book.seller and book.seller.rating else '4.8' }}</span>
+                <small class="text-muted">({{ book.seller.review_count if book.seller and book.seller.review_count else '3.6k+' }} đánh giá)</small>
+              </div>
+            </div>
+
+            <h3 class="fw-bold">{{ book.name }}</h3>
+            <p class="text-muted small">Tác giả: {{ book.author.name if book.author else 'Không rõ' }} | Còn: {{ book.quantity }} quyển</p>
+
+            <div class="mb-3">
+              <div class="text-warning fs-5">
+                {% set rounded_rating = (avg_rating or 0)|int %}
+                {% for i in range(rounded_rating) %}★{% endfor %}
+                {% for i in range(5 - rounded_rating) %}☆{% endfor %}
+                <span class="text-dark">({{ total_reviews }} đánh giá)</span>
+              </div>
+            </div>
+
+            <div class="row align-items-center g-3">
+              <div class="col-auto">
+                <label class="form-label">Số lượng</label>
+                <div class="input-group" style="width: 120px;">
+                  <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(-1)">-</button>
+                  <input type="text" id="quantity" class="form-control text-center" value="1">
+                  <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(1)">+</button>
+                </div>
+              </div>
+
+              <div class="col">
+                <h4 class="text-danger fw-bold">
+                  {% if book.price_physical > 0 %}
+                    {{ "{:,.0f}".format(book.price_physical) }}₫
+                  {% else %}Miễn phí{% endif %}
+                </h4>
+              </div>
+
+              <div class="col text-end">
+                <button class="btn btn-danger" onclick="addToCart({{ book.id }}, '{{ book.name }}', {{ book.price_physical }})">
+                  ❤️ Thêm vào giỏ
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Giới thiệu -->
+      <div class="mt-4">
+        <button class="btn btn-outline-secondary" onclick="toggleDescription()">📘 Xem mô tả sách</button>
+        <div id="book-description" class="mt-3" style="display: none;">
+          <div class="card card-body">
+            {{ book.description | safe if book.description else 'Không có mô tả cho sách này.' }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Sách liên quan -->
+      {% if related_books %}
+      <div class="related-books mt-4">
+        <h2 class="section-title">Sách liên quan</h2>
+        <div class="related-books-list">
+          {% for related_book in related_books %}
+            <a href="{{ url_for('details', book_id=related_book.id) }}" class="related-book-item text-decoration-none text-dark">
+              <img src="{{ related_book.image or 'https://via.placeholder.com/150?text=No+Image' }}" alt="{{ related_book.name }}" class="related-book-image">
+              <p class="related-book-name">{{ related_book.name }}</p>
+              <p class="related-book-price">
+                {% if related_book.price_physical > 0 %}
+                  {{ "{:,.0f}".format(related_book.price_physical) }}₫
+                {% else %}Miễn phí{% endif %}
+              </p>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Thông tin chi tiết -->
+      <div class="card card-body mt-4">
+        <h5 class="fw-bold">Thông tin chi tiết</h5>
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Công ty phát hành:</strong> {{ book.publisher_company or '...Đang cập nhật' }}</p>
+            <p><strong>Ngày xuất bản:</strong> {{ book.publish_date or '...Đang cập nhật' }}</p>
+            <p><strong>Loại bìa:</strong> {{ book.cover_type or '...Đang cập nhật' }}</p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Số trang:</strong> {{ book.page_count or '...Đang cập nhật' }}</p>
+            <p><strong>Nhà xuất bản:</strong> {{ book.publisher_name or '...Đang cập nhật' }}</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Cột phải: Khuyến mãi (sticky) -->
+    <div class="col-md-2 col-ad">
+      <div class="ad-banner sticky-top" style="top: 20px;">
+        <h5 class="text-center mb-3">Khuyến mãi đặc biệt</h5>
+        <div class="card mb-3 promotion-card">
+          <img src="https://via.placeholder.com/150x200?text=Khuyến+Mãi" class="card-img-top" alt="Khuyến mãi">
+          <div class="card-body">
+            <h6 class="card-title">Giảm 20% tất cả sách</h6>
+            <p class="card-text">Đến 10/08/2025</p>
+          </div>
+        </div>
+        <div class="card promotion-card">
+          <img src="https://via.placeholder.com/150x200?text=Mới+Nhất" class="card-img-top" alt="Sách mới">
+          <div class="card-body">
+            <h6 class="card-title">Sách mới ra mắt</h6>
+            <p class="card-text">Khám phá ngay!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
+<!-- Đánh giá & Bình luận -->
+<div class="card card-body mt-4">
+  <h5 class="fw-bold mb-3">💬 Đánh giá & Bình luận</h5>
+  {% if current_user.is_authenticated %}
+    {% set purchase = purchases_dict.values() | selectattr('book_id', 'equalto', book.id) | selectattr('status', 'equalto', 'COMPLETED') | first %}
+    {% if purchase %}
+      <div class="mb-3">
+        <label for="stars" class="form-label">Chọn sao</label>
+        <select class="form-select w-auto mb-2" id="stars">
+          <option value="5">★★★★★ - Tuyệt vời</option>
+          <option value="4">★★★★☆ - Tốt</option>
+          <option value="3">★★★☆☆ - Trung bình</option>
+          <option value="2">★★☆☆☆ - Tệ</option>
+          <option value="1">★☆☆☆☆ - Rất tệ</option>
+        </select>
+        <textarea id="comment_content" name="content" class="form-control mb-2" placeholder="Viết bình luận của bạn..."></textarea>
+        <button class="btn btn-primary" onclick="submitComment({{ book.id }})">📩 Gửi bình luận</button>
+      </div>
+    {% else %}
+      <p class="text-muted">Vui lòng mua sách để có thể bình luận. <a href="/books/{{ book.id }}">Mua ngay</a></p>
+    {% endif %}
+  {% else %}
+    <p class="text-muted">Vui lòng <a href="/login?next=/books/{{ book.id }}">đăng nhập</a> để bình luận.</p>
+  {% endif %}
 
-<!-- JavaScript -->
+  <ul class="list-group mt-3" id="comments">
+    {% for c in comments %}
+    <li class="list-group-item">
+      <div class="d-flex align-items-start">
+        <img src="{{ c.user.avatar or 'https://via.placeholder.com/50' }}" class="rounded-circle me-3" width="50" height="50">
+        <div>
+          <strong>{{ c.user.name }}</strong>
+          <div class="text-warning small mb-1">
+            {% for i in range(c.rating or 5) %}★{% endfor %}
+            {% for i in range(5 - (c.rating or 5)) %}☆{% endfor %}
+          </div>
+          {% if c.verified %}<span class="badge bg-success">Đã mua hàng</span>{% endif %}
+          <p class="mb-1">{{ c.comment }}</p>
+          <small class="text-muted date">{{ c.created_date }}</small>
+        </div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
 <script>
-    window.onload = function () {
-        let dates = document.getElementsByClassName("date");
-        for (let d of dates)
-            d.innerText = moment(d.innerText).locale("vi").fromNow();
-    }
+  function updateQuantity(change) {
+    const quantityInput = document.getElementById('quantity');
+    let current = parseInt(quantityInput.value);
+    current = isNaN(current) ? 1 : current + change;
+    if (current < 1) current = 1;
+    quantityInput.value = current;
+  }
 
-    function updateQuantity(change) {
-        const quantityInput = document.getElementById('quantity');
-        let current = parseInt(quantityInput.value);
-        current = isNaN(current) ? 1 : current;
-        current += change;
-        if (current < 1) current = 1;
-        quantityInput.value = current;
-    }
-
-    function buyNow() {
-        const quantity = parseInt(document.getElementById('quantity').value);
-        alert(`Mua ngay với số lượng: ${quantity}`);
-        // Bạn có thể thay thế bằng chuyển đến /checkout với quantity
-    }
-
-    function addToCart(id, name, price_physical) {
-        const quantity = parseInt(document.getElementById('quantity').value);
-        fetch('/api/carts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: id, name: name, price_physical: price_physical, quantity: quantity })
-        })
-        .then(res => res.json())
-        .then(data => {
-            alert('Đã thêm vào giỏ hàng!');
-            if (document.querySelector('.cart-quantity')) {
-                document.querySelector('.cart-quantity').textContent = data.total_quantity;
-            }
-        })
-        .catch(err => console.error('Lỗi thêm giỏ hàng:', err));
-    }
-
-    function addComment(bookId) {
-        let content = document.getElementById("comment").value;
-        fetch(`/api/books/${bookId}/comments`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: content })
-        })
-        .then(res => res.json())
-        .then(data => {
-            location.reload();
-        })
-        .catch(err => console.error(err));
-    }
-
-    function toggleDescription() {
-        const desc = document.getElementById("book-description");
-        desc.style.display = (desc.style.display === "none") ? "block" : "none";
-    }
-
-   const bookId = {{ book.id | tojson }};
-
-function buyReadingPackage(packageId, accessType) {
-  if (accessType === 'free') {
-    fetch('/api/buy_reading_package', {
+  function addToCart(id, name, price) {
+    const quantity = parseInt(document.getElementById('quantity').value);
+    fetch('/api/carts', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        package_id: packageId,
-        book_id: bookId
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, name, price, quantity })
     })
     .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        window.location.href = `/read/${bookId}`, 300;
-      } else {
-        alert(data.message || 'Bạn đã dùng gói đọc miễn phí!');
-      }
-    })
-    .catch(err => {
-      console.error('Lỗi:', err);
-      alert('Có lỗi xảy ra khi xử lý gói đọc!');
-    });
-  } else {
-    window.location.href = `/api/pay_reading_package?package_id=${packageId}&book_id=${bookId}`;
+    .then(data => alert('Đã thêm vào giỏ hàng!'))
+    .catch(err => console.error(err));
   }
+
+  function submitComment(bookId) {
+  const content = document.getElementById('comment_content').value;
+  const stars = document.getElementById('stars').value;
+
+  fetch(`/api/books/${bookId}/comments`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ content, stars })
+})
+.then(async response => {
+  const data = await response.json();
+  if (response.ok) {
+    alert('Bình luận đã được gửi!');
+    location.reload();
+  } else {
+    alert(data.error || 'Lỗi khi gửi bình luận.');
+  }
+})
+.catch(error => {
+  alert('Lỗi hệ thống, vui lòng thử lại.');
+  console.error('Error:', error);
+});
+
 }
 
+  function showToast(message, isError = false) {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white ${isError ? 'bg-danger' : 'bg-success'} border-0 show`;
+    toast.role = 'alert';
+    toast.style.position = 'fixed';
+    toast.style.bottom = '1rem';
+    toast.style.right = '1rem';
+    toast.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">${message}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
+      </div>`;
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.remove(), 3000);
+  }
 </script>
 {% endblock %}

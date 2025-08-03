@@ -1,14 +1,22 @@
-import hmac, os, uuid, math, requests, filetype, pdfkit
+import hashlib, hmac, os, uuid, math, requests, filetype, pdfkit
 from flask import (
-    render_template, request, redirect, jsonify,
+    render_template, request, redirect, session, jsonify,
     send_file, make_response, url_for, abort, flash)
+from flask_login import login_user, logout_user, login_required, current_user
+from saleapp import app, login, db, dao, utils
+from saleapp.dao import check_username_exists
+from saleapp.models import (
+    UserRole, Book, ImportReceipt,
+    DigitalPricing, Purchase, BookContent, Order, CartItem, Review
+)
 from flask_login import login_user, logout_user, login_required
 from saleapp import login, dao, utils
 from saleapp.dao import *
 from saleapp.models import *
 from gtts import gTTS
 from flask import Blueprint
-
+from datetime import datetime, timedelta
+from sqlalchemy import func
 # MoMo configuration
 MOMO_PARTNER_CODE = "MOMODMJ120250721_TEST"
 MOMO_ACCESS_KEY = "Csil0yiSO0r7Ete4"
@@ -97,16 +105,12 @@ def details(book_id):
     comments = dao.load_comments(book_id)
     book = Book.query.get(book_id)
     my_purchases = Purchase.query.filter_by(user_id=current_user.id,
-                                            book_id=book_id).all() if current_user.is_authenticated else []
-    valid_purchases_dict = {}
-    expired_purchase_ids = set()
+                                           book_id=book_id).all() if current_user.is_authenticated else []
+    purchases_dict = {}
     now = datetime.now()
-
     for p in my_purchases:
-        if p.time_end and p.time_end >= now:
-            valid_purchases_dict[p.digital_pricing_id] = p
-        else:
-            expired_purchase_ids.add(p.digital_pricing_id)
+        if p.time_end >= now:
+            purchases_dict[p.digital_pricing_id] = p
 
     ORDER = {'free': 1, 'prenium': 2}
     reading_packages = sorted(
@@ -114,30 +118,60 @@ def details(book_id):
         key=lambda x: ORDER.get(x.access_type, 99)
     )
 
-    return render_template(
-        'details.html',
-        book=dao.get_book_by_id(book_id),
-        comments=comments,
-        reading_packages=reading_packages,
-        my_purchases=my_purchases,
-        purchases_dict=valid_purchases_dict,
-        expired_purchase_ids=expired_purchase_ids,
-        now=now
-    )
+    # Lấy sách liên quan (cùng thể loại, loại trừ sách hiện tại)
+    related_books = Book.query.filter(
+        Book.category_id == book.category_id,
+        Book.id != book_id
+    ).limit(4).all()
+
+    from sqlalchemy import func
+
+    avg_rating = db.session.query(func.avg(Review.rating)) \
+                     .filter(Review.book_id == book_id).scalar() or 0
+    total_reviews = db.session.query(func.count(Review.id)) \
+                        .filter(Review.book_id == book_id).scalar() or 0
+
+    return render_template('details.html',
+                           book=dao.get_book_by_id(book_id),
+                           comments=comments,
+                           reading_packages=reading_packages,
+                           purchases_dict=purchases_dict,
+                           now=now,
+                           related_books=related_books,
+                           avg_rating=avg_rating,
+                           total_reviews=total_reviews)
 
 
-@app.route("/api/books/<book_id>/comments", methods=['post'])
+
+@app.context_processor
+def common_response_data():
+    return {
+        'categories': dao.load_categories(),
+        'cart_stats': utils.cart_stats(session.get('cart'))
+    }
+@app.route("/api/books/<book_id>/comments", methods=['POST'])
 @login_required
 def add_comment(book_id):
-    c = dao.add_comment(content=request.json.get('content'), book_id=book_id)
-    return jsonify({
-        "id": c.id,
-        "content": c.content,
-        "created_date": c.created_date,
-        "user": {
-            "avatar": c.user.avatar
-        }
-    })
+    content = request.json.get('content')
+    rating = request.json.get('stars', 5)
+    if not content or not isinstance(rating, int) or rating < 1 or rating > 5:
+        return jsonify({"error": "Nội dung bình luận không hợp lệ hoặc số sao không đúng"}), 400
+    try:
+        c = dao.add_comment(content=content, book_id=book_id, rating=rating)
+        return jsonify({
+            "id": c.id,
+            "content": c.comment,
+            "created_date": c.created_date,
+            "user": {
+                "avatar": c.user.avatar,
+                "name": c.user.name
+            },
+            "rating": c.rating
+        })
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 403
+    except Exception as e:
+        return jsonify({"error": "Lỗi hệ thống khi thêm bình luận"}), 500
 
 
 @app.route("/logout")
@@ -254,7 +288,12 @@ def pay():
                 {"id": item["id"], "name": item["name"], "price": item["price"], "quantity": item["quantity"]}
                 for item in cart.values()
             ]
-
+            session['pending_order'] = {
+                "order_id": order_id,
+                "customer_phone": customer_phone,
+                "customer_address": customer_address,
+                "delivery_method": delivery_method
+            }
             raw_signature = (f"accessKey={MOMO_ACCESS_KEY}&amount={amount}&extraData=&ipnUrl={MOMO_IPN_URL}"
                              f"&orderId={order_id}&orderInfo={order_info}&partnerCode={MOMO_PARTNER_CODE}"
                              f"&redirectUrl={MOMO_REDIRECT_URL}&requestId={request_id}&requestType=captureWallet")
@@ -293,7 +332,7 @@ def pay():
                 response_data = response.json()
                 print("MoMo Response:", response_data)
                 if response_data.get("resultCode") == 0:
-                    dao.add_receipt(cart, customer_phone, customer_address, True, delivery_method, order_id=order_id)
+                    # dao.add_receipt(cart, customer_phone, customer_address, True, delivery_method, order_id=order_id)
                     return jsonify({"payUrl": response_data.get("payUrl")})
                 else:
                     return jsonify({"error": response_data.get("message", "Thanh toán MoMo thất bại")}), 400
@@ -314,26 +353,42 @@ def momo_callback():
     order_id = request.args.get('orderId')
 
     if result_code == '0':  # Thanh toán thành công
-
         order = Order.query.filter_by(order_id=order_id).first()
+
+        if not order:
+            # Lấy lại thông tin đơn hàng tạm từ session
+            info = session.pop('pending_order', {})
+            cart = session.get('cart')
+            customer_phone = info.get('customer_phone', '')
+            customer_address = info.get('customer_address', '')
+            delivery_method = info.get('delivery_method', 'Tiêu chuẩn')
+
+            if not cart:
+                flash("Không tìm thấy giỏ hàng!", "danger")
+                return redirect(url_for('index'))
+
+            dao.add_receipt(
+                cart=cart,
+                customer_phone=customer_phone,
+                customer_address=customer_address,
+                payment_method=True,
+                delivery_method=delivery_method,
+                order_id=order_id
+            )
+            print("Callback thông tin đơn hàng:", info)
+            # Lấy lại order vừa tạo
+            order = Order.query.filter_by(order_id=order_id).first()
+
+        # Cập nhật trạng thái
         if order:
             order.payment_status = 'Paid'
             order.status = 'Confirmed'
             db.session.commit()
             session.pop('cart', None)
             flash("Thanh toán đơn hàng thành công!", "success")
-            return redirect(url_for('index'))
+        else:
+            flash("Không tìm thấy đơn hàng!", "danger")
 
-        purchase = Purchase.query.filter_by(momo_order_id=order_id).first()
-        if purchase:
-            pricing = DigitalPricing.query.get(purchase.digital_pricing_id)
-            purchase.time_end = purchase.time_start + timedelta(days=pricing.duration_day)
-            purchase.status = 'COMPLETED'
-            db.session.commit()
-            flash("Thanh toán gói đọc thành công!", "success")
-            return redirect(url_for('read_book', book_id=purchase.book_id))
-
-        flash("Không tìm thấy đơn hàng!", "danger")
     else:
         flash("Thanh toán thất bại: " + request.args.get('message', 'Lỗi không xác định'), "danger")
 
@@ -373,19 +428,6 @@ def momo_ipn():
             purchase.status = 'COMPLETED'
             db.session.commit()
     return jsonify({"message": "IPN received"}), 200
-
-
-# @app.route("/momo/ipn", methods=['POST'])
-# def momo_ipn():
-#     data = request.get_json()
-#     if data.get('resultCode') == 0:
-#         order_id = data.get('orderId')
-#         order = Order.query.filter_by(id=order_id).first()
-#         if order:
-#             order.payment_status = 'Paid'
-#             order.status = 'Confirmed'
-#             db.session.commit()
-#     return jsonify({"message": "IPN received"}), 200
 
 @app.route('/cart')
 def cart_view():

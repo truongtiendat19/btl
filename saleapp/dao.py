@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from flask import session
-from saleapp.models import Category, Book, User, Author, Review, OrderDetail, Order
+from saleapp.models import Category, Book, User, Author, Review, OrderDetail, Order, Purchase
 from saleapp import app, db
 import hashlib
 import cloudinary.uploader
@@ -10,7 +10,10 @@ from flask_login import current_user
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_v1_5
 from base64 import b64encode
-
+from saleapp.models import Review
+import logging
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
 
 def encrypt_payload(data):
     with open('mykey.pem', 'r') as f:
@@ -64,7 +67,39 @@ def load_books(kw=None, category_id=None, author_id=None, price_filter=None, pag
     start = (page - 1) * page_size
     books = books.slice(start, start + page_size)
     return books.all()
+# comment
+def add_comment(book_id, content, rating=5):
+    try:
+        # Kiểm tra sách có tồn tại không
+        if not Book.query.get(book_id):
+            raise ValueError("Sách không tồn tại")
 
+        # Kiểm tra người dùng đã mua sách chưa
+        now = datetime.now()
+        purchase = Purchase.query.filter(
+            Purchase.book_id == book_id,
+            Purchase.user_id == current_user.id,
+            Purchase.time_start <= now,
+            Purchase.time_end >= now,
+            Purchase.status == 'COMPLETED'
+        ).first()
+
+        if not purchase:
+            raise ValueError("Bạn cần mua sách trước khi bình luận")
+
+        c = Review(
+            user_id=current_user.id,
+            book_id=book_id,
+            rating=rating,
+            comment=content
+        )
+        db.session.add(c)
+        db.session.commit()
+        return c
+    except Exception as e:
+        logger.error(f"Lỗi khi thêm bình luận: {str(e)}")
+        db.session.rollback()
+        raise
 
 def count_books(kw=None, category_id=None, author_id=None, price_filter=None):
     query = Book.query
@@ -112,7 +147,8 @@ def get_user_by_id(id):
 
 
 def get_book_by_id(id):
-    return Book.query.get(id)
+    return db.session.get(Book, id)
+
 
 
 def stats_books():

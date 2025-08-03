@@ -36,26 +36,9 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700">Phương thức thanh toán</label>
                     <div class="mt-2">
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="payment_method" value="COD" class="form-radio" required>
-                            <span class="ml-2">Thanh toán khi nhận hàng (COD)</span>
-                        </label>
                         <label class="inline-flex items-center ml-6">
                             <input type="radio" name="payment_method" value="MoMo" class="form-radio">
                             <span class="ml-2">Thanh toán qua MoMo</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700">Phương thức giao hàng</label>
-                    <div class="mt-2">
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="delivery_method" value="Tiêu chuẩn" class="form-radio" required>
-                            <span class="ml-2">Giao hàng tiêu chuẩn</span>
-                        </label>
-                        <label class="inline-flex items-center ml-6">
-                            <input type="radio" name="delivery_method" value="Nhanh" class="form-radio">
-                            <span class="ml-2">Giao hàng nhanh</span>
                         </label>
                     </div>
                 </div>
@@ -67,7 +50,7 @@
 
         <!-- Order Summary -->
         <div class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold mb-4">Tóm tắt đơn hàng</h2>
+            <h2 class="text-2xl font-semibold mb-4">Chi tiết đơn hàng</h2>
             <div class="space-y-4">
                 {% for item in session['cart'].values() %}
                 <div class="flex justify-between">
