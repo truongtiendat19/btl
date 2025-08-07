@@ -10,8 +10,9 @@ from flask_login import current_user
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_v1_5
 from base64 import b64encode
-from saleapp.models import Review
 import logging
+
+
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 

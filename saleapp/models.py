@@ -62,7 +62,7 @@ digitalpricing_books = (
 # thông tin sách
 class Book(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(100), nullable=False, unique=True)
+    name = Column(String(255), nullable=False, unique=True)
     author_id = Column(Integer, ForeignKey(Author.id), nullable=True)
     category_id = Column(Integer, ForeignKey(Category.id), nullable=False)
 
@@ -73,7 +73,7 @@ class Book(db.Model):
     price_physical = Column(Float, default=0, nullable=False)
     quantity = Column(Integer, nullable=False, default=0)
     is_digital_avaible = Column(Boolean, default=False)
-    description = Column(String(255), nullable=True)
+    description = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
     book_contents = relationship('BookContent', backref='book', lazy=True)
     digital_pricings = relationship('DigitalPricing', secondary=digitalpricing_books, back_populates='books')
