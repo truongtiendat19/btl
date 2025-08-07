@@ -256,6 +256,10 @@ footer {
 }
 
 /* ===================== Đăng nhập ===================== */
+.login-right h3{
+    font-weight: bold;
+}
+
 .login-wrapper {
     min-height: 100vh;
     display: flex;
@@ -281,7 +285,12 @@ footer {
     text-align: center;
     padding: 40px 20px;
     border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
+
 
 .login-left img {
     width: 100px;
@@ -301,18 +310,23 @@ footer {
 }
 
 .btn-login {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background-color: #0d6efd;
     border: none;
     color: #fff;
     padding: 10px 20px;
     border-radius: 25px;
-    margin-top: 20px;
+    margin: 20px auto;
     transition: 0.3s ease;
+    width: fit-content;
 }
 
 .btn-login:hover {
     background-color: #0b5ed7;
 }
+
 
 .related-books {
   padding: 15px 0;

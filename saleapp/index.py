@@ -1,14 +1,7 @@
 import hashlib, hmac, os, uuid, math, requests, filetype, pdfkit
 from flask import (
-    render_template, request, redirect, session, jsonify,
+    render_template, request, redirect, jsonify,
     send_file, make_response, url_for, abort, flash)
-from flask_login import login_user, logout_user, login_required, current_user
-from saleapp import app, login, db, dao, utils
-from saleapp.dao import check_username_exists
-from saleapp.models import (
-    UserRole, Book, ImportReceipt,
-    DigitalPricing, Purchase, BookContent, Order, CartItem, Review
-)
 from flask_login import login_user, logout_user, login_required
 from saleapp import login, dao, utils
 from saleapp.dao import *
@@ -16,7 +9,7 @@ from saleapp.models import *
 from gtts import gTTS
 from flask import Blueprint
 from datetime import datetime, timedelta
-from sqlalchemy import func
+
 # MoMo configuration
 MOMO_PARTNER_CODE = "MOMODMJ120250721_TEST"
 MOMO_ACCESS_KEY = "Csil0yiSO0r7Ete4"
@@ -105,14 +98,14 @@ def details(book_id):
     comments = dao.load_comments(book_id)
     book = Book.query.get(book_id)
     my_purchases = Purchase.query.filter_by(user_id=current_user.id,
-                                           book_id=book_id).all() if current_user.is_authenticated else []
+                                            book_id=book_id).all() if current_user.is_authenticated else []
     purchases_dict = {}
     now = datetime.now()
     for p in my_purchases:
         if p.time_end >= now:
             purchases_dict[p.digital_pricing_id] = p
 
-    ORDER = {'free': 1, 'prenium': 2}
+    ORDER = {'free': 1, 'premium': 2}
     reading_packages = sorted(
         book.digital_pricings,
         key=lambda x: ORDER.get(x.access_type, 99)
@@ -140,7 +133,6 @@ def details(book_id):
                            related_books=related_books,
                            avg_rating=avg_rating,
                            total_reviews=total_reviews)
-
 
 
 @app.context_processor
@@ -355,6 +347,16 @@ def momo_callback():
     if result_code == '0':  # Thanh toán thành công
         order = Order.query.filter_by(order_id=order_id).first()
 
+        purchase = Purchase.query.filter_by(momo_order_id=order_id).first()
+        if purchase:
+            pricing = DigitalPricing.query.get(purchase.digital_pricing_id)
+            if pricing:
+                purchase.time_end = purchase.time_start + timedelta(days=pricing.duration_day)
+            purchase.status = 'COMPLETED'
+            db.session.commit()
+            flash("Thanh toán gói đọc thành công!", "success")
+            return redirect(url_for('read_book', book_id=purchase.book_id))
+
         if not order:
             # Lấy lại thông tin đơn hàng tạm từ session
             info = session.pop('pending_order', {})
@@ -388,6 +390,7 @@ def momo_callback():
             flash("Thanh toán đơn hàng thành công!", "success")
         else:
             flash("Không tìm thấy đơn hàng!", "danger")
+
 
     else:
         flash("Thanh toán thất bại: " + request.args.get('message', 'Lỗi không xác định'), "danger")
@@ -486,9 +489,6 @@ def print_import_receipt(receipt_id):
     return response
 
 
-from datetime import datetime, timedelta
-
-
 @app.route('/api/buy_reading_package', methods=['POST'])
 @login_required
 def buy_reading_package():
@@ -533,6 +533,7 @@ def buy_reading_package():
 @login_required
 def read_book(book_id):
     now = datetime.now()
+
     purchase = Purchase.query.filter(
         Purchase.book_id == book_id,
         Purchase.user_id == current_user.id,
@@ -541,21 +542,50 @@ def read_book(book_id):
     ).first()
 
     if not purchase:
-        return render_template("access_denied.html")
+        return render_template("access_denied.html"), 403
 
-    page = int(request.args.get('page', 1))
+    total_pages = BookContent.query.filter_by(book_id=book_id).count()
+    if total_pages == 0:
+        abort(404)
+
+    page = request.args.get('page', default=1, type=int)
+    action = request.args.get('action')
+
+    last_page = purchase.page_number or 1
+    if last_page < 1:
+        last_page = 1
+    if last_page > total_pages:
+        last_page = total_pages
+
+    if action == 'resume':
+        page = last_page
+    elif action == 'restart':
+        page = 1
+
+    if page < 1:
+        page = 1
+    elif page > total_pages:
+        page = total_pages
+
+    show_continue_modal = (action is None and page == 1 and last_page > 1)
+
+    if not show_continue_modal and page != last_page:
+        purchase.page_number = page
+        db.session.commit()
+
     content = BookContent.query.filter_by(book_id=book_id, page_number=page).first()
-
     if not content:
         abort(404)
 
-    total_pages = BookContent.query.filter_by(book_id=book_id).count()
-
-    return render_template("read_book.html",
-                           content=content,
-                           page=page,
-                           total_pages=total_pages,
-                           book_id=book_id)
+    return render_template(
+        "read_book.html",
+        content=content,
+        page=page,
+        total_pages=total_pages,
+        book_id=book_id,
+        last_page_read=last_page,
+        show_continue_modal=show_continue_modal
+    )
 
 
 @app.route("/read_audio_temp/<int:book_id>/<int:page>")
@@ -690,7 +720,6 @@ def pay_reading_package():
 
 if __name__ == '__main__':
     from saleapp import admin
-
 
     with app.app_context():
         app.run(debug=True)

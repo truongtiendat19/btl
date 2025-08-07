@@ -3,7 +3,7 @@ from sqlalchemy import extract
 from flask_admin import Admin, AdminIndexView, BaseView, expose
 from saleapp.models import *
 from flask_login import current_user
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from flask import request, redirect, url_for, jsonify
 from PIL import Image
@@ -28,7 +28,7 @@ class AdminView(BaseView):
 
 class StaffView(BaseView):
     def is_accessible(self):
-        return (current_user.is_authenticated and
+        return current_user.is_authenticated and (
                 current_user.user_role == UserRole.ADMIN or current_user.user_role == UserRole.STAFF)
 
 
@@ -487,6 +487,279 @@ class AddBookContentView(StaffView):
                            show_modal=show_modal)
 
 
+PAGE_SIZE = 12
+
+class OrderSellerView(StaffView):
+    # Danh sách + lọc + phân trang
+    @expose('/', methods=['GET'])
+    def index(self):
+        q = (request.args.get('q') or '').strip()   # order_id / tên KH / username
+        status = (request.args.get('status') or '').strip()
+        pay = (request.args.get('pay') or '').strip()
+        page = int(request.args.get('page', 1))
+
+        query = (db.session.query(
+            Order.id, Order.order_id, Order.order_date, Order.status,
+            Order.payment_status, Order.payment_method, Order.total_amount,
+            User.name.label('customer_name'), User.username.label('customer_username'))
+                 .join(User, User.id == Order.user_id))
+
+        if q:
+            like = f"%{q}%"
+            query = query.filter(
+                (Order.order_id.ilike(like)) |
+                (User.name.ilike(like)) |
+                (User.username.ilike(like))
+            )
+        if status:
+            query = query.filter(Order.status == status)
+        if pay:
+            query = query.filter(Order.payment_status == pay)
+
+        total_records = query.count()
+        orders = (query.order_by(Order.order_date.desc())
+                  .limit(PAGE_SIZE)
+                  .offset((page - 1) * PAGE_SIZE)
+                  .all())
+        total_pages = (total_records + PAGE_SIZE - 1) // PAGE_SIZE
+
+        return self.render('admin/order_seller.html',
+                           orders=orders, page=page, total_pages=total_pages,
+                           total_records=total_records, q=q, status=status, pay_status=pay)
+
+    # Chi tiết đơn (JS gọi để hiển thị modal)
+    @expose('/detail/<int:order_id>')
+    def detail(self, order_id):
+        od = (db.session.query(
+            Order.id, Order.order_id, Order.order_date, Order.status,
+            Order.payment_status, Order.payment_method, Order.total_amount,
+            User.name.label('customer_name'), User.username.label('customer_username'),
+            User.email, User.phone, Order.shipping_address)
+              .join(User, User.id == Order.user_id)
+              .filter(Order.id == order_id)
+              .first_or_404())
+
+        items = (db.session.query(
+            Book.name.label('book_name'),
+            OrderDetail.quantity, OrderDetail.unit_price)
+                 .join(Book, Book.id == OrderDetail.book_id)
+                 .filter(OrderDetail.order_id == order_id)
+                 .all())
+
+        return jsonify({
+            'order': {
+                'id': od.id,
+                'order_id': od.order_id,
+                'order_date': od.order_date.strftime('%d/%m/%Y %H:%M'),
+                'status': od.status,
+                'payment_status': od.payment_status,
+                'payment_method': od.payment_method,
+                'total_amount': od.total_amount,
+                'customer_name': od.customer_name,
+                'customer_username': od.customer_username,
+                'email': od.email,
+                'phone': od.phone,
+                'shipping_address': od.shipping_address
+            },
+            'items': [{'book_name': it.book_name,
+                       'quantity': it.quantity,
+                       'unit_price': it.unit_price,
+                       'line_total': it.quantity * it.unit_price}
+                      for it in items]
+        })
+
+    # Hủy đơn (đổi trạng thái → CANCELLED)
+    @expose('/cancel', methods=['POST'])
+    def cancel(self):
+        oid = request.form.get('id')
+
+        order = Order.query.get_or_404(oid)
+
+        if order.status in ('COMPLETED', 'CANCELLED'):
+            return jsonify({'ok': False, 'msg': 'Không thể hủy đơn này.'}), 400
+
+        order.status = 'CANCELLED'
+        db.session.commit()
+        return jsonify({'ok': True})
+
+    # Trang in hoá đơn (in-friendly)
+    @expose('/invoice/<int:order_id>')
+    def invoice(self, order_id):
+        od = (db.session.query(
+            Order.id, Order.order_id, Order.order_date, Order.status,
+            Order.payment_status, Order.payment_method, Order.total_amount,
+            User.name.label('customer_name'), User.username.label('customer_username'),
+            User.email, User.phone, Order.shipping_address)
+              .join(User, User.id == Order.user_id)
+              .filter(Order.id == order_id)
+              .first_or_404())
+
+        items = (db.session.query(
+            Book.name.label('book_name'),
+            OrderDetail.quantity, OrderDetail.unit_price)
+                 .join(Book, Book.id == OrderDetail.book_id)
+                 .filter(OrderDetail.order_id == order_id)
+                 .all())
+
+        # render template hoá đơn để in
+        return self.render('admin/invoice_print.html', order=od, items=items)
+
+    @expose('/update_status', methods=['POST'])
+    def update_status(self):
+        order_id = request.form.get('id', type=int)
+        status = request.form.get('status', type=str)
+        payment_status = request.form.get('payment_status', type=str)
+
+        order = Order.query.get_or_404(order_id)
+
+        if status:
+            order.status = status
+        if payment_status:
+            order.payment_status = payment_status
+
+        db.session.commit()
+        return jsonify({'ok': True})
+
+
+# trang thêm tài khoản nv
+class AddStaffView(AdminView):
+    @expose('/', methods=['GET', 'POST'])
+    def index(self):
+        if request.method == 'POST':
+            staff_id = request.form.get('staff_id')
+            name = (request.form.get('name') or '').strip()
+            username = (request.form.get('username') or '').strip()
+            password = (request.form.get('password') or '').strip()
+            is_active = True if request.form.get('is_active') == 'on' else False
+
+            if not username or not name or (not staff_id and not password):
+                headcontent = 'Thất bại'
+                content = 'Vui lòng nhập đủ Họ tên, Username và Mật khẩu (khi thêm mới).'
+                staffs = User.query.filter_by(user_role=UserRole.STAFF).all()
+                return self.render('admin/add_staff_user.html',
+                                   staffs=staffs, show_modal=True,
+                                   headcontent=headcontent, content=content)
+
+            try:
+                if staff_id:
+                    # sửa
+                    duplicate = User.query.filter(
+                        User.username == username,
+                        User.id != int(staff_id)
+                    ).first()
+                    if duplicate:
+                        headcontent = 'Thất bại'
+                        content = 'Username đã tồn tại.'
+                    else:
+                        staff = User.query.filter_by(id=staff_id, user_role=UserRole.STAFF).first()
+                        if staff:
+                            staff.name = name
+                            staff.username = username
+                            staff.is_active = is_active
+                            if password:  # chỉ cập nhật nếu nhập mật khẩu mới
+                                staff.password = hashlib.md5(password.encode('utf-8')).hexdigest()
+                            db.session.commit()
+                            headcontent = 'Thành công'
+                            content = 'Thông tin nhân viên đã được cập nhật.'
+                        else:
+                            headcontent = 'Thất bại'
+                            content = 'Không tìm thấy nhân viên để sửa.'
+                else:
+                    # --------- THÊM MỚI ----------
+                    if User.query.filter_by(username=username).first():
+                        headcontent = 'Thất bại'
+                        content = 'Username đã tồn tại.'
+                    else:
+                        staff = User(
+                            name=name,
+                            username=username,
+                            password=hashlib.md5(password.encode('utf-8')).hexdigest(),
+                            user_role=UserRole.STAFF,
+                            is_active=is_active
+                        )
+                        db.session.add(staff)
+                        db.session.commit()
+                        headcontent = 'Thành công'
+                        content = 'Đã thêm nhân viên mới.'
+            except Exception as ex:
+                db.session.rollback()
+                headcontent = 'Thất bại'
+                content = f'Có lỗi xảy ra: {ex}'
+
+            staffs = User.query.filter_by(user_role=UserRole.STAFF).all()
+            return self.render('admin/add_staff_user.html',
+                               staffs=staffs, show_modal=True,
+                               headcontent=headcontent, content=content)
+
+        staffs = User.query.filter_by(user_role=UserRole.STAFF).all()
+        return self.render('admin/add_staff_user.html', staffs=staffs)
+
+    @expose('/<int:staff_id>')
+    def get_staff(self, staff_id):
+        staff = User.query.filter_by(id=staff_id, user_role=UserRole.STAFF).first_or_404()
+        return jsonify({
+            'id': staff.id,
+            'name': staff.name,
+            'username': staff.username,
+            'is_active': staff.is_active
+        })
+
+
+# trang tài khoản khách hàng
+class CustomerAccountsView(StaffView):
+    @expose('/', methods=['GET'])
+    def index(self):
+        new_threshold = datetime.utcnow() - timedelta(days=7)
+
+        q = (
+            db.session.query(
+                User.id,
+                User.name,
+                User.username,
+                User.email,
+                User.phone,
+                User.created_at,
+                func.count(Order.id).label('total_orders'),
+                func.coalesce(func.sum(Order.total_amount), 0).label('total_spent')
+            )
+            .outerjoin(Order, Order.user_id == User.id)
+            .filter(User.user_role == UserRole.CUSTOMER)
+            .group_by(User.id)
+            .order_by(User.created_at.desc())
+        )
+
+        customers = q.all()
+
+        total_accounts = len(customers)
+        total_new_accounts = sum(1 for c in customers if c.created_at and c.created_at >= new_threshold)
+
+        return self.render(
+            'admin/customer_accounts.html',
+            customers=customers,
+            new_threshold=new_threshold,
+            total_accounts=total_accounts,
+            total_new_accounts=total_new_accounts
+        )
+
+
+# trang báo cáo bình luận
+class ReviewCommentView(AdminView):
+    @expose('/', methods=['GET'])
+    def index(self):
+        days = request.args.get('days', type=int, default=30)
+        date_from = datetime.utcnow() - timedelta(days=days)
+
+        # Bình luận mới nhất trong khoảng thời gian
+        latest_comments = (Review.query
+                           .filter(Review.created_date >= date_from)
+                           .order_by(Review.created_date.desc())
+                           .limit(20).all())
+
+        return self.render('admin/stats_comment.html',
+                           days=days,
+                           latest_comments=latest_comments)
+
+
 # trang báo cáo bán sách
 class RevenueStatsView(AdminView):
     @expose('/')
@@ -590,5 +863,9 @@ admin.add_view(ImportBooksView(endpoint='import_books'))
 admin.add_view(ImportReceiptHistoryView(endpoint='import_receipts_history'))
 admin.add_view(AddDigitalPricingView(endpoint='add_digital_pricing'))
 admin.add_view(AddBookContentView(endpoint='add_book_content'))
+admin.add_view(OrderSellerView(endpoint='orders_seller'))
+admin.add_view(AddStaffView(endpoint='add_staff'))
+admin.add_view(CustomerAccountsView(endpoint='customer_accounts'))
+admin.add_view(ReviewCommentView(endpoint="comment_stats"))
 admin.add_view(RevenueStatsView(endpoint="revenue_stats"))
 admin.add_view(RevenueDigitalStatsView(endpoint='stats_digital'))

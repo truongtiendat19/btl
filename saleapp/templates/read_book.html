@@ -87,6 +87,28 @@
     </style>
 </head>
 <body>
+{% if show_continue_modal %}
+<!-- Modal hỏi đọc tiếp -->
+<div class="modal fade" id="continueModal" tabindex="-1" aria-labelledby="continueModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="continueModalLabel">Tiếp tục đọc?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                Bạn đã đọc đến trang <strong>{{ last_page_read }}</strong>. Bạn có muốn tiếp tục không?
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('read_book', book_id=book_id, page=last_page_read) }}" class="btn btn-primary">Tiếp tục</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Không</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
 <!-- Nút Trang chủ -->
 <a href="{{ url_for('index') }}" class="btn btn-outline-secondary back-home">🏠 Trang chủ</a>
 
@@ -143,26 +165,52 @@
     const pauseBtn = document.getElementById('pauseBtn');
     const stopBtn = document.getElementById('stopBtn');
 
-    playBtn.onclick = async () => {
-      try {
-        await audio.play();
-      } catch (error) {
-        console.error("Lỗi phát audio:", error);
-      }
-    };
+    // Hàm cập nhật giao diện nút
+function updateControls() {
+  const isPlaying = !audio.paused && !audio.ended && audio.currentTime > 0;
 
-    pauseBtn.onclick = () => {
-      if (!audio.paused) {
-        audio.pause();
-      }
-    };
+  if (isPlaying) {
+    playBtn.classList.add('d-none');
+    pauseBtn.classList.remove('d-none');
+    stopBtn.classList.remove('d-none');
+  } else {
+    playBtn.classList.remove('d-none');
+    pauseBtn.classList.add('d-none');
+    stopBtn.classList.add('d-none');
+  }
+}
 
-    stopBtn.onclick = () => {
-      if (!audio.paused) {
-        audio.pause();
-      }
-      audio.currentTime = 0;
-    };
+// Xử lý nút Phát
+playBtn.onclick = async () => {
+  try {
+    await audio.play();
+    updateControls();
+  } catch (e) {
+    console.error('Lỗi phát audio:', e);
+  }
+};
+
+// Xử lý nút Tạm dừng
+pauseBtn.onclick = () => {
+  if (!audio.paused) audio.pause();
+  updateControls();
+};
+
+// Xử lý nút Dừng
+stopBtn.onclick = () => {
+  if (!audio.paused) audio.pause();
+  audio.currentTime = 0;
+  updateControls();
+};
+
+// Lắng nghe sự kiện audio để cập nhật nút
+['play','playing','pause','ended','waiting'].forEach(ev => {
+  audio.addEventListener(ev, updateControls);
+});
+
+// Khởi tạo trạng thái ban đầu
+document.addEventListener('DOMContentLoaded', updateControls);
+
 
     // Chuyển chế độ sáng / tối
     const toggleBtn = document.getElementById("toggleMode");
@@ -190,6 +238,13 @@
         localStorage.setItem("theme", "light");
       }
     };
+
+    document.addEventListener('DOMContentLoaded', function () {
+    {% if show_continue_modal %}
+    const modal = new bootstrap.Modal(document.getElementById('continueModal'));
+    modal.show();
+    {% endif %}
+  });
 </script>
 </body>
 </html>

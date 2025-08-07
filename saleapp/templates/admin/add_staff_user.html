@@ -1,0 +1,135 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block page_title %}Quản lý Nhân viên{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-5 py-4">
+    <div class="content-wrapper">
+        <div class="custom-row">
+            <div class="form-column">
+                <div class="form-section">
+                    <form method="POST">
+                        <input type="hidden" name="staff_id" id="staff_id">
+
+                        <div class="mb-3">
+                            <label for="name">Họ và tên</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="username">Tên đăng nhập</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password">Mật khẩu</label>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Để trống nếu không đổi">
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">Hoạt động</label>
+                        </div>
+
+
+                        <button type="submit" class="btn btn-primary">Thêm / Sửa</button>
+                        <button type="reset" class="btn btn-secondary">Làm lại</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-column">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm nhân viên...">
+                        <button class="btn btn-outline-secondary" type="button" id="clearButton">❌</button>
+                    </div>
+                </div>
+
+                <table class="table table-bordered text-center">
+                    <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Họ và tên</th>
+                        <th>Tên đăng nhập</th>
+                        <th>Hoạt động</th>
+                        <th>Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for s in staffs %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ s.name }}</td>
+                        <td>{{ s.username }}</td>
+                        <td>
+                            {% if s.is_active == True %}
+                            <i class="bi bi-check-square-fill"></i>
+                            {% else %}
+                            <i class="bi bi-app"></i>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" onclick="selectStaff({{ s.id }})">Sửa</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4">Không có nhân viên nào.</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function selectStaff(id) {
+      fetch(`/admin/add_staff/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('staff_id').value = data.id;
+          document.getElementById('name').value = data.name;
+          document.getElementById('username').value = data.username;
+          document.getElementById('password').value = '';
+          document.getElementById('is_active').checked = data.is_active;
+        });
+    }
+
+    function filterTable() {
+      const filter = document.getElementById('searchInput').value.toLowerCase();
+      const rows = document.querySelectorAll('.table tbody tr');
+
+      rows.forEach(row => {
+        const name = row.cells[1].textContent.toLowerCase();
+        const username = row.cells[2].textContent.toLowerCase();
+        if (name.includes(filter) || username.includes(filter)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    function selectStaff(id) {
+      fetch(`/admin/add_staff/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('staff_id').value = data.id;
+          document.getElementById('name').value = data.name;
+          document.getElementById('username').value = data.username;
+          document.getElementById('password').value = '';
+          document.getElementById('is_active').checked = data.is_active;
+        });
+    }
+
+
+    document.getElementById('searchInput').addEventListener('keyup', filterTable);
+    document.getElementById('clearButton').addEventListener('click', function() {
+      document.getElementById('searchInput').value = '';
+      filterTable();
+    });
+</script>
+{% endblock %}

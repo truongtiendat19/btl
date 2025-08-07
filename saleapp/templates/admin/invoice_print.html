@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>Hóa đơn #{{ order.order_id }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        /* Nếu cần font Việt hoá, dùng static thay vì file:/// */
+        @font-face{
+          font-family:'DejaVu';
+          src: url("{{ url_for('static', filename='fonts/DejaVuSans.ttf') }}");
+        }
+        body { font-family: DejaVu, -apple-system, Segoe UI, Tahoma, Arial, sans-serif; margin:24px; color:#111; }
+        .header { display:flex; justify-content:space-between; align-items:flex-start; }
+        .brand { font-size: 20px; font-weight: 700; }
+        .muted { color:#555; }
+        table { width:100%; border-collapse: collapse; margin-top:12px; }
+        th, td { border:1px solid #ddd; padding:8px; }
+        th { background:#f5f5f5; text-align:left; }
+        tfoot td { font-weight:700; }
+        .actions { margin-top:16px; }
+        @media print { .actions { display:none; } }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div>
+        <div class="brand">ReadZone</div>
+        <div class="muted">Hóa đơn bán hàng</div>
+    </div>
+    <div class="muted" style="text-align:right;">
+        <div>Mã hóa đơn: <b>#{{ order.order_id }}</b></div>
+        <div>Ngày: {{ order.order_date.strftime('%d/%m/%Y %H:%M') }}</div>
+        <div>Thanh toán: {{ order.payment_status }} ({{ order.payment_method }})</div>
+    </div>
+</div>
+
+<div style="margin-top:12px;">
+    <div><b>Khách hàng:</b> {{ order.customer_name }} ({{ order.customer_username }})</div>
+    <div><b>Email / ĐT:</b> {{ order.email or '-' }} / {{ order.phone or '-' }}</div>
+    <div><b>Địa chỉ giao hàng:</b> {{ order.shipping_address }}</div>
+</div>
+
+<table>
+    <thead>
+    <tr>
+        <th>Sản phẩm</th>
+        <th style="width:80px; text-align:center;">SL</th>
+        <th style="width:150px; text-align:right;">Đơn giá</th>
+        <th style="width:150px; text-align:right;">Thành tiền</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% set total = 0 %}
+    {% for it in items %}
+    {% set line = it.quantity * it.unit_price %}
+    {% set total = total + line %}
+    <tr>
+        <td>{{ it.book_name }}</td>
+        <td style="text-align:center;">{{ it.quantity }}</td>
+        <td style="text-align:right;">{{ "{:,.0f}".format(it.unit_price) }} đ</td>
+        <td style="text-align:right;">{{ "{:,.0f}".format(line) }} đ</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+    <tr>
+        <td colspan="3" style="text-align:right;">Tổng cộng</td>
+        <td style="text-align:right;">{{ "{:,.0f}".format(total) }} đ</td>
+    </tr>
+    </tfoot>
+</table>
+
+<div class="actions">
+    <button onclick="window.print()">In hóa đơn</button>
+</div>
+</body>
+</html>
