@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from flask import request, redirect, url_for, jsonify
 from PIL import Image
-
+PAGE_SIZE = 12
 
 # trang chủ
 class MyAdminIndexView(AdminIndexView):
@@ -367,6 +367,40 @@ class ImportReceiptHistoryView(StaffView):
         receipts = ImportReceipt.query.order_by(ImportReceipt.import_date.desc()).all()
         return self.render("admin/import_receipt_history.html", receipts=receipts)
 
+    @expose('/receipt/<int:receipt_id>/print')
+    def print_import_receipt(self, receipt_id):
+        receipt = ImportReceipt.query.get_or_404(receipt_id)
+
+        items = (db.session.query(
+            Book.name.label('book_name'),
+            ImportReceiptDetail.quantity,
+            ImportReceiptDetail.unit_price)
+                 .join(Book, Book.id == ImportReceiptDetail.book_id)
+                 .filter(ImportReceiptDetail.import_receipt_id == receipt_id)
+                 .all())
+
+        return self.render('admin/print_receipt.html', receipt=receipt, items=items, now=datetime.now())
+
+    @expose('/detail/<int:receipt_id>')
+    def receipt_detail(self, receipt_id):
+        receipt = ImportReceipt.query.get_or_404(receipt_id)
+        return jsonify({
+            "receipt": {
+                "id": receipt.id,
+                "user_name": receipt.user.name,
+                "import_date": receipt.import_date.strftime('%d/%m/%Y %H:%M:%S'),
+                "note": receipt.note,
+                "total_amount": receipt.total_amount,
+                "details": [
+                    {
+                        "book_name": d.book.name,
+                        "unit_price": d.unit_price,
+                        "quantity": d.quantity
+                    } for d in receipt.import_receipt_detail
+                ]
+            }
+        })
+
 
 # trang thêm gói đọc sách
 class AddDigitalPricingView(StaffView):
@@ -487,8 +521,6 @@ class AddBookContentView(StaffView):
                            show_modal=show_modal)
 
 
-PAGE_SIZE = 12
-
 class OrderSellerView(StaffView):
     # Danh sách + lọc + phân trang
     @expose('/', methods=['GET'])
@@ -527,7 +559,7 @@ class OrderSellerView(StaffView):
                            orders=orders, page=page, total_pages=total_pages,
                            total_records=total_records, q=q, status=status, pay_status=pay)
 
-    # Chi tiết đơn (JS gọi để hiển thị modal)
+    # Chi tiết đơn
     @expose('/detail/<int:order_id>')
     def detail(self, order_id):
         od = (db.session.query(
@@ -568,7 +600,7 @@ class OrderSellerView(StaffView):
                       for it in items]
         })
 
-    # Hủy đơn (đổi trạng thái → CANCELLED)
+    # Hủy đơn
     @expose('/cancel', methods=['POST'])
     def cancel(self):
         oid = request.form.get('id')
@@ -582,7 +614,7 @@ class OrderSellerView(StaffView):
         db.session.commit()
         return jsonify({'ok': True})
 
-    # Trang in hoá đơn (in-friendly)
+    # Trang in hoá đơn
     @expose('/invoice/<int:order_id>')
     def invoice(self, order_id):
         od = (db.session.query(
@@ -602,7 +634,7 @@ class OrderSellerView(StaffView):
                  .all())
 
         # render template hoá đơn để in
-        return self.render('admin/invoice_print.html', order=od, items=items)
+        return self.render('admin/invoice_print.html', order=od, items=items, now=datetime.now())
 
     @expose('/update_status', methods=['POST'])
     def update_status(self):

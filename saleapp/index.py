@@ -462,33 +462,6 @@ def common_response_data():
     }
 
 
-@app.route('/admin/receipt/<int:receipt_id>/print')
-def print_import_receipt(receipt_id):
-    receipt = ImportReceipt.query.get_or_404(receipt_id)
-    html = render_template('admin/print_receipt.html', receipt=receipt, now=datetime.now())
-
-    config = pdfkit.configuration(wkhtmltopdf=r'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
-
-    pdf_data = pdfkit.from_string(
-        html,
-        False,
-        configuration=config,
-        options={"enable-local-file-access": ""}
-    )
-
-    response = make_response(pdf_data)
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = f'inline; filename=phieu_nhap_{receipt_id}.pdf'
-
-    def cleanup():
-        try:
-            os.remove(pdf_data)
-        except Exception as e:
-            print("Lỗi xoá file tạm:", e)
-
-    return response
-
-
 @app.route('/api/buy_reading_package', methods=['POST'])
 @login_required
 def buy_reading_package():
