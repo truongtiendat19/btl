@@ -3,7 +3,7 @@ from flask import (
     render_template, request, redirect, jsonify,
     send_file, make_response, url_for, abort, flash)
 from flask_login import login_user, logout_user, login_required
-from saleapp import login, dao, utils
+from saleapp import login, dao, utils, scheduler
 from saleapp.dao import *
 from saleapp.models import *
 from gtts import gTTS
@@ -95,7 +95,6 @@ def index():
 
 @app.route("/books/<book_id>")
 def details(book_id):
-    comments = dao.load_comments(book_id)
     book = Book.query.get(book_id)
     my_purchases = Purchase.query.filter_by(user_id=current_user.id,
                                             book_id=book_id).all() if current_user.is_authenticated else []
@@ -119,20 +118,13 @@ def details(book_id):
 
     from sqlalchemy import func
 
-    avg_rating = db.session.query(func.avg(Review.rating)) \
-                     .filter(Review.book_id == book_id).scalar() or 0
-    total_reviews = db.session.query(func.count(Review.id)) \
-                        .filter(Review.book_id == book_id).scalar() or 0
 
     return render_template('details.html',
                            book=dao.get_book_by_id(book_id),
-                           comments=comments,
                            reading_packages=reading_packages,
                            purchases_dict=purchases_dict,
                            now=now,
-                           related_books=related_books,
-                           avg_rating=avg_rating,
-                           total_reviews=total_reviews)
+                           related_books=related_books)
 
 
 @app.context_processor
@@ -312,11 +304,6 @@ def pay():
                 "items": items
             }
 
-            print("====== MOMO CREATE REQUEST ======")
-            print("Payload:", payload)
-            print("Raw Signature:", raw_signature)
-            print("Calculated Signature:", signature)
-
             try:
                 response = requests.post(MOMO_ENDPOINT, json=payload, headers={"Content-Type": "application/json"},
                                          timeout=10)
@@ -324,7 +311,7 @@ def pay():
                 response_data = response.json()
                 print("MoMo Response:", response_data)
                 if response_data.get("resultCode") == 0:
-                    # dao.add_receipt(cart, customer_phone, customer_address, True, delivery_method, order_id=order_id)
+                    dao.add_receipt(cart, customer_phone, customer_address, True, delivery_method, order_id=order_id)
                     return jsonify({"payUrl": response_data.get("payUrl")})
                 else:
                     return jsonify({"error": response_data.get("message", "Thanh toán MoMo thất bại")}), 400
@@ -332,10 +319,7 @@ def pay():
                 print("MoMo Error:", str(e))
                 return jsonify({"error": f"Lỗi kết nối MoMo: {str(e)}"}), 500
 
-        # Xử lý COD
-        order = dao.add_receipt(cart, customer_phone, customer_address, False, delivery_method)
-        session.pop('cart', None)
-        return jsonify({"message": "Thanh toán COD thành công", "redirect_url": url_for('index')})
+            session.pop('cart', None)
     return render_template('order_books.html', user=current_user)
 
 
@@ -344,8 +328,7 @@ def momo_callback():
     result_code = request.args.get('resultCode')
     order_id = request.args.get('orderId')
 
-    if result_code == '0':  # Thanh toán thành công
-        order = Order.query.filter_by(order_id=order_id).first()
+    if result_code == '0':
 
         purchase = Purchase.query.filter_by(momo_order_id=order_id).first()
         if purchase:
@@ -357,45 +340,17 @@ def momo_callback():
             flash("Thanh toán gói đọc thành công!", "success")
             return redirect(url_for('read_book', book_id=purchase.book_id))
 
-        if not order:
-            # Lấy lại thông tin đơn hàng tạm từ session
-            info = session.pop('pending_order', {})
-            cart = session.get('cart')
-            customer_phone = info.get('customer_phone', '')
-            customer_address = info.get('customer_address', '')
-            delivery_method = info.get('delivery_method', 'Tiêu chuẩn')
-
-            if not cart:
-                flash("Không tìm thấy giỏ hàng!", "danger")
-                return redirect(url_for('index'))
-
-            dao.add_receipt(
-                cart=cart,
-                customer_phone=customer_phone,
-                customer_address=customer_address,
-                payment_method=True,
-                delivery_method=delivery_method,
-                order_id=order_id
-            )
-            print("Callback thông tin đơn hàng:", info)
-            # Lấy lại order vừa tạo
-            order = Order.query.filter_by(order_id=order_id).first()
-
         # Cập nhật trạng thái
+        order = Order.query.filter_by(order_id=order_id).first()
         if order:
-            order.payment_status = 'Paid'
-            order.status = 'Confirmed'
+            order.payment_status = 'PAID'
             db.session.commit()
             session.pop('cart', None)
-            flash("Thanh toán đơn hàng thành công!", "success")
-        else:
-            flash("Không tìm thấy đơn hàng!", "danger")
+        return redirect(url_for('index'))
 
 
     else:
         flash("Thanh toán thất bại: " + request.args.get('message', 'Lỗi không xác định'), "danger")
-
-    return redirect(url_for('index'))
 
 
 @app.route("/momo/ipn", methods=['POST'])
@@ -420,8 +375,8 @@ def momo_ipn():
         order_id = data.get('orderId')
         order = Order.query.filter_by(order_id=order_id).first()
         if order:
-            order.payment_status = 'Paid'
-            order.status = 'Confirmed'
+            order.payment_status = 'PAID'
+            order.status = 'PENDING'
             db.session.commit()
 
         purchase = Purchase.query.filter_by(momo_order_id=order_id).first()
@@ -431,6 +386,7 @@ def momo_ipn():
             purchase.status = 'COMPLETED'
             db.session.commit()
     return jsonify({"message": "IPN received"}), 200
+
 
 @app.route('/cart')
 def cart_view():
@@ -690,6 +646,11 @@ def pay_reading_package():
     except requests.exceptions.RequestException as e:
         return f"Lỗi kết nối MoMo: {str(e)}", 500
 
+
+@scheduler.task('interval', id='clear_expired', minutes=1)
+def job_clear_expired():
+    with app.app_context():
+        clean_expired_pending_purchases()
 
 if __name__ == '__main__':
     from saleapp import admin

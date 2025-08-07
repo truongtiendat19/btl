@@ -6,7 +6,7 @@
         <!-- Cột trái: Thể loại phổ biến (sticky) -->
         <div class="col-md-2 col-ad">
             <div class="ad-banner sticky-top" style="top: 20px;">
-                <h5 class="text-center mb-3">ỊThể loại phổ biến</h5>
+                <h5 class="text-center mb-3">Thể loại phổ biến</h5>
                 <ul class="list-group">
                     {% for category in categories %}
                     <a href="{{ url_for('index', category_id=category.id) }}" class="list-group-item list-group-item-action">

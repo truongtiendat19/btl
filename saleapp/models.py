@@ -25,7 +25,6 @@ class User(db.Model, UserMixin):
     phone = Column(String(50), nullable=True)
     user_role = Column(Enum(UserRole), nullable=False, default=UserRole.CUSTOMER)
     is_active = Column(Boolean, default=True)
-    reviews = relationship('Review', backref='user', lazy=True)
     import_receipts = relationship('ImportReceipt', backref='user', lazy=True)
     orders = relationship('Order', backref='user', lazy=True)
     cart_items = relationship('CartItem', backref='user', lazy=True)
@@ -81,7 +80,6 @@ class Book(db.Model):
     order_detail = relationship('OrderDetail', backref='book', lazy=True)
     import_receipt_detail = relationship('ImportReceiptDetail', back_populates='book', lazy=True)
     cart_items = relationship('CartItem', backref='book', lazy=True)
-    reviews = relationship('Review', backref='book', lazy=True)
     discount = relationship('Discount', backref='book', lazy=True)
 
     def __str__(self):
@@ -109,6 +107,7 @@ class OrderDetail(db.Model):
     book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
     quantity = Column(Integer, default=0, nullable=False)
     unit_price = Column(Float, default=0, nullable=False)
+    reviews = relationship('Review', backref='orderdatail', lazy=True)
 
 
 # giỏ hàng
@@ -176,8 +175,7 @@ class ImportReceiptDetail(db.Model):
 # đánh giá sách
 class Review(db.Model):  #bình luận
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey(User.id), nullable=False)
-    book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
+    order_detail_id = Column(Integer, ForeignKey(OrderDetail.id), nullable=False)
     rating = Column(Integer, nullable=False)
     comment = Column(String(255), nullable=False)
     created_date = Column(DateTime, server_default=func.now(), nullable=False)

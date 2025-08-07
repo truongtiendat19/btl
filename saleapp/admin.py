@@ -1,6 +1,8 @@
 import cloudinary.uploader
 from sqlalchemy import extract
 from flask_admin import Admin, AdminIndexView, BaseView, expose
+from sympy.codegen.ast import continue_
+
 from saleapp.models import *
 from flask_login import current_user
 from datetime import datetime, timedelta
@@ -99,11 +101,15 @@ class BookAdminView(StaffView):
             db.session.commit()
             headcontent = 'Thành công'
             content = 'Sách đã được cập nhật.' if book_id else 'Sách đã được thêm.'
-
+            books = Book.query.all()
+            authors = Author.query.all()
+            categories = Category.query.all()
             return self.render('admin/book_custom_view.html', books=books,
                                authors=authors, categories=categories, show_modal=True,
                                headcontent=headcontent, content=content)
-
+        books = Book.query.all()
+        authors = Author.query.all()
+        categories = Category.query.all()
         return self.render('admin/book_custom_view.html', books=books, authors=authors, categories=categories)
 
     @expose('/<int:book_id>')
@@ -170,7 +176,8 @@ class CategoryAdminView(StaffView):
                                categories=categories, show_modal=True,
                                headcontent=headcontent, content=content)
         categories = Category.query.all()
-        return self.render('admin/category_custom_view.html', categories=categories)
+        error = request.args.get('error')
+        return self.render('admin/category_custom_view.html', categories=categories, error=error)
 
     @expose('/<int:category_id>')
     def get_category(self, category_id):
@@ -185,18 +192,12 @@ class CategoryAdminView(StaffView):
         category = Category.query.get_or_404(category_id)
 
         if category.books:
-            headcontent = 'Thất bại'
-            content = 'Không thể xóa, đang có sách thuộc thể loại này. '
+            return redirect(url_for('.index', error="Không thể xóa vì thể loại đã có sách."))
         else:
             db.session.delete(category)
             db.session.commit()
-            headcontent = 'Thành công'
-            content = 'Thể loại đã được xóa.'
 
-        categories = Category.query.all()
-        return self.render('admin/category_custom_view.html',
-                           categories=categories, show_modal=True,
-                           headcontent=headcontent, content=content)
+        return redirect(url_for('.index'))
 
 
 # trang tác giả
@@ -232,13 +233,13 @@ class AuthorAdminView(StaffView):
                 # thêm mới
                 if Author.query.filter_by(name=name).first():
                     headcontent = 'Thất bại'
-                    content = 'Tên thể loại đã tồn tại.'
+                    content = 'Tên tác giả đã tồn tại.'
                 else:
                     author = Author(name=name)
                     db.session.add(author)
                     db.session.commit()
                     headcontent = 'Thành công'
-                    content = 'Đã thêm thể loại mới.'
+                    content = 'Đã thêm tác giả mới.'
 
             authors = Author.query.all()
 
@@ -246,7 +247,8 @@ class AuthorAdminView(StaffView):
                                authors=authors, show_modal=True,
                                headcontent=headcontent, content=content)
         authors = Author.query.all()
-        return self.render('admin/author_custom_view.html', authors=authors)
+        error = request.args.get('error')
+        return self.render('admin/author_custom_view.html', authors=authors, error=error)
 
     @expose('/<int:author_id>')
     def get_author(self, author_id):
@@ -261,18 +263,12 @@ class AuthorAdminView(StaffView):
         author = Author.query.get_or_404(author_id)
 
         if author.books:
-            headcontent = 'Thất bại'
-            content = 'Không thể xóa, đang có sách của tác giả này. '
+            return redirect(url_for('.index', error="Không thể xóa vì tác giả đã có sách."))
         else:
             db.session.delete(author)
             db.session.commit()
-            headcontent = 'Thành công'
-            content = 'Tác giả đã được xóa.'
 
-        authors = author.query.all()
-        return self.render('admin/author_custom_view.html',
-                           authors=authors, show_modal=True,
-                           headcontent=headcontent, content=content)
+        return redirect(url_for('.index'))
 
 
 # trang nhập sách

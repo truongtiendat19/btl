@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import session
 from saleapp.models import Category, Book, User, Author, Review, OrderDetail, Order, Purchase
 from saleapp import app, db
@@ -165,9 +165,9 @@ def add_receipt(cart, customer_phone, customer_address, payment_method, delivery
     order = Order(
         user_id=current_user.id,
         order_date=datetime.now(),
-        status='Pending',
-        payment_status='Pending' if payment_method else 'Unpaid',
-        payment_method='MoMo' if payment_method else 'COD',
+        status='PENDING',
+        payment_status='UNPAID',
+        payment_method='MoMo',
         shipping_address=customer_address,
         total_amount=total_amount
     )
@@ -195,6 +195,19 @@ def add_receipt(cart, customer_phone, customer_address, payment_method, delivery
         session.pop('cart', None)
 
     return order
+
+def clean_expired_pending_purchases():
+    expiration_time = datetime.now() - timedelta(minutes=1)
+    expired = Purchase.query.filter(
+        Purchase.status == 'PENDING',
+        Purchase.create_date <= expiration_time
+    ).all()
+
+    if expired:
+        print(f"Xóa {len(expired)} đơn hàng PENDING hết hạn.")
+    for p in expired:
+        db.session.delete(p)
+    db.session.commit()
 
 
 if __name__ == '__main__':

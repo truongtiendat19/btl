@@ -2,9 +2,16 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 import cloudinary
+from flask_apscheduler import APScheduler
+
+scheduler = APScheduler()
 
 # tạo ứng dụng
 app = Flask(__name__)
+
+
+scheduler.init_app(app)
+scheduler.start()
 
 # Đặt secret_key để bảo mật session
 app.secret_key = 'your_secret_key'

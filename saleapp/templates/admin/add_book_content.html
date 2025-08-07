@@ -49,6 +49,12 @@
                     <button type="reset" class="btn btn-secondary">Làm lại</button>
                 </form>
             </div>
+            <form method="post" action="/upload-docx" enctype="multipart/form-data">
+  <input type="hidden" name="book_id" value="{{ book.id }}">
+  <input type="file" name="word_file" accept=".docx" required>
+  <button type="submit">Tải lên</button>
+</form>
+
         </div>
 
         <div class="table-column">
@@ -59,6 +65,7 @@
                     <th>STT</th>
                     <th>Tên sách</th>
                     <th>Bản đọc</th>
+                    <th>Gói đọc</th>
                     <th>Thao tác</th>
                 </tr>
                 </thead>
@@ -68,6 +75,18 @@
                     <td>{{ loop.index }}</td>
                     <td class="text-start">{{ b.name }}</td>
                     <td>{{ 'Có' if b.is_digital_avaible else 'Không' }}</td>
+                    <td class="text-start">
+                        {% if b.digital_pricings %}
+                        <ul class="mb-0 ps-3">
+                            {% for p in b.digital_pricings %}
+                            <li>{{ p.access_type }} ({{ "{:,.0f}".format(p.price) }}đ / {{ p.duration_days }} ngày)</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <em>Không có</em>
+                        {% endif %}
+                    </td>
+
                     <td>
                         <a href="{{ url_for('add_book_content.add_book_content', book_id=b.id) }}"
                            class="btn btn-primary btn-sm">Sửa</a>
