@@ -354,23 +354,52 @@ def add_to_cart():
     return jsonify(utils.cart_stats(cart))
 
 
-@app.route("/api/carts/<book_id>", methods=['put'])
+@app.route("/api/carts/<book_id>", methods=['PUT'])
+@login_required
 def update_cart(book_id):
-    quantity = request.json.get('quantity', 0)
-    cart = session.get('cart')
-    if cart and book_id in cart:
-        cart[book_id]["quantity"] = int(quantity)
+    quantity = int(request.json.get('quantity', 0))
+    if quantity < 0:
+        return jsonify({"error": "Số lượng không hợp lệ!"}), 400
+
+    cart_item = CartItem.query.filter_by(user_id=current_user.id, book_id=book_id).first()
+    if cart_item:
+        if quantity == 0:
+            db.session.delete(cart_item)
+        else:
+            cart_item.quantity = quantity
+        db.session.commit()
+
+    # Cập nhật session['cart']
+    cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+    cart = {
+        str(item.book_id): {
+            "id": item.book_id,
+            "name": item.book.name,
+            "price": item.book.price_physical,
+            "quantity": item.quantity
+        } for item in cart_items
+    }
     session['cart'] = cart
+
     return jsonify(utils.cart_stats(cart))
 
 
-@app.route("/api/carts/<book_id>", methods=['delete'])
+
+@app.route("/api/carts/<book_id>", methods=['DELETE'])
+@login_required
 def delete_cart(book_id):
-    cart = session.get('cart')
-    if cart and book_id in cart:
-        del cart[book_id]
-    session['cart'] = cart
-    return jsonify(utils.cart_stats(cart))
+    book_id = str(book_id)
+    cart_item = CartItem.query.filter_by(user_id=current_user.id, book_id=book_id).first()
+    if cart_item:
+        db.session.delete(cart_item)
+        db.session.commit()
+
+    # Cập nhật session['cart']
+    utils.sync_cart_to_session(current_user.id)
+
+    return jsonify(utils.cart_stats(session.get('cart', {})))
+
+
 
 
 @app.route("/api/pay", methods=['POST', 'GET'])
@@ -381,6 +410,7 @@ def pay():
         cart = session.get('cart')
         if not cart:
             return jsonify({"error": "Giỏ hàng trống"}), 400
+
         customer_phone = data.get('customer_phone')
         customer_address = data.get('customer_address')
         payment_method = data.get('payment_method')
@@ -391,7 +421,7 @@ def pay():
 
         if payment_method == 'MoMo':
             order_id = str(uuid.uuid4())
-            amount = str(int(utils.cart_stats(cart)['total_amount']))  # Đảm bảo là chuỗi
+            amount = str(int(utils.cart_stats(cart)['total_amount']))
             request_id = str(uuid.uuid4())
             order_info = f"Payment for order {order_id}"
             items = [
@@ -404,6 +434,7 @@ def pay():
                 "customer_address": customer_address,
                 "delivery_method": delivery_method
             }
+
             raw_signature = (f"accessKey={MOMO_ACCESS_KEY}&amount={amount}&extraData=&ipnUrl={MOMO_IPN_URL}"
                              f"&orderId={order_id}&orderInfo={order_info}&partnerCode={MOMO_PARTNER_CODE}"
                              f"&redirectUrl={MOMO_REDIRECT_URL}&requestId={request_id}&requestType=captureWallet")
@@ -431,22 +462,33 @@ def pay():
             }
 
             try:
-                response = requests.post(MOMO_ENDPOINT, json=payload, headers={"Content-Type": "application/json"},
-                                         timeout=10)
+                response = requests.post(MOMO_ENDPOINT, json=payload, headers={"Content-Type": "application/json"}, timeout=10)
                 response.raise_for_status()
                 response_data = response.json()
                 print("MoMo Response:", response_data)
+
                 if response_data.get("resultCode") == 0:
+                    # Tạo đơn hàng
                     dao.add_receipt(cart, customer_phone, customer_address, True, delivery_method, order_id=order_id)
+
+                    # Xóa giỏ hàng trong session
+                    session.pop('cart', None)
+
+                    # (Tùy chọn) Xóa giỏ hàng trong DB nếu bạn lưu bằng CartItem
+                    from saleapp.models import CartItem
+                    CartItem.query.filter_by(user_id=current_user.id).delete()
+                    db.session.commit()
+
                     return jsonify({"payUrl": response_data.get("payUrl")})
                 else:
                     return jsonify({"error": response_data.get("message", "Thanh toán MoMo thất bại")}), 400
+
             except requests.exceptions.RequestException as e:
                 print("MoMo Error:", str(e))
                 return jsonify({"error": f"Lỗi kết nối MoMo: {str(e)}"}), 500
 
-            session.pop('cart', None)
     return render_template('order_books.html', user=current_user)
+
 
 
 @app.route("/momo/callback", methods=['GET'])
@@ -517,18 +559,22 @@ def momo_ipn():
 @app.route('/cart')
 def cart_view():
     if current_user.is_authenticated:
+        # Lấy giỏ hàng từ DB
         cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
-        cart = {str(item.book_id): {
-            "id": item.book_id,
-            "name": item.book.name,
-            "price": item.book.price_physical,
-            "quantity": item.quantity
-        } for item in cart_items}
-        session['cart'] = cart  # Đồng bộ với session nếu cần
+        cart = {
+            str(item.book_id): {
+                "id": item.book_id,
+                "name": item.book.name,
+                "price": item.book.price_physical,
+                "quantity": item.quantity
+            } for item in cart_items
+        }
+        session['cart'] = cart
     else:
         cart = session.get('cart', {})
 
     return render_template('cart.html')
+
 
 
 @login.user_loader
