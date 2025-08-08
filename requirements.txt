@@ -1,56 +1,7 @@
-Flask==3.1.1
-Flask-Admin==1.6.1
-Flask-Login==0.6.3
-Flask-SQLAlchemy==3.1.1
-Jinja2==3.1.4
-MarkupSafe==3.0.2
-PyMySQL==1.1.1
-PyYAML==6.0.2
-SQLAlchemy==2.0.36
-WTForms==3.1.2
-Werkzeug==3.1.0
-arabic-reshaper==3.0.0
-asgiref==3.9.1
-asn1crypto==1.5.1
-blinker==1.9.0
-certifi==2024.8.30
-cffi==1.17.1
-charset-normalizer==3.4.2
-click==8.2.1
-cloudinary==1.44.1
-colorama==0.4.6
-cryptography==45.0.5
-cssselect2==0.8.0
-filetype==1.2.0
-greenlet==3.2.3
-html5lib==1.1
-idna==3.10
-importlib_metadata==8.7.0
-itsdangerous==2.2.0
-lxml==6.0.0
-oscrypto==1.3.0
-pdfkit==1.0.0
-pillow==11.3.0
-pip==25.1.1
-pyHanko==0.29.1
-pycparser==2.22
-pycryptodome==3.23.0
-pyhanko-certvalidator==0.27.0
-pypdf==5.8.0
-python-bidi==0.6.6
-reportlab==4.4.3
-requests==2.32.4
-setuptools==80.9.0
-six==1.17.0
-sqlparse==0.5.3
-svglib==1.5.1
-tinycss2==1.4.0
-typing_extensions==4.12.2
-tzdata==2025.2
-tzlocal==5.3.1
-uritools==5.0.0
-urllib3==2.5.0
-webencodings==0.5.1
-wheel==0.37.1
-xhtml2pdf==0.2.17
-flask_apscheduler
+{% extends "layout/base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-danger">🚫 Bạn không có quyền đọc sách này!</h1>
+    <p>Vui lòng mua gói đọc để tiếp tục.</p>
+</div>
+{% endblock %}

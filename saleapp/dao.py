@@ -25,7 +25,9 @@ def encrypt_payload(data):
 
 
 def load_comments(book_id):
-    return Review.query.filter_by(book_id=book_id).order_by(Review.created_date.desc()).all()
+    return Review.query.join(OrderDetail).filter(OrderDetail.book_id == book_id)\
+        .order_by(Review.created_date.desc()).all()
+
 
 
 def load_categories():
@@ -68,40 +70,6 @@ def load_books(kw=None, category_id=None, author_id=None, price_filter=None, pag
     start = (page - 1) * page_size
     books = books.slice(start, start + page_size)
     return books.all()
-# comment
-def add_comment(book_id, content, rating=5):
-    try:
-        # Kiểm tra sách có tồn tại không
-        if not Book.query.get(book_id):
-            raise ValueError("Sách không tồn tại")
-
-        # Kiểm tra người dùng đã mua sách chưa
-        now = datetime.now()
-        purchase = Purchase.query.filter(
-            Purchase.book_id == book_id,
-            Purchase.user_id == current_user.id,
-            Purchase.time_start <= now,
-            Purchase.time_end >= now,
-            Purchase.status == 'COMPLETED'
-        ).first()
-
-        if not purchase:
-            raise ValueError("Bạn cần mua sách trước khi bình luận")
-
-        c = Review(
-            user_id=current_user.id,
-            book_id=book_id,
-            rating=rating,
-            comment=content
-        )
-        db.session.add(c)
-        db.session.commit()
-        return c
-    except Exception as e:
-        logger.error(f"Lỗi khi thêm bình luận: {str(e)}")
-        db.session.rollback()
-        raise
-
 def count_books(kw=None, category_id=None, author_id=None, price_filter=None):
     query = Book.query
 
@@ -209,6 +177,53 @@ def clean_expired_pending_purchases():
         db.session.delete(p)
     db.session.commit()
 
+def add_comment(book_id, content, rating=5, image=None):
+    try:
+        if not Book.query.get(book_id):
+            raise ValueError("Sách không tồn tại")
+
+        now = datetime.now()
+        # Kiểm tra quyền mua sách qua Purchase (gói đọc trực tuyến)
+        purchase = Purchase.query.filter(
+            Purchase.book_id == book_id,
+            Purchase.user_id == current_user.id,
+            Purchase.time_start <= now,
+            Purchase.time_end >= now,
+            Purchase.status == 'COMPLETED'
+        ).first()
+
+        # Kiểm tra quyền mua sách qua Order (sách vật lý)
+        order_detail = OrderDetail.query.join(Order).filter(
+            Order.user_id == current_user.id,
+            OrderDetail.book_id == book_id,
+            Order.payment_status == 'PAID'
+        ).first()
+
+        # Yêu cầu ít nhất một trong hai điều kiện trên phải đúng
+        if not (purchase or order_detail):
+            raise ValueError("Bạn cần mua sách trước khi bình luận")
+
+        # Sử dụng order_detail_id từ đơn hàng nếu có, nếu không thì để null
+        order_detail_id = order_detail.id if order_detail else None
+
+        # Nếu không có order_detail_id (chỉ có Purchase), vẫn cho phép bình luận
+        if not order_detail_id and not purchase:
+            raise ValueError("Không tìm thấy đơn hàng hoặc gói đọc hợp lệ để bình luận")
+
+        c = Review(
+            user_id=current_user.id,
+            order_detail_id=order_detail_id,
+            rating=rating,
+            comment=content,
+            image=image
+        )
+        db.session.add(c)
+        db.session.commit()
+        return c
+    except Exception as e:
+        logger.error(f"Lỗi khi thêm bình luận: {str(e)}")
+        db.session.rollback()
+        raise
 
 if __name__ == '__main__':
     with app.app_context():

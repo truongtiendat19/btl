@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -37,3 +39,10 @@ cloudinary.config(
     api_secret="jduVINOQaVK_Q7CjBa7EKHGiKAk",
     secure=True
 )
+
+
+UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Tạo thư mục nếu chưa tồn tại
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)

@@ -256,53 +256,30 @@
             </div>
         </div>
 
-    </div>
-</div>
-<!-- Đánh giá & Bình luận -->
-<div class="card card-body mt-4">
-    <h5 class="fw-bold mb-3">💬 Đánh giá & Bình luận</h5>
-    {% if current_user.is_authenticated %}
-    {% set purchase = purchases_dict.values() | selectattr('book_id', 'equalto', book.id) | selectattr('status', 'equalto', 'COMPLETED') | first %}
-    {% if purchase %}
-    <div class="mb-3">
-        <label for="stars" class="form-label">Chọn sao</label>
-        <select class="form-select w-auto mb-2" id="stars">
-            <option value="5">★★★★★ - Tuyệt vời</option>
-            <option value="4">★★★★☆ - Tốt</option>
-            <option value="3">★★★☆☆ - Trung bình</option>
-            <option value="2">★★☆☆☆ - Tệ</option>
-            <option value="1">★☆☆☆☆ - Rất tệ</option>
-        </select>
-        <textarea id="comment_content" name="content" class="form-control mb-2" placeholder="Viết bình luận của bạn..."></textarea>
-        <button class="btn btn-primary" onclick="submitComment({{ book.id }})">📩 Gửi bình luận</button>
-    </div>
-    {% else %}
-    <p class="text-muted">Vui lòng mua sách để có thể bình luận. <a href="/books/{{ book.id }}">Mua ngay</a></p>
-    {% endif %}
-    {% else %}
-    <p class="text-muted">Vui lòng <a href="/login?next=/books/{{ book.id }}">đăng nhập</a> để bình luận.</p>
-    {% endif %}
-
-    <ul class="list-group mt-3" id="comments">
-        {% for c in comments %}
-        <li class="list-group-item">
-            <div class="d-flex align-items-start">
-                <img src="{{ c.user.avatar or 'https://via.placeholder.com/50' }}" class="rounded-circle me-3" width="50" height="50">
-                <div>
-                    <strong>{{ c.user.name }}</strong>
-                    <div class="text-warning small mb-1">
-                        {% for i in range(c.rating or 5) %}★{% endfor %}
-                        {% for i in range(5 - (c.rating or 5)) %}☆{% endfor %}
-                    </div>
-                    {% if c.verified %}<span class="badge bg-success">Đã mua hàng</span>{% endif %}
-                    <p class="mb-1">{{ c.comment }}</p>
-                    <small class="text-muted date">{{ c.created_date }}</small>
-                </div>
-            </div>
-        </li>
+    </div><!-- Phần hiển thị bình luận -->
+<div class="comments-section mt-5">
+    <h3>Đánh giá người dùng</h3>
+    {% if reviews %}
+        {% for review in reviews %}
+        <div class="review-item mb-3">
+            <p>
+                {% for i in range(review.rating) %}★{% endfor %}
+                {% for i in range(5 - review.rating) %}☆{% endfor %}
+                ({{ review.created_date.strftime('%d/%m/%Y %H:%M') }})
+            </p>
+            <p>{{ review.comment }}</p>
+            {% if review.image %}
+                <img src="{{ review.image }}" alt="Review Image" style="max-width: 200px;">
+            {% endif %}
+        </div>
         {% endfor %}
-    </ul>
+    {% else %}
+        <p>Chưa có đánh giá nào cho sách này.</p>
+    {% endif %}
 </div>
+
+
+
 <script>
     const bookId = {{ book.id }};
   function updateQuantity(change) {
@@ -324,31 +301,6 @@
     .then(data => alert('Đã thêm vào giỏ hàng!'))
     .catch(err => console.error(err));
   }
-
-  function submitComment(bookId) {
-  const content = document.getElementById('comment_content').value;
-  const stars = document.getElementById('stars').value;
-
-  fetch(`/api/books/${bookId}/comments`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ content, stars })
-})
-.then(async response => {
-  const data = await response.json();
-  if (response.ok) {
-    alert('Bình luận đã được gửi!');
-    location.reload();
-  } else {
-    alert(data.error || 'Lỗi khi gửi bình luận.');
-  }
-})
-.catch(error => {
-  alert('Lỗi hệ thống, vui lòng thử lại.');
-  console.error('Error:', error);
-});
-
-}
 
   function showToast(message, isError = false) {
     const toast = document.createElement('div');

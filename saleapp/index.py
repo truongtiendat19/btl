@@ -9,7 +9,8 @@ from saleapp.models import *
 from gtts import gTTS
 from flask import Blueprint
 from datetime import datetime, timedelta
-
+from werkzeug.utils import secure_filename
+import os
 # MoMo configuration
 MOMO_PARTNER_CODE = "MOMODMJ120250721_TEST"
 MOMO_ACCESS_KEY = "Csil0yiSO0r7Ete4"
@@ -73,6 +74,43 @@ def admin_logout_process():
 # Đăng ký Blueprint
 app.register_blueprint(admin_bp)
 
+@app.route("/order_history")
+@login_required
+def order_history():
+    try:
+        query = Order.query.filter_by(user_id=current_user.id, payment_status='PAID')
+
+        # Lọc theo ngày
+        from_date = request.args.get('from_date')
+        to_date = request.args.get('to_date')
+        if from_date:
+            try:
+                from_date_obj = datetime.strptime(from_date, '%Y-%m-%d')
+                query = query.filter(Order.order_date >= from_date_obj)
+            except ValueError:
+                pass
+
+        if to_date:
+            try:
+                to_date_obj = datetime.strptime(to_date, '%Y-%m-%d') + timedelta(days=1)
+                query = query.filter(Order.order_date < to_date_obj)
+            except ValueError:
+                pass
+
+        orders = query.order_by(Order.order_date.desc()).all()
+
+        return render_template('order_history.html', orders=orders)
+    except Exception as e:
+        print(f"Error in order_history: {str(e)}")
+        abort(500, description="Lỗi khi tải lịch sử đơn hàng.")
+
+@app.route("/order_details/<int:order_id>")
+@login_required
+def order_details(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.user_id != current_user.id:
+        return render_template("access_denied.html"), 403
+    return render_template('Reveiw.html', order=order)
 
 @app.route("/")
 def index():
@@ -93,9 +131,13 @@ def index():
                            page=page)
 
 
+from sqlalchemy.orm import joinedload
+
 @app.route("/books/<book_id>")
 def details(book_id):
     book = Book.query.get(book_id)
+
+    # Kiểm tra user đã mua chưa
     my_purchases = Purchase.query.filter_by(user_id=current_user.id,
                                             book_id=book_id).all() if current_user.is_authenticated else []
     purchases_dict = {}
@@ -104,27 +146,35 @@ def details(book_id):
         if p.time_end >= now:
             purchases_dict[p.digital_pricing_id] = p
 
-    ORDER = {'free': 1, 'premium': 2}
-    reading_packages = sorted(
-        book.digital_pricings,
-        key=lambda x: ORDER.get(x.access_type, 99)
-    )
-
-    # Lấy sách liên quan (cùng thể loại, loại trừ sách hiện tại)
+    # Lấy sách liên quan
     related_books = Book.query.filter(
         Book.category_id == book.category_id,
         Book.id != book_id
     ).limit(4).all()
 
-    from sqlalchemy import func
+    #  Lấy các bình luận từ đơn hàng vật lý (qua OrderDetail)
+    reviews = db.session.query(Review).join(OrderDetail).filter(OrderDetail.book_id == book_id).options(
+        joinedload(Review.orderdetail).joinedload(OrderDetail.order),
+        joinedload(Review.orderdetail).joinedload(OrderDetail.book)
+    ).order_by(Review.created_date.desc()).all()
 
+    # Tính sao trung bình
+    avg_rating = db.session.query(func.avg(Review.rating)) \
+        .join(OrderDetail).filter(OrderDetail.book_id == book_id).scalar() or 0
+
+    # Tổng số lượt đánh giá
+    total_reviews = db.session.query(Review).join(OrderDetail).filter(OrderDetail.book_id == book_id).count()
 
     return render_template('details.html',
-                           book=dao.get_book_by_id(book_id),
-                           reading_packages=reading_packages,
+                           book=book,
+                           reading_packages=book.digital_pricings,
                            purchases_dict=purchases_dict,
                            now=now,
-                           related_books=related_books)
+                           related_books=related_books,
+                           reviews=reviews,
+                           avg_rating=avg_rating,
+                           total_reviews=total_reviews)
+
 
 
 @app.context_processor
@@ -133,29 +183,105 @@ def common_response_data():
         'categories': dao.load_categories(),
         'cart_stats': utils.cart_stats(session.get('cart'))
     }
+
+
 @app.route("/api/books/<book_id>/comments", methods=['POST'])
 @login_required
 def add_comment(book_id):
-    content = request.json.get('content')
-    rating = request.json.get('stars', 5)
+    content = request.form.get('content')
+    rating = request.form.get('stars', 5, type=int)
+    image = request.files.get('image')
+
     if not content or not isinstance(rating, int) or rating < 1 or rating > 5:
         return jsonify({"error": "Nội dung bình luận không hợp lệ hoặc số sao không đúng"}), 400
+
     try:
-        c = dao.add_comment(content=content, book_id=book_id, rating=rating)
+        # Kiểm tra và tải ảnh lên Cloudinary nếu có
+        image_url = None
+        if image:
+            kind = filetype.guess(image)
+            if not kind or kind.mime.split('/')[0] != 'image':
+                return jsonify({"error": "Tệp tải lên không phải là ảnh hợp lệ!"}), 400
+            image.seek(0)  # Reset con trỏ file
+            upload_result = cloudinary.uploader.upload(image)
+            image_url = upload_result.get('secure_url')
+
+        c = dao.add_comment(content=content, book_id=book_id, rating=rating, image=image_url)
+
+        # Lấy thông tin user
+        user = None
+        if c.order_detail_id:
+            order_detail = OrderDetail.query.get(c.order_detail_id)
+            order = Order.query.get(order_detail.order_id)
+            user = User.query.get(order.user_id)
+        else:
+            # Nếu không có order_detail_id, lấy user từ Purchase
+            purchase = Purchase.query.filter_by(book_id=book_id, user_id=current_user.id).first()
+            if purchase:
+                user = User.query.get(purchase.user_id)
+
+        if not user:
+            raise ValueError("Không tìm thấy thông tin người dùng")
+
         return jsonify({
             "id": c.id,
             "content": c.comment,
-            "created_date": c.created_date,
+            "created_date": c.created_date.isoformat(),
             "user": {
-                "avatar": c.user.avatar,
-                "name": c.user.name
+                "avatar": user.avatar,
+                "name": user.name
             },
-            "rating": c.rating
+            "rating": c.rating,
+            "image": c.image
         })
     except ValueError as e:
         return jsonify({"error": str(e)}), 403
     except Exception as e:
-        return jsonify({"error": "Lỗi hệ thống khi thêm bình luận"}), 500
+        return jsonify({"error": f"Lỗi hệ thống khi thêm bình luận: {str(e)}"}), 500
+
+@app.route("/api/order-details/<int:order_detail_id>/comments", methods=["POST"])
+@login_required
+def comment_on_order_detail(order_detail_id):
+    # Kiểm tra đã có bình luận chưa
+    existing_review = Review.query.filter_by(order_detail_id=order_detail_id).first()
+    if existing_review:
+        return jsonify({'error': 'Bạn đã bình luận cho đơn mua này rồi!'}), 400
+
+    # Lấy dữ liệu từ form
+    content = request.form.get('content')
+    rating = int(request.form.get('stars', 5))
+    image = None
+
+    # Xử lý ảnh nếu có
+    file = request.files.get('image')
+    if file:
+        filename = f"{uuid.uuid4().hex}_{file.filename}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        image = f"/static/uploads/{filename}"
+
+    # Tạo và lưu Review
+    try:
+        review = Review(
+            order_detail_id=order_detail_id,
+            rating=rating,
+            comment=content,
+            image=image,
+            user_id=current_user.id  # nếu Review model có user_id
+        )
+        db.session.add(review)
+        db.session.commit()
+
+        return jsonify({
+            "created_date": review.created_date.strftime("%Y-%m-%d %H:%M"),
+            "rating": review.rating,
+            "comment": review.comment,
+            "image": review.image
+        })
+    except Exception as ex:
+        db.session.rollback()
+        app.logger.error(f"Lỗi khi thêm bình luận: {ex}")
+        return jsonify({'error': 'Không thể lưu bình luận.'}), 500
 
 
 @app.route("/logout")

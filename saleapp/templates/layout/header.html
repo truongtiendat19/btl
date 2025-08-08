@@ -1,8 +1,8 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg bg-white shadow-sm rounded-pill my-3 mx-4 px-4">
     <div class="container-fluid">
-        <!-- Logo-->
-        <a class="navbar-brand fw-bold d-flex align-items-center me-4" href="/" style="color: #0d6efd;">
+        <!-- Logo -->
+        <a class="navbar-brand fw-bold d-flex align-items-center me-4" href="{{ url_for('index') }}" style="color: #0d6efd;">
             <img src="https://res.cloudinary.com/dapckqqhj/image/upload/v1751531116/read_zone_o4xfbo.png" alt="Logo"
                  style="width: 40px; height: 40px; border: 2px solid #0d6efd; border-radius: 50%; margin-right: 10px;">
             ReadZone
@@ -16,25 +16,29 @@
 
         <!-- Nội dung navbar -->
         <div class="collapse navbar-collapse justify-content-between" id="navbarMain">
-            <!-- Links-->
+            <!-- Links -->
             <ul class="navbar-nav d-flex align-items-center">
                 <li class="nav-item">
-                    <a class="nav-link" href="/" style="color: #0d6efd;">Trang chủ</a>
+                    <a class="nav-link" href="{{ url_for('index') }}" style="color: #0d6efd;">Trang chủ</a>
                 </li>
                 <li class="nav-item ms-2">
-                    <a class="nav-link position-relative" href="/cart" style="color: #0d6efd;">
+                    <a class="nav-link position-relative" href="{{ url_for('cart_view') }}" style="color: #0d6efd;">
                         <i class="fas fa-shopping-cart fa-lg"></i>
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-quantity-badge"
                               style="font-size: 12px;">
-                        {{ cart_stats.total_quantity }}
+                            {{ cart_stats.total_quantity }}
                         </span>
-
                     </a>
                 </li>
+                {% if current_user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('order_history') }}" style="color: #0d6efd;">Lịch sử đơn hàng</a>
+                </li>
+                {% endif %}
             </ul>
 
-            <!-- Tìm kiếm-->
-            <form class="d-flex mx-auto" style="width: 40%;" method="get" action="/">
+            <!-- Tìm kiếm -->
+            <form class="d-flex mx-auto" style="width: 40%;" method="get" action="{{ url_for('index') }}">
                 <input class="form-control rounded-pill me-2" type="search" name="kw" placeholder="Tìm sách..."
                        aria-label="Search">
                 <button class="btn btn-primary rounded-pill" type="submit">
@@ -46,31 +50,32 @@
             <ul class="navbar-nav d-flex align-items-center">
                 {% if current_user.is_authenticated %}
                 <li class="nav-item d-flex align-items-center">
-                    <a class="nav-link" href="/" style="color: #0d6efd;">
+                    <a class="nav-link" href="{{ url_for('index') }}" style="color: #0d6efd;">
                         <img src="{{ current_user.avatar }}" width="30" height="30" class="rounded-circle me-2">
                         {{ current_user.name }}
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-danger" href="/logout">Đăng xuất</a>
+                    <a class="nav-link text-danger" href="{{ url_for('logout_process') }}">Đăng xuất</a>
                 </li>
                 {% else %}
                 <li class="nav-item">
-                    <a class="nav-link" href="/login" style="color: #0d6efd;">Đăng nhập</a>
+                    <a class="nav-link" href="{{ url_for('login_process') }}" style="color: #0d6efd;">Đăng nhập</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/register" style="color: #0d6efd;">Đăng ký</a>
+                    <a class="nav-link" href="{{ url_for('register_process') }}" style="color: #0d6efd;">Đăng ký</a>
                 </li>
                 {% endif %}
             </ul>
         </div>
     </div>
 </nav>
+
 <script>
     function updateCartQuantity(quantity) {
         const badge = document.querySelector('.cart-quantity-badge');
         if (badge) {
-            badge.textContent = quantity+1;
+            badge.textContent = quantity;
         }
     }
 
@@ -88,4 +93,3 @@
         .catch(err => console.error('❌ Lỗi khi thêm vào giỏ:', err));
     }
 </script>
-

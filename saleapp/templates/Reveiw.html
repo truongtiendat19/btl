@@ -1,0 +1,70 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+<h2>Đánh Giá Cho Đơn Hàng: #{{ order.order_id }}</h2>
+<p>Ngày đặt: {{ order.order_date.strftime('%d/%m/%Y %H:%M') }}</p>
+<p>Tổng tiền: {{ "{:,.0f}".format(order.total_amount) }}₫</p>
+
+<h3>Bình luận theo từng cuốn sách</h3>
+
+{% for detail in order.order_details %}
+<div class="book-review-section mb-4 p-3 border rounded">
+    <h5>Sách: {{ detail.book.name }}</h5>
+
+    {% if current_user.is_authenticated %}
+    <form class="comment-form" data-order-detail-id="{{ detail.id }}" enctype="multipart/form-data">
+        <div class="form-group">
+            <label>Bình luận của bạn:</label>
+            <textarea name="content" class="form-control" rows="4" required></textarea>
+        </div>
+        <div class="form-group">
+            <label>Đánh giá:</label>
+            <select name="stars" class="form-control" required>
+                <option value="1">1 sao</option>
+                <option value="2">2 sao</option>
+                <option value="3">3 sao</option>
+                <option value="4">4 sao</option>
+                <option value="5" selected>5 sao</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Ảnh (nếu có):</label>
+            <input type="file" name="image" accept="image/*" class="form-control-file">
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Gửi bình luận</button>
+    </form>
+    {% else %}
+    <p>Vui lòng đăng nhập để bình luận sách.</p>
+    {% endif %}
+</div>
+{% endfor %}
+
+<!-- Script gửi bình luận -->
+<script>
+document.querySelectorAll('.comment-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const orderDetailId = form.getAttribute('data-order-detail-id');
+        const formData = new FormData(form);
+
+        fetch(`/api/order-details/${orderDetailId}/comments`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert("Gửi bình luận thành công!");
+                form.reset();
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Lỗi khi gửi bình luận!");
+        });
+    });
+});
+</script>
+{% endblock %}
