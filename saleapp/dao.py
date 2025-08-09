@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime, timedelta
 from flask import session
 from saleapp.models import Category, Book, User, Author, Review, OrderDetail, Order, Purchase
@@ -11,8 +12,9 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_v1_5
 from base64 import b64encode
 import logging
-
-
+import cv2
+import numpy as np
+from urllib.request import urlopen
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
@@ -224,6 +226,7 @@ def add_comment(book_id, content, rating=5, image=None):
         logger.error(f"Lỗi khi thêm bình luận: {str(e)}")
         db.session.rollback()
         raise
+
 
 if __name__ == '__main__':
     with app.app_context():

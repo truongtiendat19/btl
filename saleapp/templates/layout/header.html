@@ -36,16 +36,6 @@
                 </li>
                 {% endif %}
             </ul>
-
-            <!-- Tìm kiếm -->
-            <form class="d-flex mx-auto" style="width: 40%;" method="get" action="{{ url_for('index') }}">
-                <input class="form-control rounded-pill me-2" type="search" name="kw" placeholder="Tìm sách..."
-                       aria-label="Search">
-                <button class="btn btn-primary rounded-pill" type="submit">
-                    <i class="fas fa-search"></i>
-                </button>
-            </form>
-
             <!-- Đăng nhập / Đăng ký hoặc tên người dùng -->
             <ul class="navbar-nav d-flex align-items-center">
                 {% if current_user.is_authenticated %}

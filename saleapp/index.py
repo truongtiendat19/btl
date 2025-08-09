@@ -1,4 +1,4 @@
-import hashlib, hmac, os, uuid, math, requests, filetype, pdfkit
+import hashlib, hmac, uuid, math, requests, filetype, pdfkit
 from flask import (
     render_template, request, redirect, jsonify,
     send_file, make_response, url_for, abort, flash)
@@ -9,8 +9,8 @@ from saleapp.models import *
 from gtts import gTTS
 from flask import Blueprint
 from datetime import datetime, timedelta
-from werkzeug.utils import secure_filename
 import os
+# from chatbot import chatbot_bp
 # MoMo configuration
 MOMO_PARTNER_CODE = "MOMODMJ120250721_TEST"
 MOMO_ACCESS_KEY = "Csil0yiSO0r7Ete4"
@@ -73,6 +73,22 @@ def admin_logout_process():
 
 # Đăng ký Blueprint
 app.register_blueprint(admin_bp)
+
+@app.route("/api/chatbot/books")
+def get_books():
+    books = Book.query.filter_by(is_active=True).all()
+    return jsonify([
+        {
+            "id": b.id,
+            "name": b.name,
+            "price": b.price_physical,
+            "category": b.category.name if b.category else None,
+            "author": b.author.name if b.author else None,
+            "description": b.description,
+            "image": b.image
+        }
+        for b in books
+    ])
 
 @app.route("/order_history")
 @login_required

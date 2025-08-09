@@ -50,20 +50,6 @@ function deleteCart(productId) {
         });
     }
 }
-
-//function pay() {
-//    if (confirm("Bạn chắc chắn thanh toán không?") === true) {
-//        fetch("/api/pay", {
-//            method: "post"
-//        }).then(res => res.json()).then(data => {
-//            if (data.status === 200) {
-//                alert("Thanh toán thành công!");
-//                location.reload();
-//            }
-//        })
-//    }
-//}
-
 function addComment(productId) {
     fetch(`/api/products/${productId}/comments`, {
         method: "post",

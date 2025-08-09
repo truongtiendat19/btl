@@ -15,6 +15,9 @@ class UserRole(RoleEnum):
 
 # thông tin người dùng
 class User(db.Model, UserMixin):
+    __tablename__ = 'user'
+    __table_args__ = {'extend_existing': True}
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(100), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
@@ -60,6 +63,9 @@ digitalpricing_books = (
 
 # thông tin sách
 class Book(db.Model):
+    __tablename__ = 'book'
+    __table_args__ = {'extend_existing': True}
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=False, unique=True)
     author_id = Column(Integer, ForeignKey(Author.id), nullable=True)
@@ -200,94 +206,94 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
 
-        # with app.app_context():
-        #     # Tạo người dùng
-        #     admin = User(
-        #         name='admin',
-        #         username='a',
-        #         password=hashlib.md5('1'.encode('utf-8')).hexdigest(),
-        #         user_role=UserRole.ADMIN
-        #     )
-        #     db.session.add(admin)
-        #
-        #     # Thêm tác giả
-        #     authors = ["Ngô Tất Tố", "Nguyễn Nhật Ánh", "Tô Hoài", "Kim Lân"]
-        #     author_objects = []
-        #     for name in authors:
-        #         author = Author(name=name)
-        #         db.session.add(author)
-        #         author_objects.append(author)
-        #
-        #     # Thêm thể loại
-        #     c1 = Category(name='Văn học')
-        #     c2 = Category(name='Sách thiếu nhi')
-        #     c3 = Category(name='Giáo khoa - tham khảo')
-        #     db.session.add_all([c1, c2, c3])
-        #     db.session.commit()  # Commit trước để các ID được tạo
-        #
-        #     # Thêm sách
-        #     books_data = [
-        #         {
-        #             "name": "Bà già xông pha",
-        #             "description": "Bão táp mưa sa cũng không cản được Băng Hưu Trí.",
-        #             "price_physical": 76000,
-        #             "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734544786/m6pygvphn7zlrd3stzbl.jpg",
-        #             "author": author_objects[0],
-        #             "category": c1
-        #         },
-        #         {
-        #             "name": "Hiểu Về Quyền Trẻ Em - Người Sên",
-        #             "description": "Vào một ngày mùa đông cách đây rất nhiều năm",
-        #             "price_physical": 50000,
-        #             "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734544786/cda1cvom2awwtkoikanr.webp",
-        #             "author": author_objects[1],
-        #             "category": c2
-        #         },
-        #         {
-        #             "name": "Bầu trời năm ấy",
-        #             "description": "Tôi đã yêu em...",
-        #             "price_physical": 37000,
-        #             "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428224/mljvnwhxmo46ci3ysal2.jpg",
-        #             "author": author_objects[2],
-        #             "category": c3
-        #         },
-        #         {
-        #             "name": "Đại cương về Nhà nước và Pháp luật",
-        #             "description": "Sách giáo khoa, tài liệu cho các trường đại học.",
-        #             "price_physical": 45000,
-        #             "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/jgwsfsambzvlos5cgk2g.jpg",
-        #             "author": author_objects[3],
-        #             "category": c1
-        #         },
-        #         {
-        #             "name": "Mình nói gì hạnh phúc",
-        #             "description": "Hạnh phúc là gì?",
-        #             "price_physical": 90000,
-        #             "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/y0bg0xxfphgihzt6xflk.jpg",
-        #             "author": author_objects[0],
-        #             "category": c2
-        #         },
-        #         {
-        #             "name": "Người đàn bà miền núi",
-        #             "description": "Miền núi rừng cây xanh tươi tốt.",
-        #             "price_physical": 100000,
-        #             "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428221/tuizny2flckfxzjbxakp.jpg",
-        #             "author": author_objects[0],
-        #             "category": c3
-        #         }
-        #     ]
-        #
-        #     for b in books_data:
-        #         book = Book(
-        #             name=b["name"],
-        #             description=b["description"],
-        #             price_physical=b["price_physical"],
-        #             image=b["image"],
-        #             author=b["author"],
-        #             category=b["category"],
-        #             quantity=10,
-        #             is_digital_avaible=True
-        #         )
-        #         db.session.add(book)
-        #
-        #     db.session.commit()
+        with app.app_context():
+            # Tạo người dùng
+            admin = User(
+                name='admin',
+                username='a',
+                password=hashlib.md5('1'.encode('utf-8')).hexdigest(),
+                user_role=UserRole.ADMIN
+            )
+            db.session.add(admin)
+
+            # Thêm tác giả
+            authors = ["Ngô Tất Tố", "Nguyễn Nhật Ánh", "Tô Hoài", "Kim Lân"]
+            author_objects = []
+            for name in authors:
+                author = Author(name=name)
+                db.session.add(author)
+                author_objects.append(author)
+
+            # Thêm thể loại
+            c1 = Category(name='Văn học')
+            c2 = Category(name='Sách thiếu nhi')
+            c3 = Category(name='Giáo khoa - tham khảo')
+            db.session.add_all([c1, c2, c3])
+            db.session.commit()  # Commit trước để các ID được tạo
+
+            # Thêm sách
+            books_data = [
+                {
+                    "name": "Bà già xông pha",
+                    "description": "Bão táp mưa sa cũng không cản được Băng Hưu Trí.",
+                    "price_physical": 76000,
+                    "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734544786/m6pygvphn7zlrd3stzbl.jpg",
+                    "author": author_objects[0],
+                    "category": c1
+                },
+                {
+                    "name": "Hiểu Về Quyền Trẻ Em - Người Sên",
+                    "description": "Vào một ngày mùa đông cách đây rất nhiều năm",
+                    "price_physical": 50000,
+                    "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734544786/cda1cvom2awwtkoikanr.webp",
+                    "author": author_objects[1],
+                    "category": c2
+                },
+                {
+                    "name": "Bầu trời năm ấy",
+                    "description": "Tôi đã yêu em...",
+                    "price_physical": 37000,
+                    "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428224/mljvnwhxmo46ci3ysal2.jpg",
+                    "author": author_objects[2],
+                    "category": c3
+                },
+                {
+                    "name": "Đại cương về Nhà nước và Pháp luật",
+                    "description": "Sách giáo khoa, tài liệu cho các trường đại học.",
+                    "price_physical": 45000,
+                    "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/jgwsfsambzvlos5cgk2g.jpg",
+                    "author": author_objects[3],
+                    "category": c1
+                },
+                {
+                    "name": "Mình nói gì hạnh phúc",
+                    "description": "Hạnh phúc là gì?",
+                    "price_physical": 90000,
+                    "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428222/y0bg0xxfphgihzt6xflk.jpg",
+                    "author": author_objects[0],
+                    "category": c2
+                },
+                {
+                    "name": "Người đàn bà miền núi",
+                    "description": "Miền núi rừng cây xanh tươi tốt.",
+                    "price_physical": 100000,
+                    "image": "https://res.cloudinary.com/dapckqqhj/image/upload/v1734428221/tuizny2flckfxzjbxakp.jpg",
+                    "author": author_objects[0],
+                    "category": c3
+                }
+            ]
+
+            for b in books_data:
+                book = Book(
+                    name=b["name"],
+                    description=b["description"],
+                    price_physical=b["price_physical"],
+                    image=b["image"],
+                    author=b["author"],
+                    category=b["category"],
+                    quantity=10,
+                    is_digital_avaible=True
+                )
+                db.session.add(book)
+
+            db.session.commit()
