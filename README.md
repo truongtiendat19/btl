@@ -23,7 +23,6 @@
 - **Thống kê doanh thu & báo cáo đánh giá**.
 - **Quản lý & phân quyền nhân viên**.
 
----
 
 ## 2. Công nghệ sử dụng
 - **Frontend:** HTML, CSS, Bootstrap  
@@ -33,7 +32,6 @@
 - **AI Chatbox:** Gợi ý sách tự động  
 - **IDE:** PyCharm  
 
----
 
 ## 3. Cài đặt 
 
