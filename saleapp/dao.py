@@ -12,7 +12,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_v1_5
 from base64 import b64encode
 import logging
-import cv2
+
 import numpy as np
 from urllib.request import urlopen
 logging.basicConfig(level=logging.ERROR)
@@ -167,14 +167,12 @@ def add_receipt(cart, customer_phone, customer_address, payment_method, delivery
     return order
 
 def clean_expired_pending_purchases():
-    expiration_time = datetime.now() - timedelta(minutes=1)
+    expiration_time = datetime.now() - timedelta(minutes=11)
     expired = Purchase.query.filter(
         Purchase.status == 'PENDING',
         Purchase.create_date <= expiration_time
     ).all()
 
-    if expired:
-        print(f"Xóa {len(expired)} đơn hàng PENDING hết hạn.")
     for p in expired:
         db.session.delete(p)
     db.session.commit()

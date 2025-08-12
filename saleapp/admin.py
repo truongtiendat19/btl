@@ -28,6 +28,7 @@ class AdminView(BaseView):
     def is_accessible(self):
         return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
 
+
 class StaffView(BaseView):
     def is_accessible(self):
         return current_user.is_authenticated and (
@@ -310,8 +311,6 @@ class ImportBooksView(StaffView):
                         if quantity < 1 or price < 0:
                             raise ValueError
                     except ValueError:
-                        errors.append(
-                            f"Sai định dạng dữ liệu cho '{book_name}': SL={quantity_str}, ĐG={price_str}")
                         continue
 
                     total_amount += quantity * price
@@ -518,10 +517,9 @@ class AddBookContentView(StaffView):
 
 
 class OrderSellerView(StaffView):
-    # Danh sách + lọc + phân trang
     @expose('/', methods=['GET'])
     def index(self):
-        q = (request.args.get('q') or '').strip()   # order_id / tên KH / username
+        q = (request.args.get('q') or '').strip()
         status = (request.args.get('status') or '').strip()
         pay = (request.args.get('pay') or '').strip()
         page = int(request.args.get('page', 1))
@@ -777,15 +775,22 @@ class ReviewCommentView(AdminView):
         days = request.args.get('days', type=int, default=30)
         date_from = datetime.utcnow() - timedelta(days=days)
 
-        # Bình luận mới nhất trong khoảng thời gian
-        latest_comments = (Review.query
-                           .filter(Review.created_date >= date_from)
-                           .order_by(Review.created_date.desc())
-                           .limit(20).all())
+        # Bình luận mới nhất kèm thông tin sách
+        latest_comments = (
+            db.session.query(Review)
+            .join(OrderDetail, Review.order_detail_id == OrderDetail.id)
+            .join(Book, OrderDetail.book_id == Book.id)
+            .filter(Review.created_date >= date_from)
+            .order_by(Review.created_date.desc())
+            .limit(20)
+            .all()
+        )
 
-        return self.render('admin/stats_comment.html',
-                           days=days,
-                           latest_comments=latest_comments)
+        return self.render(
+            'admin/stats_comment.html',
+            days=days,
+            latest_comments=latest_comments
+        )
 
 
 # trang báo cáo bán sách
@@ -801,13 +806,15 @@ class RevenueStatsView(AdminView):
             func.sum(OrderDetail.quantity * OrderDetail.unit_price)
         ).join(Order).filter(
             extract('month', Order.order_date) == month,
-            extract('year', Order.order_date) == year
+            extract('year', Order.order_date) == year,
+            Order.payment_status == 'PAID'
         ).scalar() or 0
 
         # Tổng đơn hàng
         total_orders = db.session.query(Order).filter(
             extract('month', Order.order_date) == month,
-            extract('year', Order.order_date) == year
+            extract('year', Order.order_date) == year,
+            Order.payment_status == 'PAID'
         ).count()
 
         # Chi phí nhập hàng
@@ -829,7 +836,8 @@ class RevenueStatsView(AdminView):
             .join(Order, Order.id == OrderDetail.order_id) \
             .filter(
             extract('month', Order.order_date) == month,
-            extract('year', Order.order_date) == year
+            extract('year', Order.order_date) == year,
+            Order.payment_status == 'PAID'
         ).group_by(Category.id).all()
 
         return self.render('admin/stats.html',

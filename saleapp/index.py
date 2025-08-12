@@ -10,6 +10,8 @@ from gtts import gTTS
 from flask import Blueprint
 from datetime import datetime, timedelta
 import os
+from sqlalchemy.orm import joinedload
+
 # from chatbot import chatbot_bp
 # MoMo configuration
 MOMO_PARTNER_CODE = "MOMODMJ120250721_TEST"
@@ -120,6 +122,7 @@ def order_history():
         print(f"Error in order_history: {str(e)}")
         abort(500, description="Lỗi khi tải lịch sử đơn hàng.")
 
+
 @app.route("/order_details/<int:order_id>")
 @login_required
 def order_details(order_id):
@@ -127,6 +130,7 @@ def order_details(order_id):
     if order.user_id != current_user.id:
         return render_template("access_denied.html"), 403
     return render_template('Reveiw.html', order=order)
+
 
 @app.route("/")
 def index():
@@ -146,8 +150,6 @@ def index():
                            pages=math.ceil(total / app.config["PAGE_SIZE"]),
                            page=page)
 
-
-from sqlalchemy.orm import joinedload
 
 @app.route("/books/<book_id>")
 def details(book_id):
@@ -494,7 +496,7 @@ def pay():
                     from saleapp.models import CartItem
                     CartItem.query.filter_by(user_id=current_user.id).delete()
                     db.session.commit()
-
+                    print("thanh toan")
                     return jsonify({"payUrl": response_data.get("payUrl")})
                 else:
                     return jsonify({"error": response_data.get("message", "Thanh toán MoMo thất bại")}), 400
@@ -509,6 +511,7 @@ def pay():
 
 @app.route("/momo/callback", methods=['GET'])
 def momo_callback():
+    print("kieem tra ne")
     result_code = request.args.get('resultCode')
     order_id = request.args.get('orderId')
 
@@ -539,6 +542,7 @@ def momo_callback():
 
 @app.route("/momo/ipn", methods=['POST'])
 def momo_ipn():
+    print("kiem tra")
     data = request.get_json()
 
     received_signature = data.get('signature')

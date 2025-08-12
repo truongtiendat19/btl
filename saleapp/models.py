@@ -86,7 +86,6 @@ class Book(db.Model):
     order_detail = relationship('OrderDetail', backref='book', lazy=True)
     import_receipt_detail = relationship('ImportReceiptDetail', back_populates='book', lazy=True)
     cart_items = relationship('CartItem', backref='book', lazy=True)
-    discount = relationship('Discount', backref='book', lazy=True)
 
     def __str__(self):
         return self.name
@@ -190,16 +189,6 @@ class Review(db.Model):  #bình luận
     created_date = Column(DateTime, server_default=func.now(), nullable=False)
     image = db.Column(db.String(255))
     user = db.relationship('User', backref='reviews')
-
-# thông tin giảm giá
-class Discount(db.Model):
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    book_id = Column(Integer, ForeignKey(Book.id), nullable=False)
-    discount_type = Column(String(100), nullable=False)
-    value = Column(Float, nullable=False)
-    start_date = Column(DateTime, nullable=False)
-    end_date = Column(DateTime, nullable=False)
-    is_active = Column(Boolean, default=True)
 
 
 if __name__ == '__main__':

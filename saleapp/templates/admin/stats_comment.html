@@ -34,7 +34,8 @@
                 <td>{{ loop.index }}</td>
                 <td>{{ c.created_date.strftime('%d/%m/%Y %H:%M') }}</td>
                 <td>{{ c.user.name }}</td>
-                <td>{{ c.book.name }}</td>
+                <td>{{ c.orderdetail.book.name }}
+</td>
                 <td>
                     {% for i in range(1, 6) %}
                     {% if i <= c.rating %}
