@@ -76,6 +76,7 @@ def admin_logout_process():
 # Đăng ký Blueprint
 app.register_blueprint(admin_bp)
 
+
 @app.route("/api/chatbot/books")
 def get_books():
     books = Book.query.filter_by(is_active=True).all()
@@ -91,6 +92,7 @@ def get_books():
         }
         for b in books
     ])
+
 
 @app.route("/order_history")
 @login_required
@@ -194,7 +196,6 @@ def details(book_id):
                            total_reviews=total_reviews)
 
 
-
 @app.context_processor
 def common_response_data():
     return {
@@ -256,6 +257,7 @@ def add_comment(book_id):
         return jsonify({"error": str(e)}), 403
     except Exception as e:
         return jsonify({"error": f"Lỗi hệ thống khi thêm bình luận: {str(e)}"}), 500
+
 
 @app.route("/api/order-details/<int:order_detail_id>/comments", methods=["POST"])
 @login_required
@@ -402,7 +404,6 @@ def update_cart(book_id):
     return jsonify(utils.cart_stats(cart))
 
 
-
 @app.route("/api/carts/<book_id>", methods=['DELETE'])
 @login_required
 def delete_cart(book_id):
@@ -416,8 +417,6 @@ def delete_cart(book_id):
     utils.sync_cart_to_session(current_user.id)
 
     return jsonify(utils.cart_stats(session.get('cart', {})))
-
-
 
 
 @app.route("/api/pay", methods=['POST', 'GET'])
@@ -508,10 +507,8 @@ def pay():
     return render_template('order_books.html', user=current_user)
 
 
-
 @app.route("/momo/callback", methods=['GET'])
 def momo_callback():
-    print("kieem tra ne")
     result_code = request.args.get('resultCode')
     order_id = request.args.get('orderId')
 
@@ -542,7 +539,6 @@ def momo_callback():
 
 @app.route("/momo/ipn", methods=['POST'])
 def momo_ipn():
-    print("kiem tra")
     data = request.get_json()
 
     received_signature = data.get('signature')

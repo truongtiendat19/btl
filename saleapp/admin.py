@@ -1,9 +1,9 @@
 import cloudinary.uploader
 from sqlalchemy import extract
 from flask_admin import Admin, AdminIndexView, BaseView, expose
-from sympy.codegen.ast import continue_
-
+from docx import Document
 from saleapp.models import *
+from saleapp.dao import *
 from flask_login import current_user
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
@@ -470,7 +470,6 @@ class AddBookContentView(StaffView):
     @expose('/', methods=['GET', 'POST'])
     def add_book_content(self):
         all_books = Book.query.all()
-
         book_ids_with_content = db.session.query(BookContent.book_id).distinct().all()
         book_ids_with_content = [b[0] for b in book_ids_with_content]
         books_with_content = Book.query.filter(Book.id.in_(book_ids_with_content)).all()
@@ -480,24 +479,41 @@ class AddBookContentView(StaffView):
 
         if request.method == 'POST':
             book_id = request.form.get('book_id')
-            page_numbers = request.form.getlist('page_number[]')
-            content_texts = request.form.getlist('content[]')
+            word_file = request.files.get('word_file')
 
+            # Xóa nội dung cũ
             BookContent.query.filter_by(book_id=book_id).delete()
 
-            for i in range(len(page_numbers)):
-                db.session.add(BookContent(
-                    book_id=book_id,
-                    page_number=int(page_numbers[i]),
-                    content=content_texts[i]
-                ))
-            db.session.commit()
+            if word_file and word_file.filename.endswith('.docx'):
+                doc = Document(word_file)
+                all_paragraphs = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+
+                full_text = "\n".join(all_paragraphs)
+                pages = split_text_by_chars(full_text, chars_per_page=1000)
+
+                for i, page_content in enumerate(pages, start=1):
+                    db.session.add(BookContent(
+                        book_id=book_id,
+                        page_number=i,
+                        content=page_content
+                    ))
+                db.session.commit()
+
+            else:
+                page_numbers = request.form.getlist('page_number[]')
+                content_texts = request.form.getlist('content[]')
+                for i in range(len(page_numbers)):
+                    db.session.add(BookContent(
+                        book_id=book_id,
+                        page_number=int(page_numbers[i]),
+                        content=content_texts[i]
+                    ))
+                db.session.commit()
 
             return redirect(url_for('.add_book_content', success='1'))
 
         book_id = request.args.get('book_id')
         success = request.args.get('success')
-
         if book_id:
             selected_book = Book.query.get(book_id)
             contents = BookContent.query.filter_by(book_id=book_id).order_by(BookContent.page_number).all()

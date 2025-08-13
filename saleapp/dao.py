@@ -226,6 +226,25 @@ def add_comment(book_id, content, rating=5, image=None):
         raise
 
 
+def split_text_by_chars(text, chars_per_page=1000):
+    pages = []
+    start = 0
+    while start < len(text):
+        end = start + chars_per_page
+        if end >= len(text):
+            pages.append(text[start:].strip())
+            break
+
+        space_pos = text.rfind(" ", start, end)
+        if space_pos == -1 or space_pos <= start:
+            space_pos = end
+
+        pages.append(text[start:space_pos].strip())
+        start = space_pos + 1
+    return pages
+
+
+
 if __name__ == '__main__':
     with app.app_context():
         print(count_books())

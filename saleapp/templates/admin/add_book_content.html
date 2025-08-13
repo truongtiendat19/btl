@@ -7,7 +7,7 @@
     <div class="custom-row content-wrapper">
         <div class="form-column">
             <div class="form-section">
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label>Tìm sách:</label>
                         <input type="text" id="bookSearch" class="form-control search-select"
@@ -24,7 +24,11 @@
                         </select>
 
                     </div>
-
+                    <div class="mb-3">
+                        <label>Upload nội dung từ file Word:</label>
+                        <input type="file" name="word_file" accept=".docx" class="form-control">
+                        <small class="text-muted">Chỉ hỗ trợ file .docx</small>
+                    </div>
                     <div id="page-contents">
                         {% for c in contents %}
                         <div class="page-block">
@@ -41,12 +45,12 @@
                         </div>
                         {% endfor %}
                     </div>
-
                     <button type="button" id="add-page-btn" class="btn btn-outline-primary btn-sm mb-3">+ Thêm trang
                     </button>
                     <br><br>
                     <button type="submit" class="btn btn-primary">Lưu nội dung</button>
                     <button type="reset" class="btn btn-secondary">Làm lại</button>
+
                 </form>
             </div>
 

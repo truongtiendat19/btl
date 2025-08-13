@@ -46,3 +46,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Tạo thư mục nếu chưa tồn tại
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
+
