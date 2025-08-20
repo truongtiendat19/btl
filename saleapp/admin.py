@@ -9,7 +9,9 @@ from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from flask import request, redirect, url_for, jsonify
 from PIL import Image
+
 PAGE_SIZE = 12
+
 
 # trang chủ
 class MyAdminIndexView(AdminIndexView):
@@ -892,8 +894,8 @@ class RevenueDigitalStatsView(BaseView):
         stats = db.session.query(
             Book.name,
             func.sum(Purchase.unit_price)
-        ).join(Book, Book.id == Purchase.book_id)\
-         .filter(
+        ).join(Book, Book.id == Purchase.book_id) \
+            .filter(
             extract('month', Purchase.create_date) == month,
             extract('year', Purchase.create_date) == year,
             Purchase.status == 'COMPLETED'

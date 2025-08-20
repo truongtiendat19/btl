@@ -11,7 +11,6 @@ scheduler = APScheduler()
 # tạo ứng dụng
 app = Flask(__name__)
 
-
 scheduler.init_app(app)
 scheduler.start()
 
@@ -39,7 +38,6 @@ cloudinary.config(
     api_secret="jduVINOQaVK_Q7CjBa7EKHGiKAk",
     secure=True
 )
-
 
 UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER

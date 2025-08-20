@@ -1,5 +1,4 @@
 import json
-import os
 from datetime import datetime, timedelta
 from flask import session
 from saleapp.models import Category, Book, User, Author, Review, OrderDetail, Order, Purchase
@@ -13,8 +12,7 @@ from Crypto.Cipher import PKCS1_v1_5
 from base64 import b64encode
 import logging
 
-import numpy as np
-from urllib.request import urlopen
+
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 

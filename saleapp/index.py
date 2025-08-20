@@ -1,7 +1,7 @@
-import hashlib, hmac, uuid, math, requests, filetype, pdfkit
+import hmac, uuid, math, requests, filetype
 from flask import (
     render_template, request, redirect, jsonify,
-    send_file, make_response, url_for, abort, flash)
+    send_file, url_for, abort, flash)
 from flask_login import login_user, logout_user, login_required
 from saleapp import login, dao, utils, scheduler
 from saleapp.dao import *
